@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Slot">
+  <rect width="512" height="512" rx="118" fill="#1B382B"/>
+  <rect x="113" y="159" width="287" height="44" rx="22" fill="#FAF9F6"/>
+  <rect x="113" y="223" width="204" height="44" rx="22" fill="#C9EAD7"/>
+  <rect x="113" y="287" width="132" height="44" rx="22" fill="#FAF9F6"/>
+</svg>

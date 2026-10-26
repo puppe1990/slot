@@ -1,0 +1,94 @@
+{{ define "content" }}
+<div class="mx-auto flex w-full max-w-[720px] flex-col gap-space-lg">
+  <section class="flex flex-wrap items-center justify-between gap-3">
+    <div class="flex flex-col gap-1">
+      <span class="text-label-mono uppercase tracking-[0.14em] text-muted">Configuring session</span>
+      <h1 class="text-headline-md font-semibold tracking-tight text-pine">{{ .MeetingType.Title }}</h1>
+      <span class="text-label-mono text-pine">{{ .MeetingType.PublicPath }}</span>
+    </div>
+    <a href="/meeting-types" class="text-label-ui uppercase tracking-[0.08em] text-muted hover:text-foam">← All formats</a>
+  </section>
+
+  <form action="/meeting-types/{{ .MeetingType.ID }}" method="post" class="flex flex-col gap-space-md">
+    <input type="hidden" name="csrf_token" value="{{ .CSRFToken }}" />
+
+    <section class="rounded-xl border border-line bg-surface p-space-md">
+      <div class="flex flex-wrap items-center justify-between gap-3">
+        <h2 class="text-headline-sm font-medium text-foam">Identity</h2>
+        <label class="inline-flex cursor-pointer items-center gap-2">
+          <input type="checkbox" name="is_active" value="1" class="h-4 w-4 accent-[#1B382B]" {{ if .MeetingType.IsActive }}checked{{ end }} />
+          <span class="text-label-mono uppercase tracking-[0.08em] text-muted">Published</span>
+        </label>
+      </div>
+      <div class="mt-space-md flex flex-col gap-space-sm">
+        <.input name="title" label="Session title" value="{{ .MeetingType.Title }}" error="{{ fieldError .Errors "title" }}" />
+        <label class="flex flex-col gap-1">
+          <span class="text-label-ui uppercase tracking-[0.08em] text-muted">Description</span>
+          <textarea name="description" rows="4" class="w-full rounded-lg border border-line bg-canvas px-3 py-2.5 text-body-md text-foam outline-none focus:border-pine" placeholder="What the guest should bring and what you will cover.">{{ .MeetingType.Description }}</textarea>
+        </label>
+        <div class="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-line bg-canvas px-3 py-2">
+          <span class="text-label-mono text-foam">{{ .MeetingType.PublicPath }}</span>
+          <button type="button" class="inline-flex h-8 items-center rounded-full border border-line px-3 text-label-mono text-muted transition-colors hover:border-line-strong" amarra-hook="clipboard" data-amarra-copy="{{ .MeetingType.PublicPath }}" data-amarra-copy-done="Copied">Copy</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="rounded-xl border border-line bg-surface p-space-md">
+      <div class="flex items-center justify-between gap-3">
+        <h2 class="text-headline-sm font-medium text-foam">Format &amp; duration</h2>
+        <span class="text-label-mono text-muted">{{ .Owner.Timezone }}</span>
+      </div>
+      <div class="mt-space-md grid gap-space-sm sm:grid-cols-2">
+        <label class="flex flex-col gap-1">
+          <span class="text-label-ui uppercase tracking-[0.08em] text-muted">Session length (minutes)</span>
+          <input name="duration_minutes" type="number" min="5" max="480" step="5" value="{{ .MeetingType.DurationMinutes }}" class="h-11 rounded-lg border border-line bg-canvas px-3 text-label-mono-lg text-foam outline-none focus:border-pine" />
+          {{ with fieldError .Errors "duration_minutes" }}<span class="text-body-sm text-clay">{{ . }}</span>{{ end }}
+        </label>
+        <label class="flex flex-col gap-1">
+          <span class="text-label-ui uppercase tracking-[0.08em] text-muted">Modality</span>
+          <select name="location_type" class="h-11 rounded-lg border border-line bg-canvas px-3 text-body-md text-foam outline-none focus:border-pine">
+            {{ range $.LocationOptions }}
+            <option value="{{ .Value }}" {{ if eq .Value $.MeetingType.LocationType }}selected{{ end }}>{{ .Label }}</option>
+            {{ end }}
+          </select>
+        </label>
+        <label class="flex flex-col gap-1 sm:col-span-2">
+          <span class="text-label-ui uppercase tracking-[0.08em] text-muted">Location details</span>
+          <input name="location_details" type="text" value="{{ .MeetingType.LocationDetails }}" placeholder="Phone number, address, or a static meeting URL" class="h-11 rounded-lg border border-line bg-canvas px-3 text-body-md text-foam outline-none focus:border-pine" />
+        </label>
+      </div>
+    </section>
+
+    <section class="rounded-xl border border-line bg-surface p-space-md">
+      <div class="flex items-center justify-between gap-3">
+        <h2 class="text-headline-sm font-medium text-foam">Cadence safeguards</h2>
+        <span class="text-label-mono uppercase tracking-[0.08em] text-pine">Focus preserved</span>
+      </div>
+      <div class="mt-space-md grid gap-space-sm sm:grid-cols-2">
+        <label class="flex flex-col gap-1">
+          <span class="text-label-ui uppercase tracking-[0.08em] text-muted">Buffer before (min)</span>
+          <input name="buffer_before_minutes" type="number" min="0" max="240" step="5" value="{{ .MeetingType.BufferBeforeMinutes }}" class="h-11 rounded-lg border border-line bg-canvas px-3 text-label-mono-lg text-foam outline-none focus:border-pine" />
+        </label>
+        <label class="flex flex-col gap-1">
+          <span class="text-label-ui uppercase tracking-[0.08em] text-muted">Buffer after (min)</span>
+          <input name="buffer_after_minutes" type="number" min="0" max="240" step="5" value="{{ .MeetingType.BufferAfterMinutes }}" class="h-11 rounded-lg border border-line bg-canvas px-3 text-label-mono-lg text-foam outline-none focus:border-pine" />
+        </label>
+        <label class="flex flex-col gap-1">
+          <span class="text-label-ui uppercase tracking-[0.08em] text-muted">Minimum notice (hours)</span>
+          <input name="min_notice_hours" type="number" min="0" max="720" step="1" value="{{ .MeetingType.MinNoticeHours }}" class="h-11 rounded-lg border border-line bg-canvas px-3 text-label-mono-lg text-foam outline-none focus:border-pine" />
+        </label>
+        <label class="flex flex-col gap-1">
+          <span class="text-label-ui uppercase tracking-[0.08em] text-muted">Booking horizon (days)</span>
+          <input name="booking_horizon_days" type="number" min="1" max="400" step="1" value="{{ .MeetingType.BookingHorizonDays }}" class="h-11 rounded-lg border border-line bg-canvas px-3 text-label-mono-lg text-foam outline-none focus:border-pine" />
+        </label>
+      </div>
+      <p class="mt-space-sm text-body-sm text-muted">Buffers apply around every confirmed session and around external calendar blocks. Two sessions never touch without the gap you set here.</p>
+    </section>
+
+    <div class="flex flex-wrap items-center justify-end gap-2">
+      <a href="/meeting-types" class="inline-flex h-11 items-center rounded-lg border border-line px-5 text-label-ui uppercase tracking-[0.08em] text-foam">Cancel</a>
+      <button type="submit" class="inline-flex h-11 items-center rounded-lg bg-pine px-6 text-label-ui uppercase tracking-[0.08em] text-white transition-transform active:scale-[0.985]">Save format</button>
+    </div>
+  </form>
+</div>
+{{ end }}

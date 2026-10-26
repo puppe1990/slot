@@ -1,0 +1,135 @@
+{{ define "app" }}
+<!doctype html>
+<html lang="{{ htmlLang }}" data-amarra-layout="app">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    {{ if .CSRFToken }}<meta name="csrf-token" content="{{ .CSRFToken }}" />{{ end }}
+    <title>{{ if .Title }}{{ .Title }} · Slot{{ else }}Slot{{ end }}</title>
+    <meta name="description" content="Slot — calm scheduling for independent consultants." />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Slot" />
+    <meta property="og:title" content="{{ if .Title }}{{ .Title }}{{ else }}Slot{{ end }}" />
+    <meta property="og:image" content="{{ absURL .Site.AppURL "/static/og.png" }}" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap"
+    />
+    <link rel="stylesheet" href="/static/css/styles.css" />
+    <link rel="manifest" href="/static/manifest.webmanifest" />
+    <meta name="theme-color" content="#FAF9F6" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <link rel="apple-touch-icon" href="/static/icons/icon.png" />
+    <link rel="icon" href="/static/favicon.svg" type="image/svg+xml" />
+    <script src="/static/js/amarra.js" defer></script>
+  </head>
+  <body
+    class="min-h-screen bg-canvas font-sans text-foam"
+    data-amarra-shell="{{ if .Site.LoggedIn }}app{{ else }}auth{{ end }}"
+  >
+    <header class="sticky top-0 z-40 border-b border-line bg-canvas/85 backdrop-blur-xl">
+      <div class="mx-auto flex h-16 w-full max-w-6xl items-center justify-between gap-4 px-5">
+        <a href="{{ if .Site.LoggedIn }}/dashboard{{ else }}/{{ end }}" class="flex items-center gap-2.5">
+          <span class="font-sans text-xl font-semibold tracking-tight text-pine">Slot</span>
+          <span class="h-2 w-2 rounded-full bg-moss-dim ring-2 ring-canvas" aria-hidden="true"></span>
+          {{ with .Owner }}
+          <span class="hidden text-label-ui uppercase tracking-[0.08em] text-muted sm:inline">/ {{ .DisplayName }}</span>
+          {{ end }}
+        </a>
+
+        {{ if .Site.LoggedIn }}
+        <nav
+          amarra-hook="nav"
+          data-amarra-nav-on="text-pine"
+          data-amarra-nav-off="text-muted hover:text-foam"
+          class="hidden items-center gap-6 md:flex"
+          aria-label="Owner"
+        >
+          <a href="/dashboard" class="text-label-ui uppercase tracking-[0.08em] transition-colors {{ if eq .ActiveNav "dashboard" }}text-pine{{ else }}text-muted hover:text-foam{{ end }}">Dashboard</a>
+          <a href="/setup" class="text-label-ui uppercase tracking-[0.08em] transition-colors {{ if eq .ActiveNav "setup" }}text-pine{{ else }}text-muted hover:text-foam{{ end }}">Availability</a>
+          <a href="/meeting-types" class="text-label-ui uppercase tracking-[0.08em] transition-colors {{ if eq .ActiveNav "meeting-types" }}text-pine{{ else }}text-muted hover:text-foam{{ end }}">Formats</a>
+        </nav>
+        {{ end }}
+
+        <div class="flex items-center gap-3">
+          {{ if .Site.LoggedIn }}
+          <a
+            href="/dashboard"
+            class="hidden h-8 items-center justify-center rounded-full bg-tide px-3 text-label-mono uppercase text-muted transition-colors hover:bg-line sm:flex"
+            title="Public booking portal"
+          >Public portal</a>
+          <.form action="/logout" method="post">
+            <button
+              type="submit"
+              class="h-8 rounded-full border border-line px-3 text-label-ui uppercase tracking-[0.08em] text-muted transition-colors hover:border-line-strong hover:text-foam"
+            >Sign out</button>
+          </.form>
+          {{ else }}
+          <a href="/login" class="text-label-ui uppercase tracking-[0.08em] text-pine hover:text-foam">Sign in</a>
+          {{ end }}
+        </div>
+      </div>
+    </header>
+
+    <div id="amarra-toast-host" aria-live="polite"></div>
+
+    <main id="amarra-main" class="mx-auto w-full max-w-6xl px-5 pb-28 pt-8">
+      <.flash />
+      {{ template "content" . }}
+    </main>
+
+    {{ if .Site.LoggedIn }}
+    <nav class="fixed bottom-0 left-0 right-0 z-40 border-t border-line bg-canvas/90 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl md:hidden" aria-label="Sections">
+      <div class="flex h-16 items-center justify-around px-2">
+        <a href="/dashboard" class="flex min-h-[44px] min-w-[56px] flex-col items-center justify-center gap-1 {{ if eq .ActiveNav "dashboard" }}text-pine{{ else }}text-muted{{ end }}">
+          <span class="text-[10px] font-semibold uppercase tracking-[0.08em]">Dashboard</span>
+        </a>
+        <a href="/setup" class="flex min-h-[44px] min-w-[56px] flex-col items-center justify-center gap-1 {{ if eq .ActiveNav "setup" }}text-pine{{ else }}text-muted{{ end }}">
+          <span class="text-[10px] font-semibold uppercase tracking-[0.08em]">Availability</span>
+        </a>
+        <a href="/meeting-types" class="flex min-h-[44px] min-w-[56px] flex-col items-center justify-center gap-1 {{ if eq .ActiveNav "meeting-types" }}text-pine{{ else }}text-muted{{ end }}">
+          <span class="text-[10px] font-semibold uppercase tracking-[0.08em]">Formats</span>
+        </a>
+      </div>
+    </nav>
+    {{ end }}
+
+    {{ if eq .Site.Env "development" }}
+    <script nonce="{{ .CSPNonce }}">
+      if ("serviceWorker" in navigator) {
+        navigator.serviceWorker.getRegistrations().then(function (regs) {
+          regs.forEach(function (r) { r.unregister(); });
+        });
+        if ("caches" in window) {
+          caches.keys().then(function (keys) {
+            keys.forEach(function (k) { caches.delete(k); });
+          });
+        }
+      }
+      (function () {
+        if (!("EventSource" in window)) return;
+        if (!/^(localhost|127\.0\.0\.1|\[::1\])$/.test(location.hostname)) return;
+        var es = new EventSource("/_dev/reload");
+        es.addEventListener("reload", function () { location.reload(); });
+        es.addEventListener("boot", function (ev) {
+          var seen = sessionStorage.getItem("amarra-dev-boot");
+          sessionStorage.setItem("amarra-dev-boot", ev.data);
+          if (seen && seen !== ev.data) location.reload();
+        });
+      })();
+    </script>
+    {{ else }}
+    <script nonce="{{ .CSPNonce }}">
+      if ("serviceWorker" in navigator) {
+        navigator.serviceWorker.register("/static/js/sw.js", { scope: "/" });
+      }
+    </script>
+    {{ end }}
+  </body>
+</html>
+{{ end }}

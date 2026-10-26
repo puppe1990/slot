@@ -1,0 +1,94 @@
+{{ define "content" }}
+<div class="flex flex-col gap-space-lg">
+  <!-- Hold banner -->
+  <section class="rounded-xl bg-pine p-space-md text-white">
+    <div class="flex flex-wrap items-center justify-between gap-2">
+      <div class="flex items-center gap-2">
+        <span class="h-2.5 w-2.5 animate-ping rounded-full bg-moss"></span>
+        <span class="text-headline-sm font-medium">Slot held for you</span>
+      </div>
+      <span class="inline-flex items-center gap-1.5 rounded bg-white/10 px-2.5 py-1 text-label-mono">
+        <span id="hold-countdown" class="font-semibold tracking-[0.08em]">{{ .Remaining }}</span>
+        <span class="text-moss">sec</span>
+      </span>
+    </div>
+    <p class="mt-2 text-body-sm text-moss">
+      Nobody else can book {{ .GuestRange }} while you finish this brief. The hold releases itself if you leave.
+    </p>
+  </section>
+
+  <!-- Summary -->
+  <section class="rounded-xl border border-line bg-surface p-space-md">
+    <div class="flex items-start gap-space-sm">
+      <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-canvas text-pine">
+        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M7 3v3m10-3v3M4 8h16M5 6h14a1 1 0 011 1v13a1 1 0 01-1 1H5a1 1 0 01-1-1V7a1 1 0 011-1z" /></svg>
+      </span>
+      <div class="flex min-w-0 flex-col">
+        <span class="text-headline-sm font-medium text-foam">{{ .DateLabel }}</span>
+        <span class="text-label-mono-lg font-semibold text-pine">{{ .GuestRange }}</span>
+        <span class="text-body-sm text-muted">{{ .GuestLabel }}</span>
+        <span class="mt-2 inline-flex w-fit items-center gap-1.5 rounded bg-canvas px-2 py-1 text-label-mono text-muted">Host: {{ .HostRange }} · {{ .HostLabel }}</span>
+      </div>
+    </div>
+    <div class="mt-space-md flex flex-wrap items-center justify-between gap-2 border-t border-line pt-space-sm">
+      <span class="text-body-sm text-muted">{{ .MeetingType.Title }} · {{ .MeetingType.DurationLabel }}</span>
+      <span class="text-label-mono uppercase tracking-[0.08em] text-pine">{{ .MeetingType.LocationLabel }}</span>
+    </div>
+  </section>
+
+  <!-- Guest particulars -->
+  <section class="rounded-xl border border-line bg-surface p-space-md">
+    <div class="flex items-center justify-between gap-2">
+      <h2 class="text-headline-sm font-medium text-foam">Guest particulars</h2>
+      <span class="inline-flex items-center gap-1 text-label-mono uppercase tracking-[0.08em] text-pine">Encrypted</span>
+    </div>
+
+    <form method="post" action="{{ .PublicPath }}/confirm" class="mt-space-md flex flex-col gap-space-sm">
+      <input type="hidden" name="csrf_token" value="{{ .CSRFToken }}" />
+      <input type="hidden" name="tz" value="{{ .GuestTZ }}" />
+      <.input name="name" label="Your name" value="" error="{{ fieldError .Errors "name" }}" />
+      <.input name="email" type="email" label="Work email" value="" error="{{ fieldError .Errors "email" }}" />
+      <label class="flex flex-col gap-1">
+        <span class="flex items-center justify-between">
+          <span class="text-label-ui uppercase tracking-[0.08em] text-muted">Primary focus &amp; context</span>
+          <span class="text-label-mono text-muted">Optional</span>
+        </span>
+        <textarea name="notes" rows="3" class="w-full resize-none rounded-lg border border-line bg-canvas px-3 py-2.5 text-body-md leading-relaxed text-foam outline-none focus:border-pine" placeholder="Two questions you want answered, plus any context the host should read first."></textarea>
+      </label>
+
+      <div class="flex items-start gap-2.5 rounded-lg bg-canvas p-3">
+        <svg class="mt-0.5 h-4 w-4 shrink-0 text-pine" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M4 6h16v12H4z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M4 7l8 6 8-6"/></svg>
+        <p class="text-body-sm text-muted">An ICS invite lands in your inbox the moment you confirm, with a signed link to reschedule or cancel later.</p>
+      </div>
+
+      <button type="submit" class="mt-1 flex h-12 w-full items-center justify-center gap-2 rounded-lg bg-pine text-headline-sm font-medium text-white transition-transform active:scale-[0.985]">
+        <span>Confirm reservation</span>
+        <span class="text-moss">·</span>
+        <span class="text-label-mono text-moss">{{ .GuestRange }}</span>
+      </button>
+    </form>
+
+    <div class="mt-space-md flex flex-wrap items-center justify-between gap-2">
+      <a href="{{ .PublicPath }}?tz={{ .GuestTZ }}" class="text-body-sm text-muted underline-offset-4 hover:text-clay hover:underline">Release slot &amp; pick another time</a>
+      <span class="inline-flex items-center gap-1.5 text-label-mono text-muted"><span class="h-1.5 w-1.5 rounded-full bg-pine"></span>No login required</span>
+    </div>
+  </section>
+</div>
+
+<script nonce="{{ .CSPNonce }}">
+  (function () {
+    var seconds = {{ .Remaining }};
+    var el = document.getElementById("hold-countdown");
+    if (!el) return;
+    setInterval(function () {
+      if (seconds <= 0) {
+        el.textContent = "0";
+        el.classList.add("text-clay");
+        return;
+      }
+      seconds -= 1;
+      el.textContent = String(seconds);
+    }, 1000);
+  })();
+</script>
+{{ end }}

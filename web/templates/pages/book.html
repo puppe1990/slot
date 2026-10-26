@@ -1,0 +1,142 @@
+{{ define "content" }}
+<div class="flex flex-col gap-space-lg">
+  <!-- Host identity -->
+  <section class="rounded-xl border border-line bg-surface p-space-md">
+    <div class="flex items-start gap-space-md">
+      <div class="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-canvas text-headline-sm font-semibold text-pine">
+        {{ if .MeetingType.UserID }}{{ slice .Owner.DisplayName 0 1 }}{{ else }}S{{ end }}
+      </div>
+      <div class="flex min-w-0 flex-col">
+        <div class="flex flex-wrap items-center gap-2">
+          <span class="text-headline-sm font-semibold text-foam">{{ .Owner.DisplayName }}</span>
+          <span class="rounded bg-canvas px-1.5 py-0.5 text-label-mono uppercase tracking-[0.08em] text-muted">Verified</span>
+        </div>
+        <p class="text-body-sm text-muted">Independent consultant · {{ .Owner.Timezone }}</p>
+        <p class="mt-1 text-label-mono text-pine">Buffer-protected calendar · timezone aware</p>
+      </div>
+    </div>
+
+    <div class="mt-space-md rounded-lg border border-line bg-canvas p-space-md">
+      <h1 class="text-headline-md font-medium text-foam">{{ .MeetingType.Title }}</h1>
+      {{ if .MeetingType.Description }}<p class="mt-1 text-body-md leading-relaxed text-muted">{{ .MeetingType.Description }}</p>{{ end }}
+      <div class="mt-space-sm flex flex-wrap items-center gap-2">
+        <span class="rounded bg-surface px-2.5 py-1 text-label-mono font-medium text-foam">{{ .MeetingType.DurationLabel }}</span>
+        <span class="rounded bg-surface px-2.5 py-1 text-label-mono font-medium text-pine">{{ .MeetingType.LocationLabel }}</span>
+        <span class="rounded bg-moss/60 px-2.5 py-1 text-label-mono font-medium uppercase text-pine">Complimentary</span>
+        <span class="rounded bg-surface px-2.5 py-1 text-label-mono font-medium text-muted">{{ .MeetingType.HorizonLabel }} horizon</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- Timezone awareness -->
+  <section class="rounded-xl border border-line bg-surface p-space-md">
+    <form method="get" action="{{ .PublicPath }}" class="flex flex-wrap items-center justify-between gap-2">
+      <div class="flex min-w-0 items-center gap-2">
+        <span class="flex h-6 w-6 items-center justify-center rounded-full bg-canvas text-pine">
+          <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M12 3a9 9 0 100 18 9 9 0 000-18zm0 0v9l5 3" /></svg>
+        </span>
+        <div class="min-w-0">
+          <span class="block text-body-sm text-muted">Times shown in your timezone</span>
+          <span class="block text-label-mono text-foam">{{ .Slots.GuestTZLabel }}</span>
+        </div>
+      </div>
+      <div class="flex items-center gap-2">
+        <input type="hidden" name="date" value="{{ .Slots.SelectedDate }}" />
+        <select name="tz" class="h-9 max-w-[220px] rounded-lg border border-line bg-canvas px-2 text-label-mono text-foam outline-none focus:border-pine">
+          {{ range .GuestOptions }}
+          <option value="{{ .Value }}" {{ if .Selected }}selected{{ end }}>{{ .Label }}</option>
+          {{ end }}
+        </select>
+        <button type="submit" class="h-9 rounded-lg bg-pine px-3 text-label-ui uppercase tracking-[0.08em] text-white">Set</button>
+      </div>
+    </form>
+    <p class="mt-2 flex items-center gap-1.5 text-label-mono text-muted">
+      <span class="h-1.5 w-1.5 rounded-full bg-pine"></span>
+      Host clock: {{ .Slots.HostTZLabel }}
+    </p>
+  </section>
+
+  {{ with fieldError .Errors "slot" }}
+  <div class="rounded-xl border border-clay/40 bg-clay/5 p-space-md text-body-sm text-clay">{{ . }}</div>
+  {{ end }}
+
+  <!-- Date strip -->
+  <section class="flex flex-col gap-space-sm">
+    <div class="flex items-center justify-between">
+      <span class="text-label-ui uppercase tracking-[0.08em] text-muted">{{ .Slots.DateLabel }}</span>
+      <div class="flex items-center gap-1">
+        <a href="{{ .PublicPath }}?tz={{ .Timezone }}&date={{ .Slots.PrevDate }}" class="flex h-8 w-8 items-center justify-center rounded text-muted transition-colors hover:bg-surface hover:text-foam" aria-label="Previous week">‹</a>
+        <a href="{{ .PublicPath }}?tz={{ .Timezone }}&date={{ .Slots.NextDate }}" class="flex h-8 w-8 items-center justify-center rounded text-muted transition-colors hover:bg-surface hover:text-foam" aria-label="Next week">›</a>
+      </div>
+    </div>
+
+    <div class="no-scrollbar -mx-margin flex gap-2.5 overflow-x-auto px-margin pb-2 pt-1">
+      {{ range .Slots.Days }}
+        {{ if .HasSlots }}
+        <a href="{{ $.PublicPath }}?tz={{ $.Timezone }}&date={{ .Date }}"
+           class="flex h-20 w-14 shrink-0 flex-col items-center justify-between rounded-lg p-2 transition-transform active:scale-95 {{ if .IsSelected }}bg-pine text-white shadow-sm ring-2 ring-pine/30{{ else }}bg-surface text-foam hover:bg-line/60{{ end }}">
+          <span class="text-body-sm {{ if .IsSelected }}text-moss{{ else }}text-muted{{ end }}">{{ .Weekday }}</span>
+          <span class="text-headline-sm font-semibold">{{ .DayNumber }}</span>
+          <span class="h-1.5 w-1.5 rounded-full {{ if .IsSelected }}bg-moss{{ else }}bg-pine{{ end }}"></span>
+        </a>
+        {{ else }}
+        <span class="flex h-20 w-14 shrink-0 cursor-not-allowed flex-col items-center justify-between rounded-lg bg-surface/50 p-2 text-muted opacity-45">
+          <span class="text-body-sm">{{ .Weekday }}</span>
+          <span class="text-headline-sm">{{ .DayNumber }}</span>
+          <span class="h-1 w-1 rounded-full bg-transparent"></span>
+        </span>
+        {{ end }}
+      {{ end }}
+    </div>
+  </section>
+
+  <!-- Slots -->
+  <section class="flex flex-col gap-space-sm">
+    <div class="flex items-center justify-between">
+      <span class="text-headline-sm font-medium text-foam">{{ .Slots.DateLabel }}</span>
+      <span class="text-label-mono text-muted">{{ len .Slots.Selected.Slots }} available</span>
+    </div>
+
+    {{ if .Slots.Selected.Slots }}
+    <div class="grid gap-2.5 sm:grid-cols-2">
+      {{ range .Slots.Selected.Slots }}
+      <form method="post" action="{{ $.PublicPath }}/hold">
+        <input type="hidden" name="csrf_token" value="{{ $.CSRFToken }}" />
+        <input type="hidden" name="slot" value="{{ .StartISO }}" />
+        <input type="hidden" name="tz" value="{{ $.Timezone }}" />
+        <button type="submit" class="flex w-full items-center justify-between rounded-xl bg-surface p-3.5 text-left shadow-sm transition-transform hover:bg-line/50 active:scale-[0.98]">
+          <span class="flex flex-col">
+            <span class="text-label-mono-lg font-semibold text-foam">{{ .GuestClock }}</span>
+            <span class="text-label-mono text-muted">{{ .HostClock }} host</span>
+          </span>
+          <span class="text-label-ui uppercase tracking-[0.08em] text-pine">Hold</span>
+        </button>
+      </form>
+      {{ end }}
+    </div>
+    {{ else }}
+    <div class="rounded-xl border border-line bg-surface p-space-md">
+      <p class="text-body-md font-medium text-foam">No open slots on {{ .Slots.DateLabel }}.</p>
+      <p class="mt-1 text-body-sm text-muted">Pick another day in the strip above. Availability respects notice windows, buffers and external blocks.</p>
+    </div>
+    {{ end }}
+  </section>
+
+  <p class="text-center text-label-mono text-muted">No login required. Holding a slot reserves it for 10 minutes — nothing is charged.</p>
+</div>
+
+<script nonce="{{ .CSPNonce }}">
+  // First visit only: translate the browser's IANA zone into ?tz= so the
+  // guest sees their own clock without touching the select.
+  (function () {
+    var params = new URLSearchParams(location.search);
+    if (params.get("tz")) return;
+    try {
+      var zone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      if (!zone) return;
+      params.set("tz", zone);
+      location.replace(location.pathname + "?" + params.toString());
+    } catch (e) {}
+  })();
+</script>
+{{ end }}

@@ -1,0 +1,240 @@
+package handlers
+
+import (
+	"net/http"
+	"strings"
+	"time"
+
+	"github.com/puppe1990/amarra-cais/pkg/cais/flash"
+	"github.com/puppe1990/amarra-cais/pkg/cais/httpx"
+	"github.com/puppe1990/amarra-cais/pkg/cais/validate"
+
+	"github.com/puppe1990/slot/internal/models"
+	"github.com/puppe1990/slot/internal/scheduling"
+	"github.com/puppe1990/slot/internal/store"
+)
+
+var weekdayLabels = []string{"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"}
+
+type weekdayRow struct {
+	Index int
+	Label string
+	Start string
+	End   string
+	Open  bool
+}
+
+type SetupHandler struct {
+	base
+}
+
+func NewSetupHandler(deps Deps) *SetupHandler {
+	return &SetupHandler{base: newBase(deps)}
+}
+
+func (h *SetupHandler) Show(w http.ResponseWriter, r *http.Request) {
+	owner, ok := h.owner(r)
+	if !ok {
+		http.Redirect(w, r, "/login", http.StatusSeeOther)
+		return
+	}
+	rules, err := h.deps.Store.ListAvailabilityRules(owner.User.ID)
+	if err != nil {
+		h.serverError(w, r, err)
+		return
+	}
+	connection, err := h.deps.Store.GetCalendarConnection(owner.User.ID)
+	if err != nil && err != store.ErrConnectionNotFound {
+		h.serverError(w, r, err)
+		return
+	}
+	h.render(w, r, owner.User, rules, connection, nil, 0)
+}
+
+func (h *SetupHandler) Save(w http.ResponseWriter, r *http.Request) {
+	owner, ok := h.owner(r)
+	if !ok {
+		http.Redirect(w, r, "/login", http.StatusSeeOther)
+		return
+	}
+	if err := httpx.ParseFormOrJSON(r); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	name := strings.TrimSpace(r.FormValue("name"))
+	timezone := normalizeTimezone(r.FormValue("timezone"), owner.User.Timezone)
+	rules := h.readWeeklyRules(r)
+
+	var errs validate.FieldErrors
+	if name == "" {
+		errs.Add("name", "Your guests need a name to greet")
+	}
+	if len(rules) == 0 {
+		errs.Add("availability", "Open at least one window so guests can book")
+	}
+	if errs.Any() {
+		connection, _ := h.deps.Store.GetCalendarConnection(owner.User.ID)
+		h.render(w, r, owner.User, rules, connection, errs, http.StatusUnprocessableEntity)
+		return
+	}
+
+	if err := h.deps.Store.UpdateOwnerProfile(owner.User.ID, name, timezone); err != nil {
+		h.serverError(w, r, err)
+		return
+	}
+	if err := h.deps.Store.ReplaceAvailabilityRules(owner.User.ID, rules); err != nil {
+		h.serverError(w, r, err)
+		return
+	}
+	provider := strings.TrimSpace(r.FormValue("calendar_provider"))
+	if provider != models.CalendarProviderGoogle {
+		provider = models.CalendarProviderFake
+	}
+	if err := h.deps.Store.SaveCalendarConnection(models.CalendarConnection{
+		UserID:       owner.User.ID,
+		Provider:     provider,
+		AccountEmail: owner.User.Email,
+		SyncStatus:   "ACTIVE",
+		LastSyncedAt: h.now(),
+	}); err != nil {
+		h.serverError(w, r, err)
+		return
+	}
+
+	flash.Set(w, "notice", "Availability saved.", h.deps.Config.CookieSecure())
+	http.Redirect(w, r, "/setup", http.StatusSeeOther)
+}
+
+func (h *SetupHandler) AddOverride(w http.ResponseWriter, r *http.Request) {
+	owner, ok := h.owner(r)
+	if !ok {
+		http.Redirect(w, r, "/login", http.StatusSeeOther)
+		return
+	}
+	if err := httpx.ParseFormOrJSON(r); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	date := strings.TrimSpace(r.FormValue("date"))
+	if _, err := time.Parse(dateKeyLayout, date); err != nil {
+		flash.Set(w, "error", "Pick a valid date.", h.deps.Config.CookieSecure())
+		http.Redirect(w, r, "/setup", http.StatusSeeOther)
+		return
+	}
+
+	override := models.DateOverride{
+		Date:          date,
+		IsUnavailable: r.FormValue("is_unavailable") != "",
+	}
+	if !override.IsUnavailable {
+		override.CustomStartTime = strings.TrimSpace(r.FormValue("custom_start_time"))
+		override.CustomEndTime = strings.TrimSpace(r.FormValue("custom_end_time"))
+		if _, _, err := scheduling.ParseClock(override.CustomStartTime); err != nil {
+			flash.Set(w, "error", "Custom start needs HH:MM.", h.deps.Config.CookieSecure())
+			http.Redirect(w, r, "/setup", http.StatusSeeOther)
+			return
+		}
+		if _, _, err := scheduling.ParseClock(override.CustomEndTime); err != nil {
+			flash.Set(w, "error", "Custom end needs HH:MM.", h.deps.Config.CookieSecure())
+			http.Redirect(w, r, "/setup", http.StatusSeeOther)
+			return
+		}
+	}
+	if _, err := h.deps.Store.UpsertDateOverride(owner.User.ID, override); err != nil {
+		h.serverError(w, r, err)
+		return
+	}
+	flash.Set(w, "notice", "Date override saved.", h.deps.Config.CookieSecure())
+	http.Redirect(w, r, "/setup", http.StatusSeeOther)
+}
+
+func (h *SetupHandler) DeleteOverride(w http.ResponseWriter, r *http.Request) {
+	owner, ok := h.owner(r)
+	if !ok {
+		http.Redirect(w, r, "/login", http.StatusSeeOther)
+		return
+	}
+	id, ok := intParam(r, "id")
+	if !ok {
+		http.NotFound(w, r)
+		return
+	}
+	if err := h.deps.Store.DeleteDateOverride(owner.User.ID, id); err != nil {
+		h.serverError(w, r, err)
+		return
+	}
+	flash.Set(w, "notice", "Override removed.", h.deps.Config.CookieSecure())
+	http.Redirect(w, r, "/setup", http.StatusSeeOther)
+}
+
+func (h *SetupHandler) readWeeklyRules(r *http.Request) []models.AvailabilityRule {
+	rules := make([]models.AvailabilityRule, 0, 7)
+	for day := 0; day < 7; day++ {
+		start := strings.TrimSpace(r.FormValue("start_" + weekdayLabels[day]))
+		end := strings.TrimSpace(r.FormValue("end_" + weekdayLabels[day]))
+		if start == "" || end == "" {
+			continue
+		}
+		rules = append(rules, models.AvailabilityRule{
+			DayOfWeek: day,
+			StartTime: start,
+			EndTime:   end,
+			IsActive:  true,
+		})
+	}
+	return rules
+}
+
+func (h *SetupHandler) render(w http.ResponseWriter, r *http.Request, owner models.User, rules []models.AvailabilityRule, connection models.CalendarConnection, errs validate.FieldErrors, status int) {
+	now := h.now()
+	from := now.Format(dateKeyLayout)
+	to := now.AddDate(0, 0, 120).Format(dateKeyLayout)
+	overrides, err := h.deps.Store.ListDateOverrides(owner.ID, from, to)
+	if err != nil {
+		h.serverError(w, r, err)
+		return
+	}
+
+	h.page(w, r, "app", "setup", map[string]any{
+		"Title":             "Availability",
+		"ActiveNav":         "setup",
+		"Owner":             owner,
+		"Weekdays":          buildWeekdayRows(rules),
+		"TimezoneOptions":   buildTimezoneOptions(normalizeTimezone(owner.Timezone, "UTC")),
+		"Connection":        connection,
+		"Overrides":         overrides,
+		"Errors":            errs,
+		"GoogleConfigured":  connection.Provider == models.CalendarProviderGoogle,
+		"TimezoneAbbrevNow": zoneOffset(now, mustLocation(owner.Timezone)),
+	}, status)
+}
+
+func buildWeekdayRows(rules []models.AvailabilityRule) []weekdayRow {
+	byDay := map[int]models.AvailabilityRule{}
+	for _, rule := range rules {
+		if _, exists := byDay[rule.DayOfWeek]; !exists {
+			byDay[rule.DayOfWeek] = rule
+		}
+	}
+	rows := make([]weekdayRow, 0, 7)
+	for day := 0; day < 7; day++ {
+		row := weekdayRow{Index: day, Label: weekdayLabels[day]}
+		if rule, ok := byDay[day]; ok {
+			row.Start = rule.StartTime
+			row.End = rule.EndTime
+			row.Open = true
+		}
+		rows = append(rows, row)
+	}
+	return rows
+}
+
+func mustLocation(name string) *time.Location {
+	location, err := time.LoadLocation(name)
+	if err != nil {
+		return time.UTC
+	}
+	return location
+}
