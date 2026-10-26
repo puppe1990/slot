@@ -103,12 +103,35 @@ func (h *AuthHandler) SignUp(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/dashboard", http.StatusSeeOther)
 		return
 	}
+	if h.ownerExists(r) {
+		flash.Set(w, "notice", "This Slot already has an owner. Sign in instead.", h.cfg.CookieSecure())
+		http.Redirect(w, r, "/login", http.StatusSeeOther)
+		return
+	}
 	h.renderAuth(w, r, "signup", map[string]any{"Title": h.t(r, "auth.signup_title")}, 0)
+}
+
+// ownerExists closes public signup after the first account: Slot is a
+// single-owner app, so an open form would let the first stranger claim the
+// dashboard and every booking.
+func (h *AuthHandler) ownerExists(r *http.Request) bool {
+	count, err := h.store.CountUsers()
+	if err != nil {
+		log.Printf("slot: count users: %v", err)
+		return true
+	}
+	return count > 0
 }
 
 func (h *AuthHandler) SignUpPost(w http.ResponseWriter, r *http.Request) {
 	if err := httpx.ParseFormOrJSON(r); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	if h.ownerExists(r) {
+		flash.Set(w, "notice", "This Slot already has an owner. Sign in instead.", h.cfg.CookieSecure())
+		http.Redirect(w, r, "/login", http.StatusSeeOther)
 		return
 	}
 

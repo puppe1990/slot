@@ -14,9 +14,15 @@ import (
 	"github.com/puppe1990/slot/internal/store"
 )
 
+// newAuthHandler boots a development-env store, which seeds demo@example.com /
+// password — the credential the login/logout tests exercise.
 func newAuthHandler(t *testing.T) (*AuthHandler, store.Store) {
 	t.Helper()
-	s := setupTestStore(t)
+	s, err := store.NewSQLiteStore(":memory:", "development")
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = s.Close() })
 	h := NewAuthHandler(setupTestViews(t), s, testSite(), s.Sessions(), cais.Config{}, appi18n.DefaultCatalog())
 	return h, s
 }
@@ -24,7 +30,7 @@ func newAuthHandler(t *testing.T) (*AuthHandler, store.Store) {
 func TestAuth_RevocationFailureReturnsServerError(t *testing.T) {
 	for _, action := range []string{"login", "logout"} {
 		t.Run(action, func(t *testing.T) {
-			h, s := newAuthHandlerForSignup(t)
+			h, s := newAuthHandler(t)
 			h.cfg = cais.Config{Env: "production"}
 			user, err := s.FindUserByEmail("demo@example.com")
 			if err != nil {

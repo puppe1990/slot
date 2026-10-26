@@ -37,6 +37,7 @@ type Store interface {
 	FindUserByEmail(email string) (models.User, error)
 	GetUser(id int64) (models.User, error)
 	CreateUser(email, passwordHash string) (int64, error)
+	CountUsers() (int, error)
 	UpdateOwnerProfile(userID int64, name, timezone string) error
 	CreatePasswordResetToken(userID int64) (string, error)
 	ClearPasswordResetTokens(userID int64) error
@@ -209,4 +210,14 @@ func unixSeconds(ts time.Time) int64 {
 
 func fromUnix(seconds int64) time.Time {
 	return time.Unix(seconds, 0).UTC()
+}
+
+// CountUsers answers "is this install claimed yet?" — the owner signup closes
+// after the first account so a public deployment cannot be taken over.
+func (s *SQLiteStore) CountUsers() (int, error) {
+	var count int
+	if err := s.db.QueryRow("SELECT COUNT(*) FROM users").Scan(&count); err != nil {
+		return 0, fmt.Errorf("count users: %w", err)
+	}
+	return count, nil
 }

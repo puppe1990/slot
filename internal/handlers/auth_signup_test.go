@@ -14,9 +14,11 @@ import (
 	"github.com/puppe1990/slot/internal/store"
 )
 
-func newAuthHandlerForSignup(t *testing.T) (*AuthHandler, store.Store) {
+// newSignupHandler uses a test-env store: no demo seed, so the install starts
+// unclaimed and public signup is open.
+func newSignupHandler(t *testing.T) (*AuthHandler, store.Store) {
 	t.Helper()
-	s, err := store.NewSQLiteStore(":memory:", "development")
+	s, err := store.NewSQLiteStore(":memory:", "test")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -26,7 +28,7 @@ func newAuthHandlerForSignup(t *testing.T) (*AuthHandler, store.Store) {
 }
 
 func TestAuth_SignUpPost_createsUserAndRedirects(t *testing.T) {
-	h, s := newAuthHandlerForSignup(t)
+	h, s := newSignupHandler(t)
 
 	form := url.Values{}
 	form.Set("email", "signup@example.com")
@@ -79,8 +81,10 @@ func TestAuth_SignUpPost_createsUserAndRedirects(t *testing.T) {
 	}
 }
 
-func TestAuth_SignUpPost_duplicateEmail_returnsError(t *testing.T) {
-	h, _ := newAuthHandlerForSignup(t)
+// Slot is single-owner: the second public signup must bounce to /login instead
+// of minting another account with dashboard access.
+func TestAuth_SignUpPost_secondAccountIsBlocked(t *testing.T) {
+	h, s := newSignupHandler(t)
 
 	form := url.Values{}
 	form.Set("email", "signup@example.com")
@@ -94,20 +98,25 @@ func TestAuth_SignUpPost_duplicateEmail_returnsError(t *testing.T) {
 		t.Fatalf("first signup status = %d, want 303", rr.Code)
 	}
 
-	req2 := httptest.NewRequest(http.MethodPost, "/signup", strings.NewReader(form.Encode()))
+	second := url.Values{}
+	second.Set("email", "intruder@example.com")
+	second.Set("password", "password123")
+	second.Set("password_confirmation", "password123")
+	req2 := httptest.NewRequest(http.MethodPost, "/signup", strings.NewReader(second.Encode()))
 	req2.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	rr2 := httptest.NewRecorder()
 	h.SignUpPost(rr2, req2)
-	if rr2.Code != http.StatusUnprocessableEntity {
-		t.Fatalf("duplicate signup status = %d, want 422", rr2.Code)
+
+	if rr2.Code != http.StatusSeeOther || rr2.Header().Get("Location") != "/login" {
+		t.Fatalf("second signup = %d %q, want 303 /login", rr2.Code, rr2.Header().Get("Location"))
 	}
-	if !strings.Contains(rr2.Body.String(), "already registered") {
-		t.Errorf("missing email taken error, got: %s", rr2.Body.String())
+	if _, err := s.FindUserByEmail("intruder@example.com"); err == nil {
+		t.Fatal("second signup created an account")
 	}
 }
 
 func TestAuth_SignUp_RendersForm(t *testing.T) {
-	h, _ := newAuthHandlerForSignup(t)
+	h, _ := newSignupHandler(t)
 
 	req := httptest.NewRequest(http.MethodGet, "/signup", nil)
 	rr := httptest.NewRecorder()
