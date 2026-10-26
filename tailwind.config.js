@@ -1,5 +1,9 @@
 /** @type {import("tailwindcss").Config} */
 module.exports = {
+  // The kit's HTML lives in the Go module, so Tailwind never sees it. Every kit
+  // component this app renders is mirrored in web/templates/components/ to get
+  // its classes compiled (amarra-cais#372). Add an override before adopting a
+  // new <.tag> component.
   content: ["./web/templates/**/*.html"],
   safelist: [
     "cais-password-wrap",
