@@ -1,0 +1,7 @@
+{{ if .Flash }}
+<div
+  id="amarra-flash"
+  role="status"
+  class="mb-space-md rounded-xl border px-4 py-3 text-body-sm {{ if eq .Flash.Kind "error" }}border-clay/40 bg-clay/5 text-clay{{ else }}border-line bg-surface text-foam{{ end }}"
+>{{ with flashMessage .Flash }}{{ . }}{{ else }}{{ .Flash }}{{ end }}</div>
+{{ end }}

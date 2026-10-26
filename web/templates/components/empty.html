@@ -1,0 +1,7 @@
+<div class="rounded-xl border border-dashed border-line bg-surface px-6 py-10 text-center">
+  <p class="text-headline-sm font-medium text-foam">{{ .Title }}</p>
+  <div class="mt-2 text-body-sm text-muted">{{ .Inner }}</div>
+  {{ if .Href }}
+  <a href="{{ .Href }}" class="mt-4 inline-flex h-10 items-center rounded-lg bg-pine px-5 text-label-ui uppercase tracking-[0.08em] text-white transition-transform active:scale-[0.985]">{{ .Action }}</a>
+  {{ end }}
+</div>

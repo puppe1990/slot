@@ -1,0 +1,14 @@
+<div class="flex flex-col gap-1">
+  <label class="text-label-ui uppercase tracking-[0.08em] text-muted" for="{{ .Name }}">{{ .Label }}</label>
+  <input
+    class="h-11 w-full rounded-lg border border-line bg-canvas px-3 text-body-md text-foam outline-none transition-colors focus:border-pine user-invalid:border-clay"
+    id="{{ .Name }}"
+    name="{{ .Name }}"
+    type="{{ if .Type }}{{ .Type }}{{ else }}text{{ end }}"
+    {{- if .Type }}{{ if eq .Type "file" }}{{ else }} value="{{ .Value }}"{{ end }}{{ else }} value="{{ .Value }}"{{ end }}
+    {{- if .Placeholder }} placeholder="{{ .Placeholder }}"{{ end }}
+    {{- if .Accept }} accept="{{ .Accept }}"{{ end }}
+    {{- if .Error }} aria-invalid="true"{{ end }}
+  >
+  {{ if .Error }}<p class="text-body-sm text-clay">{{ .Error }}</p>{{ end }}
+</div>
