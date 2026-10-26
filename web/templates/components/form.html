@@ -2,5 +2,4 @@
   action="{{ .Action }}"
   method="{{ if .Method }}{{ .Method }}{{ else }}post{{ end }}"
   {{- if .Enctype }} enctype="{{ .Enctype }}"{{ end }}
-  {{- if .Class }} class="{{ .Class }}"{{ end }}
 >{{ csrfField $.CSRFToken }}{{ .Inner }}</form>

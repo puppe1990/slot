@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"errors"
 	"net/http"
 	"strings"
 	"time"
@@ -44,7 +45,7 @@ func (h *SetupHandler) Show(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	connection, err := h.deps.Store.GetCalendarConnection(owner.User.ID)
-	if err != nil && err != store.ErrConnectionNotFound {
+	if err != nil && !errors.Is(err, store.ErrConnectionNotFound) {
 		h.serverError(w, r, err)
 		return
 	}
@@ -212,6 +213,12 @@ func (h *SetupHandler) render(w http.ResponseWriter, r *http.Request, owner mode
 }
 
 func buildWeekdayRows(rules []models.AvailabilityRule) []weekdayRow {
+	// A brand-new owner has no rules yet. Prefill the work week so the first
+	// visit to /setup is one click instead of seven time inputs.
+	if len(rules) == 0 {
+		return defaultWeekdayRows()
+	}
+
 	byDay := map[int]models.AvailabilityRule{}
 	for _, rule := range rules {
 		if _, exists := byDay[rule.DayOfWeek]; !exists {
@@ -224,6 +231,20 @@ func buildWeekdayRows(rules []models.AvailabilityRule) []weekdayRow {
 		if rule, ok := byDay[day]; ok {
 			row.Start = rule.StartTime
 			row.End = rule.EndTime
+			row.Open = true
+		}
+		rows = append(rows, row)
+	}
+	return rows
+}
+
+func defaultWeekdayRows() []weekdayRow {
+	rows := make([]weekdayRow, 0, 7)
+	for day := 0; day < 7; day++ {
+		row := weekdayRow{Index: day, Label: weekdayLabels[day]}
+		if day >= 1 && day <= 5 {
+			row.Start = "09:00"
+			row.End = "17:00"
 			row.Open = true
 		}
 		rows = append(rows, row)
