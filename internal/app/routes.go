@@ -51,6 +51,10 @@ func registerRoutes(r *cais.Router, deps Deps, cfg cais.Config) {
 	r.Post("/locale", handlers.PostLocale(cfg))
 
 	r.Get("/dashboard", owner(dashboard.ServeHTTP))
+	r.Post("/bookings/{id}/cancel", owner(dashboard.Cancel))
+
+	notFound := handlers.NewNotFoundHandler(handlerDeps)
+	r.NotFound(notFound.ServeHTTP)
 
 	r.Get("/setup", owner(setup.Show))
 	r.Post("/setup", owner(setup.Save))
@@ -65,6 +69,7 @@ func registerRoutes(r *cais.Router, deps Deps, cfg cais.Config) {
 
 	r.Get("/book/{slug}", booking.Show)
 	r.Post("/book/{slug}/hold", bookingLimit.Middleware(http.HandlerFunc(booking.Hold)).ServeHTTP)
+	r.Post("/book/{slug}/release", bookingLimit.Middleware(http.HandlerFunc(booking.Release)).ServeHTTP)
 	r.Get("/book/{slug}/confirm", booking.ConfirmPage)
 	r.Post("/book/{slug}/confirm", bookingLimit.Middleware(http.HandlerFunc(booking.Confirm)).ServeHTTP)
 

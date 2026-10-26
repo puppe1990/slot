@@ -32,7 +32,7 @@
     {{ end }}
 
     <div class="mt-space-md flex flex-wrap items-center justify-between gap-2 border-t border-line pt-space-sm">
-      <span class="text-body-sm text-muted">{{ .Booking.LocationLabel }}</span>
+      <span class="text-body-sm text-muted">{{ .Booking.LocationLabel }}{{ with .MeetingType.LocationDetails }} · {{ . }}{{ end }}</span>
       {{ if not .Booking.Cancelled }}
       <a href="{{ .ICSURL }}" class="inline-flex h-9 items-center gap-1.5 rounded-full bg-pine px-4 text-label-ui uppercase tracking-[0.08em] text-white" data-amarra-skip>
         Add to calendar
@@ -150,7 +150,7 @@
   {{ else }}
   <section class="rounded-xl border border-line bg-surface p-space-md">
     <p class="text-body-md font-medium text-foam">This session was cancelled.</p>
-    {{ if .Booking.Status }}<p class="mt-1 text-body-sm text-muted">The host has been notified. Book a new time from the public page whenever you are ready.</p>{{ end }}
+    <p class="mt-1 text-body-sm text-muted">The host has been notified and the slot is free again.</p>
   </section>
   {{ end }}
 

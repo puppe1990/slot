@@ -233,6 +233,34 @@ func (s *SQLiteStore) GetHold(holdToken string, now time.Time) (models.Booking, 
 	return booking, nil
 }
 
+// ReleaseHold deletes an abandoned hold so the slot returns immediately
+// instead of waiting out the TTL. Idempotent: a consumed or already released
+// token is not an error.
+func (s *SQLiteStore) ReleaseHold(holdToken string) error {
+	tx, err := s.db.Begin()
+	if err != nil {
+		return fmt.Errorf("begin release: %w", err)
+	}
+	defer func() { _ = tx.Rollback() }()
+
+	var bookingID int64
+	err = tx.QueryRow("SELECT id FROM bookings WHERE hold_token_hash = ? AND status = 'HOLD'",
+		guesttoken.Hash(holdToken)).Scan(&bookingID)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil
+		}
+		return fmt.Errorf("load hold: %w", err)
+	}
+	if err := recordAuditTx(tx, bookingID, "HOLD_RELEASED", models.ActorGuest, map[string]any{}); err != nil {
+		return err
+	}
+	if _, err := tx.Exec("DELETE FROM bookings WHERE id = ?", bookingID); err != nil {
+		return fmt.Errorf("release hold %d: %w", bookingID, err)
+	}
+	return tx.Commit()
+}
+
 func (s *SQLiteStore) AttachCalendarEvent(bookingID int64, eventID string) error {
 	_, err := s.db.Exec("UPDATE bookings SET calendar_event_id = ?, updated_at = strftime('%s', 'now') WHERE id = ?",
 		eventID, bookingID)

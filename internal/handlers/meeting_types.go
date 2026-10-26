@@ -198,6 +198,7 @@ func (h *MeetingTypeHandler) Update(w http.ResponseWriter, r *http.Request) {
 func (h *MeetingTypeHandler) renderList(w http.ResponseWriter, r *http.Request, owner models.User, types []models.MeetingType, errs validate.FieldErrors, status int) {
 	h.page(w, r, "app", "meeting_types", map[string]any{
 		"Title":        "Session formats",
+		"PublicPath":   publicPath(firstActiveMeetingType(types)),
 		"ActiveNav":    "meeting-types",
 		"Owner":        owner,
 		"MeetingTypes": presentMeetingTypes(types),
@@ -208,6 +209,7 @@ func (h *MeetingTypeHandler) renderList(w http.ResponseWriter, r *http.Request, 
 func (h *MeetingTypeHandler) renderEdit(w http.ResponseWriter, r *http.Request, owner models.User, meetingType models.MeetingType, errs validate.FieldErrors, status int) {
 	h.page(w, r, "app", "meeting_type_edit", map[string]any{
 		"Title":           meetingType.Title,
+		"PublicPath":      publicPath(meetingType),
 		"ActiveNav":       "meeting-types",
 		"Owner":           owner,
 		"MeetingType":     presentMeetingType(meetingType),

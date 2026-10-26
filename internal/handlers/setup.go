@@ -10,6 +10,7 @@ import (
 	"github.com/puppe1990/amarra-cais/pkg/cais/httpx"
 	"github.com/puppe1990/amarra-cais/pkg/cais/validate"
 
+	"github.com/puppe1990/slot/internal/calendar"
 	"github.com/puppe1990/slot/internal/models"
 	"github.com/puppe1990/slot/internal/scheduling"
 	"github.com/puppe1990/slot/internal/store"
@@ -88,9 +89,12 @@ func (h *SetupHandler) Save(w http.ResponseWriter, r *http.Request) {
 		h.serverError(w, r, err)
 		return
 	}
-	provider := strings.TrimSpace(r.FormValue("calendar_provider"))
-	if provider != models.CalendarProviderGoogle {
-		provider = models.CalendarProviderFake
+	// google is a stored preference only when the binary actually runs the
+	// Google adapter; otherwise the radio would promise a sync that never happens.
+	provider := models.CalendarProviderFake
+	if strings.TrimSpace(r.FormValue("calendar_provider")) == models.CalendarProviderGoogle &&
+		h.deps.Calendar.Provider() == calendar.ProviderGoogle {
+		provider = models.CalendarProviderGoogle
 	}
 	if err := h.deps.Store.SaveCalendarConnection(models.CalendarConnection{
 		UserID:       owner.User.ID,
@@ -198,8 +202,10 @@ func (h *SetupHandler) render(w http.ResponseWriter, r *http.Request, owner mode
 		return
 	}
 
+	published, _ := h.deps.Store.DefaultMeetingType()
 	h.page(w, r, "app", "setup", map[string]any{
 		"Title":             "Availability",
+		"PublicPath":        publicPath(published),
 		"ActiveNav":         "setup",
 		"Owner":             owner,
 		"Weekdays":          buildWeekdayRows(rules),
@@ -207,7 +213,7 @@ func (h *SetupHandler) render(w http.ResponseWriter, r *http.Request, owner mode
 		"Connection":        connection,
 		"Overrides":         overrides,
 		"Errors":            errs,
-		"GoogleConfigured":  connection.Provider == models.CalendarProviderGoogle,
+		"GoogleAvailable":   h.deps.Calendar.Provider() == calendar.ProviderGoogle,
 		"TimezoneAbbrevNow": zoneOffset(now, mustLocation(owner.Timezone)),
 	}, status)
 }

@@ -1,0 +1,13 @@
+{{ define "content" }}
+<div class="mx-auto flex w-full max-w-[560px] flex-col items-center gap-space-md py-16 text-center">
+  <span class="text-label-mono uppercase tracking-[0.14em] text-muted">404</span>
+  <h1 class="text-headline-lg font-semibold tracking-tight text-pine">This page is not here</h1>
+  <p class="text-body-md text-muted">
+    <span class="font-mono text-foam">{{ .Path }}</span> does not match a booking, a format or a page.
+  </p>
+  <div class="flex flex-wrap items-center justify-center gap-2">
+    <a href="/" class="inline-flex h-11 items-center rounded-lg bg-pine px-6 text-label-ui uppercase tracking-[0.08em] text-white">Go home</a>
+    <a href="/login" class="inline-flex h-11 items-center rounded-lg border border-line px-6 text-label-ui uppercase tracking-[0.08em] text-foam">Sign in</a>
+  </div>
+</div>
+{{ end }}

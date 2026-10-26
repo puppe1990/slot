@@ -28,7 +28,7 @@
         </label>
         <div class="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-line bg-canvas px-3 py-2">
           <span class="text-label-mono text-foam">{{ .MeetingType.PublicPath }}</span>
-          <button type="button" class="inline-flex h-8 items-center rounded-full border border-line px-3 text-label-mono text-muted transition-colors hover:border-line-strong" amarra-hook="clipboard" data-amarra-copy="{{ .MeetingType.PublicPath }}" data-amarra-copy-done="Copied">Copy</button>
+          <button type="button" class="inline-flex h-8 items-center rounded-full border border-line px-3 text-label-mono text-muted transition-colors hover:border-line-strong" amarra-hook="clipboard" data-amarra-copy="{{ absURL $.Site.AppURL .MeetingType.PublicPath }}" data-amarra-copy-done="Copied">Copy</button>
         </div>
       </div>
     </section>

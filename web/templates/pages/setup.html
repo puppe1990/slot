@@ -56,17 +56,20 @@
       <p class="mt-1 text-body-sm text-muted">External busy time is subtracted before a slot is offered. The local calendar is deterministic and needs no credentials.</p>
       <div class="mt-space-md grid gap-space-sm sm:grid-cols-2">
         <label class="flex cursor-pointer items-start gap-3 rounded-lg border border-line bg-canvas p-3 has-[:checked]:border-pine">
-          <input type="radio" name="calendar_provider" value="fake" class="mt-1 h-4 w-4 accent-[#1B382B]" {{ if not .GoogleConfigured }}checked{{ end }} />
+          <input type="radio" name="calendar_provider" value="fake" class="mt-1 h-4 w-4 accent-[#1B382B]" {{ if not .GoogleAvailable }}checked{{ end }} />
           <span class="flex flex-col">
             <span class="text-body-md font-medium text-foam">Local calendar</span>
             <span class="text-body-sm text-muted">In-process busy blocks, zero setup.</span>
           </span>
         </label>
         <label class="flex cursor-pointer items-start gap-3 rounded-lg border border-line bg-canvas p-3 has-[:checked]:border-pine">
-          <input type="radio" name="calendar_provider" value="google" class="mt-1 h-4 w-4 accent-[#1B382B]" {{ if .GoogleConfigured }}checked{{ end }} />
+          <input type="radio" name="calendar_provider" value="google" class="mt-1 h-4 w-4 accent-[#1B382B]" {{ if .GoogleAvailable }}enabled{{ else }}disabled{{ end }} />
           <span class="flex flex-col">
-            <span class="text-body-md font-medium text-foam">Google Calendar</span>
-            <span class="text-body-sm text-muted">Adapter ships ready; needs GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET.</span>
+            <span class="text-body-md font-medium {{ if .GoogleAvailable }}text-foam{{ else }}text-muted{{ end }}">Google Calendar</span>
+            <span class="text-body-sm text-muted">
+              {{ if .GoogleAvailable }}Connected through the Google adapter.
+              {{ else }}Not configured on this server: set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET, then restart. Until then the local calendar is used.{{ end }}
+            </span>
           </span>
         </label>
       </div>

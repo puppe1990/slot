@@ -2,7 +2,11 @@
 <div class="flex items-center justify-center min-h-[calc(100vh-12rem)] px-4 py-8">
 <div class="w-full max-w-md mx-auto rounded-xl border border-line bg-surface p-6 md:p-7 shadow-layer">
   <h2 class="text-headline-md font-semibold text-pine">{{ t "auth.login_title" }}</h2>
-  <p class="mt-1 text-body-sm text-muted">Owner access. The demo seed is demo@example.com / password in development.</p>
+  {{ if eq .Site.Env "development" }}
+  <p class="mt-1 text-body-sm text-muted">Owner access. Demo seed: demo@example.com / password.</p>
+  {{ else }}
+  <p class="mt-1 text-body-sm text-muted">Owner access.</p>
+  {{ end }}
   <.form action="/login" method="post">
     <.input name="email" type="email" label="Email" value="{{ .Email }}" error="{{ fieldError .Errors "email" }}" />
     <.password name="password" label="{{ t "auth.password_label" }}" error="{{ fieldError .Errors "password" }}" autocomplete="current-password" required="required" />

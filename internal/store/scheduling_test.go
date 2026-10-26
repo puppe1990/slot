@@ -578,3 +578,47 @@ func TestStoreDefaultMeetingType(t *testing.T) {
 		t.Fatalf("DefaultMeetingType = %d, want %d", found.ID, created.ID)
 	}
 }
+
+func TestStoreReleaseHoldFreesTheSlotImmediately(t *testing.T) {
+	s := newTestStore(t)
+	ownerID := seedOwner(t, s)
+	meetingType := seedMeetingTypeWithBuffers(t, s, ownerID, 30, 0, 0)
+
+	_, holdToken, err := s.CreateHold(HoldInput{
+		MeetingTypeID: meetingType.ID,
+		Start:         at("2026-10-26T13:00:00Z"),
+		End:           at("2026-10-26T13:30:00Z"),
+		GuestEmail:    "guest@example.com",
+		GuestTimezone: "UTC",
+		ExpiresAt:     fixedNow.Add(10 * time.Minute),
+		Now:           fixedNow,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if err := s.ReleaseHold(holdToken); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := s.GetHold(holdToken, fixedNow); !errors.Is(err, ErrHoldExpired) {
+		t.Fatalf("GetHold after release = %v, want ErrHoldExpired", err)
+	}
+
+	_, secondToken, err := s.CreateHold(HoldInput{
+		MeetingTypeID: meetingType.ID,
+		Start:         at("2026-10-26T13:00:00Z"),
+		End:           at("2026-10-26T13:30:00Z"),
+		GuestEmail:    "other@example.com",
+		GuestTimezone: "UTC",
+		ExpiresAt:     fixedNow.Add(10 * time.Minute),
+		Now:           fixedNow,
+	})
+	if err != nil {
+		t.Fatalf("slot still blocked after release: %v", err)
+	}
+	_ = secondToken
+
+	if err := s.ReleaseHold("not-a-real-token"); err != nil {
+		t.Fatalf("ReleaseHold on an unknown token = %v, want nil", err)
+	}
+}

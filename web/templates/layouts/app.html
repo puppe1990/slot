@@ -58,11 +58,13 @@
 
         <div class="flex items-center gap-3">
           {{ if .Site.LoggedIn }}
+          {{ if .PublicPath }}
           <a
-            href="/dashboard"
+            href="{{ .PublicPath }}"
             class="hidden h-8 items-center justify-center rounded-full bg-tide px-3 text-label-mono uppercase text-muted transition-colors hover:bg-line sm:flex"
             title="Public booking portal"
           >Public portal</a>
+          {{ end }}
           <.form action="/logout" method="post">
             <button
               type="submit"

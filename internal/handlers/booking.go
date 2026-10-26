@@ -91,6 +91,31 @@ func (h *BookingHandler) Hold(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/book/"+meetingType.Slug+"/confirm?tz="+guestTimezone, http.StatusSeeOther)
 }
 
+// Release deletes the hold so the slot returns to the pool right away instead
+// of waiting out the ten-minute TTL.
+func (h *BookingHandler) Release(w http.ResponseWriter, r *http.Request) {
+	meetingType, ok := h.meetingType(w, r)
+	if !ok {
+		return
+	}
+	if err := httpx.ParseFormOrJSON(r); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	if token := holdTokenFromCookie(r); token != "" {
+		if err := h.deps.Store.ReleaseHold(token); err != nil {
+			h.serverError(w, r, err)
+			return
+		}
+	}
+	h.clearHoldCookie(w)
+	target := "/book/" + meetingType.Slug
+	if guestTimezone := strings.TrimSpace(r.FormValue("tz")); guestTimezone != "" {
+		target += "?tz=" + guestTimezone
+	}
+	http.Redirect(w, r, target, http.StatusSeeOther)
+}
+
 func (h *BookingHandler) ConfirmPage(w http.ResponseWriter, r *http.Request) {
 	meetingType, ok := h.meetingType(w, r)
 	if !ok {
@@ -315,12 +340,4 @@ func (h *BookingHandler) notifyOwner(r *http.Request, booking models.Booking, ma
 			booking.MeetingTypeTitle + " on " + booking.StartUTC.Format(time.RFC1123) + ".\n\n" +
 			"Guest management link: " + manageURL,
 	})
-}
-
-func (h *BookingHandler) absoluteURL(r *http.Request, path string) string {
-	base := strings.TrimRight(h.deps.Site.AppURL, "/")
-	if base == "" {
-		base = "http://" + r.Host
-	}
-	return base + path
 }

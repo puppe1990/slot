@@ -58,7 +58,7 @@
 
       <div class="flex items-start gap-2.5 rounded-lg bg-canvas p-3">
         <svg class="mt-0.5 h-4 w-4 shrink-0 text-pine" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M4 6h16v12H4z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M4 7l8 6 8-6"/></svg>
-        <p class="text-body-sm text-muted">An ICS invite lands in your inbox the moment you confirm, with a signed link to reschedule or cancel later.</p>
+        <p class="text-body-sm text-muted">You go straight to a signed management page with the .ics download, reschedule and cancel — no account needed.</p>
       </div>
 
       <button type="submit" class="mt-1 flex h-12 w-full items-center justify-center gap-2 rounded-lg bg-pine text-headline-sm font-medium text-white transition-transform active:scale-[0.985]">
@@ -69,7 +69,11 @@
     </form>
 
     <div class="mt-space-md flex flex-wrap items-center justify-between gap-2">
-      <a href="{{ .PublicPath }}?tz={{ .GuestTZ }}" class="text-body-sm text-muted underline-offset-4 hover:text-clay hover:underline">Release slot &amp; pick another time</a>
+      <form method="post" action="{{ .PublicPath }}/release">
+        <input type="hidden" name="csrf_token" value="{{ .CSRFToken }}" />
+        <input type="hidden" name="tz" value="{{ .GuestTZ }}" />
+        <button type="submit" class="text-body-sm text-muted underline-offset-4 hover:text-clay hover:underline">Release slot &amp; pick another time</button>
+      </form>
       <span class="inline-flex items-center gap-1.5 text-label-mono text-muted"><span class="h-1.5 w-1.5 rounded-full bg-pine"></span>No login required</span>
     </div>
   </section>

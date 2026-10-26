@@ -3,6 +3,7 @@ package handlers
 import (
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"strings"
 	"testing"
 
@@ -61,5 +62,64 @@ func TestDashboardHandlerSignedInShowsChrome(t *testing.T) {
 	}
 	if !strings.Contains(body, `href="/setup"`) {
 		t.Error("signed-in page should link to availability")
+	}
+}
+
+func TestDashboardOwnerCancelFreesBooking(t *testing.T) {
+	env := setupTestEnv(t)
+	meetingType := env.seedMeetingType(t, "30min", 30)
+	bookingHandler := NewBookingHandler(env.deps)
+
+	holdReq := postForm("/book/30min/hold", url.Values{
+		"slot": {"2026-10-26T14:00:00Z"},
+		"tz":   {"America/New_York"},
+	}, nil)
+	holdReq.SetPathValue("slug", "30min")
+	holdRec := httptest.NewRecorder()
+	bookingHandler.Hold(holdRec, holdReq)
+	confirmReq := postForm("/book/30min/confirm", url.Values{
+		"name":  {"Sarah Jenkins"},
+		"email": {"sarah@example.com"},
+		"tz":    {"America/New_York"},
+	}, holdCookie(holdRec))
+	confirmReq.SetPathValue("slug", "30min")
+	confirmRec := httptest.NewRecorder()
+	bookingHandler.Confirm(confirmRec, confirmReq)
+
+	dashboard := NewDashboardHandler(env.deps)
+	cancelReq := postForm("/bookings/1/cancel", url.Values{"reason": {"Conflict"}}, nil)
+	cancelReq.SetPathValue("id", "1")
+	cancelReq = session.WithUserID(cancelReq, env.ownerID)
+	cancelRec := httptest.NewRecorder()
+	dashboard.Cancel(cancelRec, cancelReq)
+
+	if cancelRec.Code != http.StatusSeeOther || cancelRec.Header().Get("Location") != "/dashboard" {
+		t.Fatalf("cancel = %d %q, want 303 /dashboard", cancelRec.Code, cancelRec.Header().Get("Location"))
+	}
+	cancelled, err := env.store.GetBooking(env.ownerID, 1)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cancelled.Status != "CANCELLED" {
+		t.Fatalf("status = %q, want CANCELLED", cancelled.Status)
+	}
+	if cancelled.MeetingTypeID != meetingType.ID {
+		t.Fatalf("wrong booking cancelled: %+v", cancelled)
+	}
+}
+
+func TestNotFoundRendersHTML(t *testing.T) {
+	env := setupTestEnv(t)
+	notFound := NewNotFoundHandler(env.deps)
+
+	req := httptest.NewRequest(http.MethodGet, "/nope", nil)
+	rec := httptest.NewRecorder()
+	notFound.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusNotFound {
+		t.Fatalf("status = %d, want 404", rec.Code)
+	}
+	if !strings.Contains(rec.Body.String(), "This page is not here") {
+		t.Fatalf("404 body is not the rendered page: %s", rec.Body.String())
 	}
 }

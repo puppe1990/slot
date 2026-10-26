@@ -40,7 +40,11 @@
 
           <div class="mt-space-md flex flex-wrap items-center gap-2">
             <a href="/meeting-types/{{ .ID }}/edit" class="inline-flex h-9 items-center rounded-full bg-pine px-4 text-label-ui uppercase tracking-[0.08em] text-white transition-transform active:scale-[0.98]">Edit format</a>
+            {{ if .IsActive }}
             <a href="{{ .PublicPath }}" class="inline-flex h-9 items-center rounded-full border border-line px-4 text-label-ui uppercase tracking-[0.08em] text-foam transition-colors hover:border-line-strong">Preview</a>
+            {{ else }}
+            <span class="inline-flex h-9 items-center rounded-full border border-line px-4 text-label-ui uppercase tracking-[0.08em] text-muted" title="Publish this format to get a public link">Paused</span>
+            {{ end }}
             <.form action="/meeting-types/{{ .ID }}/toggle" method="post">
               <button type="submit" class="inline-flex h-9 items-center rounded-full border px-4 text-label-ui uppercase tracking-[0.08em] transition-colors {{ if .IsActive }}border-clay/40 text-clay hover:border-clay{{ else }}border-line text-foam hover:border-line-strong{{ end }}">
                 {{ if .IsActive }}Pause{{ else }}Publish{{ end }}

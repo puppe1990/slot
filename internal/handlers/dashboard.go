@@ -1,9 +1,17 @@
 package handlers
 
 import (
+	"errors"
+	"log"
 	"net/http"
+	"strings"
+	"time"
+
+	"github.com/puppe1990/amarra-cais/pkg/cais/flash"
+	"github.com/puppe1990/amarra-cais/pkg/cais/httpx"
 
 	"github.com/puppe1990/slot/internal/models"
+	"github.com/puppe1990/slot/internal/notify"
 	"github.com/puppe1990/slot/internal/store"
 )
 
@@ -42,6 +50,9 @@ func (h *DashboardHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	var minutes int
 	var next *bookingView
 	for _, booking := range upcoming {
+		if booking.Status == models.BookingStatusCancelled {
+			continue
+		}
 		view := presentBooking(booking, owner.Location, owner.Location, now)
 		views = append(views, view)
 		if view.IsUpcoming {
@@ -68,6 +79,54 @@ func (h *DashboardHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		"Now":            now,
 	}
 	h.page(w, r, "app", "dashboard", data, 0)
+}
+
+// Cancel is the owner-side kill switch the guest link does not cover: the
+// owner can drop a booking from the dashboard without opening the guest token.
+func (h *DashboardHandler) Cancel(w http.ResponseWriter, r *http.Request) {
+	owner, ok := h.owner(r)
+	if !ok {
+		http.Redirect(w, r, "/login", http.StatusSeeOther)
+		return
+	}
+	bookingID, ok := intParam(r, "id")
+	if !ok {
+		http.NotFound(w, r)
+		return
+	}
+	booking, err := h.deps.Store.GetBooking(owner.User.ID, bookingID)
+	if err != nil {
+		http.NotFound(w, r)
+		return
+	}
+	if err := httpx.ParseFormOrJSON(r); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	reason := strings.TrimSpace(r.FormValue("reason"))
+	if err := h.deps.Store.CancelBooking(booking.ID, models.ActorOwner, reason); err != nil {
+		if errors.Is(err, store.ErrBookingNotFound) {
+			http.NotFound(w, r)
+			return
+		}
+		h.serverError(w, r, err)
+		return
+	}
+	if booking.CalendarEventID != "" {
+		if err := h.deps.Calendar.DeleteEvent(r.Context(), booking.CalendarEventID); err != nil {
+			log.Printf("slot: delete calendar event for booking %d: %v", booking.ID, err)
+		}
+	}
+	if booking.GuestEmail != "" {
+		_ = h.deps.Notifier.Send(r.Context(), notify.Message{
+			Kind:    "booking.cancelled",
+			To:      booking.GuestEmail,
+			Subject: "Cancelled: " + booking.MeetingTypeTitle,
+			Body:    "The host cancelled " + booking.MeetingTypeTitle + " that was set for " + booking.StartUTC.Format(time.RFC1123) + ".",
+		})
+	}
+	flash.Set(w, "notice", "Booking cancelled and the guest was notified.", h.deps.Config.CookieSecure())
+	http.Redirect(w, r, "/dashboard", http.StatusSeeOther)
 }
 
 func firstActiveMeetingType(types []models.MeetingType) models.MeetingType {

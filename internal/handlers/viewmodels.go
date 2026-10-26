@@ -77,23 +77,25 @@ func locationLabel(locationType string) string {
 
 type meetingTypeView struct {
 	models.MeetingType
-	PublicPath    string
-	DurationLabel string
-	BufferLabel   string
-	NoticeLabel   string
-	HorizonLabel  string
-	LocationLabel string
+	PublicPath      string
+	DurationLabel   string
+	BufferLabel     string
+	NoticeLabel     string
+	HorizonLabel    string
+	LocationLabel   string
+	LocationDetails string
 }
 
 func presentMeetingType(meetingType models.MeetingType) meetingTypeView {
 	return meetingTypeView{
-		MeetingType:   meetingType,
-		PublicPath:    "/book/" + meetingType.Slug,
-		DurationLabel: formatDurationShort(meetingType.DurationMinutes),
-		BufferLabel:   formatDuration(meetingType.BufferBeforeMinutes) + " / " + formatDuration(meetingType.BufferAfterMinutes),
-		NoticeLabel:   formatDuration(meetingType.MinNoticeHours*60) + " notice",
-		HorizonLabel:  formatHorizon(meetingType.BookingHorizonDays),
-		LocationLabel: locationLabel(meetingType.LocationType),
+		MeetingType:     meetingType,
+		PublicPath:      "/book/" + meetingType.Slug,
+		DurationLabel:   formatDurationShort(meetingType.DurationMinutes),
+		BufferLabel:     formatDuration(meetingType.BufferBeforeMinutes) + " / " + formatDuration(meetingType.BufferAfterMinutes),
+		NoticeLabel:     formatDuration(meetingType.MinNoticeHours*60) + " notice",
+		HorizonLabel:    formatHorizon(meetingType.BookingHorizonDays),
+		LocationLabel:   locationLabel(meetingType.LocationType),
+		LocationDetails: meetingType.LocationDetails,
 	}
 }
 

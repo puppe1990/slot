@@ -1,11 +1,11 @@
 {
-  "name": "slot",
-  "short_name": "slot",
-  "description": "slot — powered by Cais",
+  "name": "Slot",
+  "short_name": "Slot",
+  "description": "Calm scheduling for independent consultants: timezone-true slots, ten-minute holds and signed guest links.",
   "start_url": "/",
-  "display": "fullscreen",
-  "background_color": "#081318",
-  "theme_color": "#1f8ba3",
+  "display": "standalone",
+  "background_color": "#FAF9F6",
+  "theme_color": "#FAF9F6",
   "orientation": "portrait-primary",
   "icons": [
     {

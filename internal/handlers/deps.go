@@ -3,6 +3,7 @@ package handlers
 import (
 	"log"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/puppe1990/amarra-cais/pkg/amarra/view"
@@ -56,6 +57,19 @@ func (b base) now() time.Time {
 
 func (b base) page(w http.ResponseWriter, r *http.Request, layout, name string, extra map[string]any, status int) {
 	writeView(w, r, b.deps.Views, b.deps.Config, layout, name, amarraData(r, b.deps.Site, extra), status)
+}
+
+// absoluteURL is what guests paste into a chat: a relative path is useless
+// outside the browser.
+func (b base) absoluteURL(r *http.Request, path string) string {
+	if path == "" {
+		return ""
+	}
+	root := strings.TrimRight(b.deps.Site.AppURL, "/")
+	if root == "" {
+		root = "http://" + r.Host
+	}
+	return root + path
 }
 
 func (b base) ownerID(r *http.Request) int64 {

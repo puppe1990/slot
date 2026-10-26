@@ -66,6 +66,7 @@ type Store interface {
 	ListActiveIntervals(userID int64, from, to, now time.Time) ([]scheduling.Interval, error)
 	ListActiveIntervalsExcluding(userID int64, from, to, now time.Time, excludeBookingID int64) ([]scheduling.Interval, error)
 	GetHold(holdToken string, now time.Time) (models.Booking, error)
+	ReleaseHold(holdToken string) error
 	AttachCalendarEvent(bookingID int64, eventID string) error
 	GetBooking(userID, bookingID int64) (models.Booking, error)
 	GetBookingByGuestTokenHash(hash string) (models.Booking, error)

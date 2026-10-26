@@ -252,3 +252,40 @@ func TestBookingShowIs404ForUnknownSlug(t *testing.T) {
 		t.Fatalf("status = %d, want 404", rec.Code)
 	}
 }
+
+func TestReleaseFreesTheHeldSlot(t *testing.T) {
+	env := setupTestEnv(t)
+	env.seedMeetingType(t, "30min", 30)
+	booking := NewBookingHandler(env.deps)
+
+	holdReq := postForm("/book/30min/hold", url.Values{
+		"slot": {"2026-10-26T14:00:00Z"},
+		"tz":   {"America/New_York"},
+	}, nil)
+	holdReq.SetPathValue("slug", "30min")
+	holdRec := httptest.NewRecorder()
+	booking.Hold(holdRec, holdReq)
+	cookie := holdCookie(holdRec)
+
+	releaseReq := postForm("/book/30min/release", url.Values{"tz": {"America/New_York"}}, cookie)
+	releaseReq.SetPathValue("slug", "30min")
+	releaseRec := httptest.NewRecorder()
+	booking.Release(releaseRec, releaseReq)
+	if releaseRec.Code != http.StatusSeeOther {
+		t.Fatalf("release status = %d: %s", releaseRec.Code, releaseRec.Body.String())
+	}
+	if location := releaseRec.Header().Get("Location"); !strings.HasPrefix(location, "/book/30min") {
+		t.Fatalf("release Location = %q", location)
+	}
+
+	again := postForm("/book/30min/hold", url.Values{
+		"slot": {"2026-10-26T14:00:00Z"},
+		"tz":   {"America/New_York"},
+	}, nil)
+	again.SetPathValue("slug", "30min")
+	againRec := httptest.NewRecorder()
+	booking.Hold(againRec, again)
+	if againRec.Code != http.StatusSeeOther {
+		t.Fatalf("slot still held after release: status %d", againRec.Code)
+	}
+}

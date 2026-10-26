@@ -78,7 +78,7 @@
       type="button"
       class="inline-flex h-9 items-center gap-2 rounded-full border border-line px-3 text-label-ui uppercase tracking-[0.08em] text-foam transition-colors hover:border-line-strong"
       amarra-hook="clipboard"
-      data-amarra-copy="{{ .PublicPath }}"
+      data-amarra-copy="{{ absURL .Site.AppURL .PublicPath }}"
       data-amarra-copy-done="Copied"
     >
       Copy link
@@ -104,9 +104,18 @@
           <span class="text-body-sm text-muted">{{ .Title }}</span>
           <span class="truncate text-label-mono text-muted">{{ .GuestEmail }}</span>
         </div>
-        <div class="flex flex-col items-start gap-1 sm:items-end">
+        <div class="flex flex-col items-start gap-2 sm:items-end">
           <span class="text-label-mono-lg font-medium text-foam">{{ .HostRange }}</span>
           <span class="text-label-mono text-muted">{{ .DateLabel }}</span>
+          {{ if .IsUpcoming }}
+          <form action="/bookings/{{ .ID }}/cancel" method="post">
+            <button
+              type="submit"
+              class="text-label-mono uppercase tracking-[0.08em] text-muted transition-colors hover:text-clay"
+              data-amarra-confirm="Cancel this booking? The slot is freed and the guest is notified."
+            >Cancel</button>
+          </form>
+          {{ end }}
         </div>
       </article>
       {{ end }}
@@ -122,7 +131,7 @@
     <h2 class="text-headline-sm font-medium text-foam">Formats</h2>
     <div class="grid gap-space-sm sm:grid-cols-2">
       {{ range .MeetingTypes }}
-      <a href="{{ .PublicPath }}" class="group rounded-xl border border-line bg-surface p-space-md transition-colors hover:border-line-strong">
+      {{ if .IsActive }}<a href="{{ .PublicPath }}" class="group rounded-xl border border-line bg-surface p-space-md transition-colors hover:border-line-strong">{{ else }}<div class="rounded-xl border border-line bg-surface p-space-md opacity-70">{{ end }}
         <div class="flex items-center justify-between gap-3">
           <span class="text-body-md font-medium text-foam">{{ .Title }}</span>
           <span class="text-label-mono uppercase tracking-[0.08em] text-pine">{{ .DurationLabel }}</span>
@@ -134,7 +143,7 @@
             {{ if .IsActive }}Live{{ else }}Paused{{ end }}
           </span>
         </div>
-      </a>
+      {{ if .IsActive }}</a>{{ else }}</div>{{ end }}
       {{ end }}
     </div>
   </section>
