@@ -5,14 +5,12 @@ import (
 	"log"
 	"net/http"
 	"strings"
-	"time"
 
 	"github.com/puppe1990/amarra-cais/pkg/cais/flash"
 	"github.com/puppe1990/amarra-cais/pkg/cais/httpx"
 
 	"github.com/puppe1990/slot/internal/call"
 	"github.com/puppe1990/slot/internal/models"
-	"github.com/puppe1990/slot/internal/notify"
 	"github.com/puppe1990/slot/internal/store"
 )
 
@@ -135,14 +133,8 @@ func (h *DashboardHandler) Cancel(w http.ResponseWriter, r *http.Request) {
 			log.Printf("slot: end room for booking %d: %v", booking.ID, err)
 		}
 	}
-	if booking.GuestEmail != "" {
-		_ = h.deps.Notifier.Send(r.Context(), notify.Message{
-			Kind:    "booking.cancelled",
-			To:      booking.GuestEmail,
-			Subject: "Cancelled: " + booking.MeetingTypeTitle,
-			Body:    "The host cancelled " + booking.MeetingTypeTitle + " that was set for " + booking.StartUTC.Format(time.RFC1123) + ".",
-		})
-	}
+	h.sendCancelled(r, booking, "", reason)
+	h.sendOwnerCancelled(r, booking, reason)
 	flash.Set(w, "notice", h.localeFor(r).t("dashboard.cancelled_flash"), h.deps.Config.CookieSecure())
 	http.Redirect(w, r, "/dashboard", http.StatusSeeOther)
 }

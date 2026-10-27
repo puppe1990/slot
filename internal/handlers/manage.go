@@ -15,7 +15,6 @@ import (
 	"github.com/puppe1990/slot/internal/guesttoken"
 	"github.com/puppe1990/slot/internal/ics"
 	"github.com/puppe1990/slot/internal/models"
-	"github.com/puppe1990/slot/internal/notify"
 	"github.com/puppe1990/slot/internal/store"
 )
 
@@ -73,7 +72,8 @@ func (h *ManageHandler) Reschedule(w http.ResponseWriter, r *http.Request) {
 			log.Printf("slot: update calendar event for booking %d: %v", booking.ID, err)
 		}
 	}
-	h.notifyBoth(r, booking)
+	h.sendMoved(r, booking, h.absoluteURL(r, r.URL.Path))
+	h.sendOwnerMoved(r, booking)
 	http.Redirect(w, r, r.URL.Path, http.StatusSeeOther)
 }
 
@@ -105,7 +105,8 @@ func (h *ManageHandler) Cancel(w http.ResponseWriter, r *http.Request) {
 			log.Printf("slot: end room for booking %d: %v", booking.ID, err)
 		}
 	}
-	h.notifyBoth(r, booking)
+	h.sendCancelled(r, booking, h.absoluteURL(r, r.URL.Path), reason)
+	h.sendOwnerCancelled(r, booking, reason)
 	http.Redirect(w, r, r.URL.Path, http.StatusSeeOther)
 }
 
@@ -187,24 +188,4 @@ func (h *ManageHandler) load(w http.ResponseWriter, r *http.Request) (models.Boo
 		return models.Booking{}, false
 	}
 	return booking, true
-}
-
-func (h *ManageHandler) notifyBoth(r *http.Request, booking models.Booking) {
-	manageURL := strings.TrimRight(h.deps.Site.AppURL, "/") + r.URL.Path
-	if booking.GuestEmail != "" {
-		_ = h.deps.Notifier.Send(r.Context(), notify.Message{
-			Kind:    "booking.changed",
-			To:      booking.GuestEmail,
-			Subject: booking.MeetingTypeTitle + " updated",
-			Body:    booking.MeetingTypeTitle + " · " + manageURL,
-		})
-	}
-	if booking.OwnerEmail != "" {
-		_ = h.deps.Notifier.Send(r.Context(), notify.Message{
-			Kind:    "booking.owner_notice",
-			To:      booking.OwnerEmail,
-			Subject: "Booking changed: " + booking.GuestName,
-			Body:    booking.MeetingTypeTitle + " · " + manageURL,
-		})
-	}
 }

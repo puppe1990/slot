@@ -128,3 +128,48 @@ func TestServerWithoutCallProviderStoresNoRoom(t *testing.T) {
 		t.Fatalf("meeting url = %q, want empty without a provider", booking.MeetingURL)
 	}
 }
+
+// The confirmation email must carry the room and the signed link, and the
+// owner gets a separate notice so the consultant sees the booking without
+// opening the dashboard.
+func TestConfirmationEmailsCarryRoomAndManageLink(t *testing.T) {
+	env := setupTestEnv(t)
+	fake := &fakeCall{}
+	env.deps.Call = fake
+	env.seedMeetingType(t, "30min", 30)
+	bookingHandler := NewBookingHandler(env.deps)
+
+	holdReq := postForm("/book/30min/hold", url.Values{"slot": {"2026-10-26T14:00:00Z"}}, nil)
+	holdReq.SetPathValue("slug", "30min")
+	holdRec := httptest.NewRecorder()
+	bookingHandler.Hold(holdRec, holdReq)
+
+	confirmReq := postForm("/book/30min/confirm", url.Values{
+		"name":  {"Marina Costa"},
+		"email": {"marina@example.com"},
+	}, holdCookie(holdRec))
+	confirmReq.SetPathValue("slug", "30min")
+	confirmRec := httptest.NewRecorder()
+	bookingHandler.Confirm(confirmRec, confirmReq)
+	if confirmRec.Code != http.StatusSeeOther {
+		t.Fatalf("confirm = %d: %s", confirmRec.Code, confirmRec.Body.String())
+	}
+
+	guest, ok := env.outbox.LastFor("marina@example.com")
+	if !ok {
+		t.Fatal("guest email was not queued")
+	}
+	for _, want := range []string{fake.created[0], "/manage/", "30-Minute Strategy Advisory"} {
+		if !strings.Contains(guest.Body, want) && !strings.Contains(guest.Subject, want) {
+			t.Errorf("guest email missing %q: %s", want, guest.Body)
+		}
+	}
+
+	owner, ok := env.outbox.LastFor("owner@example.com")
+	if !ok {
+		t.Fatal("owner email was not queued")
+	}
+	if !strings.Contains(owner.Subject, "Marina Costa") {
+		t.Errorf("owner subject = %q, want the guest name", owner.Subject)
+	}
+}

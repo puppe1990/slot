@@ -101,7 +101,16 @@ func New(cfg cais.Config, deps Deps) (*App, error) {
 	}
 	deps.Call = callProvider
 	if deps.Notifier == nil {
-		deps.Notifier = notify.NewOutbox()
+		notifier, err := notify.New(notify.Config{
+			Provider:      os.Getenv("EMAIL_PROVIDER"),
+			ResendAPIKey:  os.Getenv("RESEND_API_KEY"),
+			ResendFrom:    os.Getenv("EMAIL_FROM"),
+			ResendBaseURL: os.Getenv("RESEND_BASE_URL"),
+		})
+		if err != nil {
+			return nil, fmt.Errorf("notifier: %w", err)
+		}
+		deps.Notifier = notifier
 	}
 
 	r := cais.NewRouter()

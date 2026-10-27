@@ -14,7 +14,6 @@ import (
 	"github.com/puppe1990/slot/internal/call"
 	"github.com/puppe1990/slot/internal/guesttoken"
 	"github.com/puppe1990/slot/internal/models"
-	"github.com/puppe1990/slot/internal/notify"
 	"github.com/puppe1990/slot/internal/store"
 )
 
@@ -214,8 +213,8 @@ func (h *BookingHandler) Confirm(w http.ResponseWriter, r *http.Request) {
 	}
 
 	manageURL := h.absoluteURL(r, "/manage/"+guestToken)
-	h.notifyGuest(r, booking, manageURL)
-	h.notifyOwner(r, booking, manageURL)
+	h.sendConfirmed(r, booking, manageURL)
+	h.sendOwnerNew(r, booking)
 
 	h.clearHoldCookie(w)
 	http.Redirect(w, r, "/manage/"+guestToken, http.StatusSeeOther)
@@ -333,41 +332,4 @@ func meetingLocation(booking models.Booking, l localeText) string {
 		return booking.MeetingURL
 	}
 	return l.locationLabel(booking.MeetingTypeLocation)
-}
-
-// meetingLine is the "where" line for notifications: the room when the
-// provider issued one, the modality label otherwise.
-func meetingLine(booking models.Booking) string {
-	if booking.MeetingURL != "" {
-		return "Join: " + booking.MeetingURL + "\n\n"
-	}
-	return ""
-}
-
-func (h *BookingHandler) notifyGuest(r *http.Request, booking models.Booking, manageURL string) {
-	if booking.GuestEmail == "" {
-		return
-	}
-	_ = h.deps.Notifier.Send(r.Context(), notify.Message{
-		Kind:    "booking.confirmed",
-		To:      booking.GuestEmail,
-		Subject: "Confirmed: " + booking.MeetingTypeTitle,
-		Body: "You are booked for " + booking.MeetingTypeTitle + " with " +
-			booking.OwnerName + " on " + booking.StartUTC.Format(time.RFC1123) + ".\n\n" +
-			meetingLine(booking) + "Reschedule or cancel: " + manageURL,
-	})
-}
-
-func (h *BookingHandler) notifyOwner(r *http.Request, booking models.Booking, manageURL string) {
-	if booking.OwnerEmail == "" {
-		return
-	}
-	_ = h.deps.Notifier.Send(r.Context(), notify.Message{
-		Kind:    "booking.owner_notice",
-		To:      booking.OwnerEmail,
-		Subject: "New booking: " + booking.GuestName,
-		Body: booking.GuestName + " (" + booking.GuestEmail + ") booked " +
-			booking.MeetingTypeTitle + " on " + booking.StartUTC.Format(time.RFC1123) + ".\n\n" +
-			"Guest management link: " + manageURL,
-	})
 }

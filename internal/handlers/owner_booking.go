@@ -15,7 +15,6 @@ import (
 
 	"github.com/puppe1990/slot/internal/ics"
 	"github.com/puppe1990/slot/internal/models"
-	"github.com/puppe1990/slot/internal/notify"
 	"github.com/puppe1990/slot/internal/store"
 )
 
@@ -223,14 +222,8 @@ func (h *DashboardHandler) Reschedule(w http.ResponseWriter, r *http.Request) {
 			log.Printf("slot: update calendar event for booking %d: %v", booking.ID, err)
 		}
 	}
-	if booking.GuestEmail != "" {
-		_ = h.deps.Notifier.Send(r.Context(), notify.Message{
-			Kind:    "booking.changed",
-			To:      booking.GuestEmail,
-			Subject: l.t("owner_reschedule.subject") + ": " + booking.MeetingTypeTitle,
-			Body:    l.t("owner_reschedule.body", start.UTC().Format(time.RFC1123)),
-		})
-	}
+	h.sendMoved(r, booking, "")
+	h.sendOwnerMoved(r, booking)
 	flash.Set(w, "notice", l.t("owner_reschedule.saved"), h.deps.Config.CookieSecure())
 	http.Redirect(w, r, "/dashboard", http.StatusSeeOther)
 }

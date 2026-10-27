@@ -268,8 +268,6 @@ var ptMessages = map[string]string{
 	"owner_reschedule.error":       "Escolha um novo horário.",
 	"owner_reschedule.unavailable": "Esse horário acabou de ser tomado.",
 	"owner_reschedule.cancelled":   "Esta reserva está cancelada.",
-	"owner_reschedule.subject":     "Sessão remarcada",
-	"owner_reschedule.body":        "O anfitrião moveu a sessão para %s.",
 
 	// Landing e 404
 	"landing.eyebrow": "Slot",
@@ -288,6 +286,23 @@ var ptMessages = map[string]string{
 	"weekday.6":                 "Sábado",
 	"formats.error_slug":        "Esse link público já está em uso",
 	"dashboard.cancelled_flash": "Reserva cancelada e convidado avisado.",
+
+	// E-mail
+	"email.confirmed.subject":       "Confirmada: %s",
+	"email.confirmed.intro":         "Você reservou %s com %s.",
+	"email.owner_new.subject":       "Nova reserva: %s",
+	"email.owner_new.intro":         "%s (%s) reservou %s.",
+	"email.moved.subject":           "Sessão remarcada: %s",
+	"email.moved.intro":             "A sessão %s foi movida para outro horário.",
+	"email.owner_moved.subject":     "Reserva remarcada: %s",
+	"email.owner_moved.intro":       "%s moveu %s.",
+	"email.cancelled.subject":       "Cancelada: %s",
+	"email.cancelled.intro":         "A sessão %s foi cancelada.",
+	"email.owner_cancelled.subject": "Reserva cancelada: %s",
+	"email.owner_cancelled.intro":   "%s cancelou %s.",
+	"email.join":                    "Entrar",
+	"email.manage":                  "Gerenciar",
+	"email.reason":                  "Motivo",
 
 	// Rodapé
 	"layout.footer":      "Slot · agendamento tranquilo",

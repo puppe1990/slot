@@ -5,6 +5,8 @@ package notify
 
 import (
 	"context"
+	"fmt"
+	"strings"
 	"sync"
 )
 
@@ -52,4 +54,28 @@ func (o *Outbox) LastFor(address string) (Message, bool) {
 		}
 	}
 	return Message{}, false
+}
+
+type Config struct {
+	Provider      string
+	ResendAPIKey  string
+	ResendFrom    string
+	ResendBaseURL string
+}
+
+// New picks the transport. outbox (default) keeps everything in memory for
+// development and tests; resend needs a key and a verified sender.
+func New(cfg Config) (Notifier, error) {
+	switch strings.ToLower(strings.TrimSpace(cfg.Provider)) {
+	case "resend":
+		if strings.TrimSpace(cfg.ResendAPIKey) == "" {
+			return nil, fmt.Errorf("EMAIL_PROVIDER=resend requires RESEND_API_KEY")
+		}
+		if strings.TrimSpace(cfg.ResendFrom) == "" {
+			return nil, fmt.Errorf("EMAIL_PROVIDER=resend requires EMAIL_FROM")
+		}
+		return NewResend(cfg.ResendAPIKey, cfg.ResendFrom, cfg.ResendBaseURL)
+	default:
+		return NewOutbox(), nil
+	}
 }

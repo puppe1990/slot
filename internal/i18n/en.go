@@ -269,8 +269,6 @@ var enMessages = map[string]string{
 	"owner_reschedule.error":       "Pick a new slot.",
 	"owner_reschedule.unavailable": "That time was just taken.",
 	"owner_reschedule.cancelled":   "This booking is cancelled.",
-	"owner_reschedule.subject":     "Session moved",
-	"owner_reschedule.body":        "The host moved the session to %s.",
 
 	// Landing and 404
 	"landing.eyebrow": "Slot",
@@ -289,6 +287,23 @@ var enMessages = map[string]string{
 	"weekday.6":                 "Saturday",
 	"formats.error_slug":        "That public link is already taken",
 	"dashboard.cancelled_flash": "Booking cancelled and the guest was notified.",
+
+	// Email
+	"email.confirmed.subject":       "Confirmed: %s",
+	"email.confirmed.intro":         "You are booked for %s with %s.",
+	"email.owner_new.subject":       "New booking: %s",
+	"email.owner_new.intro":         "%s (%s) booked %s.",
+	"email.moved.subject":           "Session moved: %s",
+	"email.moved.intro":             "The session %s moved to a new time.",
+	"email.owner_moved.subject":     "Booking moved: %s",
+	"email.owner_moved.intro":       "%s moved %s.",
+	"email.cancelled.subject":       "Cancelled: %s",
+	"email.cancelled.intro":         "The session %s was cancelled.",
+	"email.owner_cancelled.subject": "Booking cancelled: %s",
+	"email.owner_cancelled.intro":   "%s cancelled %s.",
+	"email.join":                    "Join",
+	"email.manage":                  "Manage",
+	"email.reason":                  "Reason",
 
 	// Footer
 	"layout.footer":      "Slot · quiet scheduling",
