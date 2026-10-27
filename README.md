@@ -94,6 +94,20 @@ The UI ships in **English** and **Portuguese (pt-BR)**. The header toggle posts 
 - Copy built in Go (statuses, locations, durations, dates) goes through `localeFor(r)` in `internal/handlers/locale_format.go`.
 - Clocks follow the locale: 12h in English, 24h in pt-BR. Weekdays and months are localized too, so the date strip reads `seg, ter, qua`.
 
+## Video rooms
+
+Each confirmed booking can get a real room instead of a dead "Google Meet" label. The provider is chosen by env and falls back to `none` (label only) when unconfigured.
+
+| `CALL_PROVIDER`  | Needs           | Room                                                    |
+| ---------------- | --------------- | ------------------------------------------------------- |
+| `none` (default) | —               | none; the manage page shows only the modality           |
+| `jitsi`          | —               | `https://meet.jit.si/slot-<random>`, no API call        |
+| `daily`          | `DAILY_API_KEY` | `POST /v1/rooms` with an expiry at the session end + 1h |
+
+The room URL is stored on the booking (`meeting_url`), shown as **Join room** on the manage page and the dashboard, and exported in the `.ics` as `URL`/`LOCATION`. Cancelling the booking calls `EndRoom` (Daily deletes the room; Jitsi is a no-op). A vendor failure logs and never loses the booking — same rule as the calendar event.
+
+Adding a provider is one file in `internal/call/` plus a case in `call.New`; the handlers only know the interface.
+
 ## Environment
 
 | Variable                                    | Default         | Description                                           |

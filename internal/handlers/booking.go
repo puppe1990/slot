@@ -11,6 +11,7 @@ import (
 	"github.com/puppe1990/amarra-cais/pkg/cais/validate"
 
 	"github.com/puppe1990/slot/internal/calendar"
+	"github.com/puppe1990/slot/internal/call"
 	"github.com/puppe1990/slot/internal/guesttoken"
 	"github.com/puppe1990/slot/internal/models"
 	"github.com/puppe1990/slot/internal/notify"
@@ -195,6 +196,23 @@ func (h *BookingHandler) Confirm(w http.ResponseWriter, r *http.Request) {
 		log.Printf("slot: attach calendar event %s to booking %d: %v", event.ID, booking.ID, err)
 	}
 
+	room, err := h.deps.Call.CreateRoom(r.Context(), call.Input{
+		BookingID: booking.ID,
+		Title:     booking.MeetingTypeTitle,
+		Start:     booking.StartUTC,
+		End:       booking.EndUTC,
+	})
+	if err != nil {
+		// Same rule as the calendar: the slot is already committed, so a
+		// vendor hiccup must not lose the confirmation.
+		log.Printf("slot: create room for booking %d: %v", booking.ID, err)
+	} else if room.URL != "" {
+		if err := h.deps.Store.AttachMeetingURL(booking.ID, room.URL); err != nil {
+			log.Printf("slot: attach room to booking %d: %v", booking.ID, err)
+		}
+		booking.MeetingURL = room.URL
+	}
+
 	manageURL := h.absoluteURL(r, "/manage/"+guestToken)
 	h.notifyGuest(r, booking, manageURL)
 	h.notifyOwner(r, booking, manageURL)
@@ -311,7 +329,19 @@ func bookingNotes(booking models.Booking) string {
 }
 
 func meetingLocation(booking models.Booking, l localeText) string {
+	if booking.MeetingURL != "" {
+		return booking.MeetingURL
+	}
 	return l.locationLabel(booking.MeetingTypeLocation)
+}
+
+// meetingLine is the "where" line for notifications: the room when the
+// provider issued one, the modality label otherwise.
+func meetingLine(booking models.Booking) string {
+	if booking.MeetingURL != "" {
+		return "Join: " + booking.MeetingURL + "\n\n"
+	}
+	return ""
 }
 
 func (h *BookingHandler) notifyGuest(r *http.Request, booking models.Booking, manageURL string) {
@@ -324,7 +354,7 @@ func (h *BookingHandler) notifyGuest(r *http.Request, booking models.Booking, ma
 		Subject: "Confirmed: " + booking.MeetingTypeTitle,
 		Body: "You are booked for " + booking.MeetingTypeTitle + " with " +
 			booking.OwnerName + " on " + booking.StartUTC.Format(time.RFC1123) + ".\n\n" +
-			"Reschedule or cancel: " + manageURL,
+			meetingLine(booking) + "Reschedule or cancel: " + manageURL,
 	})
 }
 

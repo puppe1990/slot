@@ -10,6 +10,7 @@ import (
 	"github.com/puppe1990/amarra-cais/pkg/cais/flash"
 	"github.com/puppe1990/amarra-cais/pkg/cais/httpx"
 
+	"github.com/puppe1990/slot/internal/call"
 	"github.com/puppe1990/slot/internal/models"
 	"github.com/puppe1990/slot/internal/notify"
 	"github.com/puppe1990/slot/internal/store"
@@ -127,6 +128,11 @@ func (h *DashboardHandler) Cancel(w http.ResponseWriter, r *http.Request) {
 	if booking.CalendarEventID != "" {
 		if err := h.deps.Calendar.DeleteEvent(r.Context(), booking.CalendarEventID); err != nil {
 			log.Printf("slot: delete calendar event for booking %d: %v", booking.ID, err)
+		}
+	}
+	if booking.MeetingURL != "" {
+		if err := h.deps.Call.EndRoom(r.Context(), call.Room{URL: booking.MeetingURL}); err != nil {
+			log.Printf("slot: end room for booking %d: %v", booking.ID, err)
 		}
 	}
 	if booking.GuestEmail != "" {

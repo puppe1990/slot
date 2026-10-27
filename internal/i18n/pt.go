@@ -61,6 +61,8 @@ var ptMessages = map[string]string{
 	"common.previous_week": "Semana anterior",
 	"common.next_week":     "Próxima semana",
 
+	"call.join": "Entrar na sala",
+
 	// Estados de reserva e locais
 	"status.confirmed":   "Confirmada",
 	"status.cancelled":   "Cancelada",

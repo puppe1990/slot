@@ -673,3 +673,40 @@ func TestStoreListBookingsFiltersByStatusSet(t *testing.T) {
 		t.Fatalf("cancelled list = %+v, want only booking %d", cancelled, dropped.ID)
 	}
 }
+
+func TestStoreAttachMeetingURL(t *testing.T) {
+	s := newTestStore(t)
+	ownerID := seedOwner(t, s)
+	meetingType := seedMeetingType(t, s, ownerID, 30)
+
+	_, holdToken, err := s.CreateHold(HoldInput{
+		MeetingTypeID: meetingType.ID,
+		Start:         at("2026-10-26T13:00:00Z"),
+		End:           at("2026-10-26T13:30:00Z"),
+		GuestEmail:    "guest@example.com",
+		GuestTimezone: "UTC",
+		ExpiresAt:     fixedNow.Add(10 * time.Minute),
+		Now:           fixedNow,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	booking, err := s.ConfirmHold(holdToken, GuestInput{Name: "Guest"}, guesttoken.Hash(holdToken), fixedNow)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if booking.MeetingURL != "" {
+		t.Fatalf("new booking has meeting url %q, want empty", booking.MeetingURL)
+	}
+
+	if err := s.AttachMeetingURL(booking.ID, "https://team.daily.co/slot-1-abcd"); err != nil {
+		t.Fatal(err)
+	}
+	stored, err := s.GetBooking(ownerID, booking.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if stored.MeetingURL != "https://team.daily.co/slot-1-abcd" {
+		t.Fatalf("meeting url = %q", stored.MeetingURL)
+	}
+}

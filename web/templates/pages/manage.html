@@ -33,11 +33,18 @@
 
     <div class="mt-space-md flex flex-wrap items-center justify-between gap-2 border-t border-line pt-space-sm">
       <span class="text-body-sm text-muted">{{ .Booking.LocationLabel }}{{ with .MeetingType.LocationDetails }} · {{ . }}{{ end }}</span>
-      {{ if not .Booking.Cancelled }}
-      <a href="{{ .ICSURL }}" class="inline-flex h-9 items-center gap-1.5 rounded-full bg-pine px-4 text-label-ui uppercase tracking-[0.08em] text-white" data-amarra-skip>
-        {{ t "manage.add_to_calendar" }}
-      </a>
-      {{ end }}
+      <div class="flex flex-wrap items-center gap-2">
+        {{ if .Booking.MeetingURL }}
+        <a href="{{ .Booking.MeetingURL }}" target="_blank" rel="noopener" data-amarra-skip class="inline-flex h-9 items-center gap-1.5 rounded-full bg-pine px-4 text-label-ui uppercase tracking-[0.08em] text-white transition-transform active:scale-[0.985]">
+          {{ t "call.join" }}
+        </a>
+        {{ end }}
+        {{ if not .Booking.Cancelled }}
+        <a href="{{ .ICSURL }}" class="inline-flex h-9 items-center gap-1.5 rounded-full border border-line px-4 text-label-ui uppercase tracking-[0.08em] text-slate transition-colors hover:border-slate hover:text-foam" data-amarra-skip>
+          {{ t "manage.add_to_calendar" }}
+        </a>
+        {{ end }}
+      </div>
     </div>
   </section>
 

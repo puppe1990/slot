@@ -18,6 +18,7 @@ func registerRoutes(r *cais.Router, deps Deps, cfg cais.Config) {
 		Catalog:  deps.Catalog,
 		Config:   cfg,
 		Calendar: deps.Calendar,
+		Call:     deps.Call,
 		Notifier: deps.Notifier,
 		Signer:   deps.Signer,
 		Clock:    deps.Clock,

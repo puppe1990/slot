@@ -11,6 +11,7 @@ import (
 	"github.com/puppe1990/amarra-cais/pkg/cais/httpx"
 	"github.com/puppe1990/amarra-cais/pkg/cais/validate"
 
+	"github.com/puppe1990/slot/internal/call"
 	"github.com/puppe1990/slot/internal/guesttoken"
 	"github.com/puppe1990/slot/internal/ics"
 	"github.com/puppe1990/slot/internal/models"
@@ -99,6 +100,11 @@ func (h *ManageHandler) Cancel(w http.ResponseWriter, r *http.Request) {
 			log.Printf("slot: delete calendar event for booking %d: %v", booking.ID, err)
 		}
 	}
+	if booking.MeetingURL != "" {
+		if err := h.deps.Call.EndRoom(r.Context(), call.Room{URL: booking.MeetingURL}); err != nil {
+			log.Printf("slot: end room for booking %d: %v", booking.ID, err)
+		}
+	}
 	h.notifyBoth(r, booking)
 	http.Redirect(w, r, r.URL.Path, http.StatusSeeOther)
 }
@@ -115,6 +121,7 @@ func (h *ManageHandler) Invite(w http.ResponseWriter, r *http.Request) {
 		Summary:        booking.MeetingTypeTitle + " · " + booking.OwnerName,
 		Description:    bookingNotes(booking),
 		Location:       meetingLocation(booking, h.localeFor(r)),
+		URL:            booking.MeetingURL,
 		OrganizerName:  booking.OwnerName,
 		OrganizerEmail: booking.OwnerEmail,
 		AttendeeName:   booking.GuestName,
