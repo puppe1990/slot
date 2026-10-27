@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/puppe1990/amarra-cais/pkg/cais/flash"
 	"github.com/puppe1990/amarra-cais/pkg/cais/httpx"
@@ -90,6 +91,40 @@ func (h *DashboardHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		"Now":            now,
 	}
 	h.page(w, r, "app", "dashboard", data, 0)
+}
+
+// Join issues an owner meeting token, so the consultant enters the same room
+// as the host (admit, record) without a password.
+func (h *DashboardHandler) Join(w http.ResponseWriter, r *http.Request) {
+	owner, ok := h.owner(r)
+	if !ok {
+		http.Redirect(w, r, "/login", http.StatusSeeOther)
+		return
+	}
+	booking, ok := h.ownerBooking(w, r, owner.User.ID)
+	if !ok {
+		return
+	}
+	if booking.MeetingURL == "" {
+		flash.Set(w, "error", h.localeFor(r).t("call.unavailable"), h.deps.Config.CookieSecure())
+		http.Redirect(w, r, "/dashboard", http.StatusSeeOther)
+		return
+	}
+	roomURL, err := h.deps.Call.RoomURL(r.Context(), call.Room{URL: booking.MeetingURL}, call.Viewer{
+		Name:      owner.User.DisplayName(),
+		Owner:     true,
+		ExpiresAt: booking.EndUTC.Add(30 * time.Minute),
+	})
+	if err != nil {
+		h.serverError(w, r, err)
+		return
+	}
+	if roomURL == "" {
+		flash.Set(w, "error", h.localeFor(r).t("call.unavailable"), h.deps.Config.CookieSecure())
+		http.Redirect(w, r, "/dashboard", http.StatusSeeOther)
+		return
+	}
+	http.Redirect(w, r, roomURL, http.StatusSeeOther)
 }
 
 // Cancel is the owner-side kill switch the guest link does not cover: the

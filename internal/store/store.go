@@ -69,6 +69,7 @@ type Store interface {
 	ReleaseHold(holdToken string) error
 	AttachCalendarEvent(bookingID int64, eventID string) error
 	AttachMeetingURL(bookingID int64, meetingURL string) error
+	SetAttendance(bookingID int64, attendance string) error
 	GetBooking(userID, bookingID int64) (models.Booking, error)
 	GetBookingByGuestTokenHash(hash string) (models.Booking, error)
 	ListBookings(userID int64, filter BookingFilter) ([]models.Booking, error)

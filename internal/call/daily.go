@@ -39,7 +39,8 @@ func (d *Daily) CreateRoom(ctx context.Context, input Input) (Room, error) {
 	name := roomName(input.BookingID)
 	exp := input.End.Add(time.Hour).Unix()
 	body := map[string]any{
-		"name": name,
+		"name":    name,
+		"privacy": "private",
 		"properties": map[string]any{
 			"exp":                exp,
 			"eject_at_room_exp":  true,
@@ -59,6 +60,47 @@ func (d *Daily) CreateRoom(ctx context.Context, input Input) (Room, error) {
 		return Room{}, fmt.Errorf("daily create room %q returned no url", name)
 	}
 	return Room{URL: response.URL, Provider: ProviderDaily}, nil
+}
+
+// RoomURL issues a meeting token for one viewer and appends it to the room URL.
+// Without the token a private room refuses entry, so the link in an email
+// stops being a key.
+func (d *Daily) RoomURL(ctx context.Context, room Room, viewer Viewer) (string, error) {
+	if room.URL == "" {
+		return "", nil
+	}
+	name := roomNameFromURL(room.URL)
+	if name == "" {
+		return "", fmt.Errorf("daily room url %q has no room name", room.URL)
+	}
+
+	exp := viewer.ExpiresAt
+	if exp.IsZero() {
+		exp = time.Now().UTC().Add(12 * time.Hour)
+	}
+	properties := map[string]any{
+		"room_name": name,
+		"user_name": viewer.Name,
+		"exp":       exp.Unix(),
+		"is_owner":  viewer.Owner,
+	}
+	body := map[string]any{"properties": properties}
+
+	var response struct {
+		Token string `json:"token"`
+	}
+	if err := d.do(ctx, http.MethodPost, "/meeting-tokens", body, &response); err != nil {
+		return "", fmt.Errorf("daily meeting token for %q: %w", name, err)
+	}
+	if response.Token == "" {
+		return "", fmt.Errorf("daily meeting token for %q came back empty", name)
+	}
+
+	separator := "?"
+	if strings.Contains(room.URL, "?") {
+		separator = "&"
+	}
+	return room.URL + separator + "t=" + url.QueryEscape(response.Token), nil
 }
 
 // EndRoom deletes the room. The name lives in the URL we stored, so the

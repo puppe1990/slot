@@ -18,6 +18,8 @@ Bug fix ⇒ regression test in the same commit.
 - **Times are UTC at rest** (`INTEGER` unix seconds). The owner timezone only decides which wall-clock windows exist. `time.Date` per day is what makes DST correct — do not normalize by adding `24h`.
 - **Guest tokens are hashed at rest**. The database stores `guest_token_hash` / `hold_token_hash`; the raw token lives in the URL (manage) or an HttpOnly cookie (hold). Never log or persist the raw value.
 - **Cookies**: `slot_hold` is HttpOnly, SameSite=Lax, 10-minute MaxAge, path `/book`.
+- **Rooms are private**: never put `booking.meeting_url` in a page, email or `.ics`. Link the join routes (`/manage/:token/join`, `/bookings/:id/join`) — they mint the Daily meeting token; the raw URL only works with one.
+- **State changes are POST**: RSVP and cancel are POST because mail scanners prefetch GET links in email bodies.
 - **Audit inside the transaction**: state change and `audit_logs` row commit together.
 
 ## Layout

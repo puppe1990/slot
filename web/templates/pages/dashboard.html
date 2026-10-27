@@ -120,6 +120,7 @@
           <div class="flex flex-wrap items-center gap-2">
             <span class="text-body-md font-semibold text-foam">{{ .GuestName }}</span>
             <span class="rounded px-2 py-0.5 text-label-mono uppercase tracking-[0.08em] {{ if .Cancelled }}bg-clay-tint/50 text-clay{{ else }}bg-moss/70 text-pine{{ end }}">{{ .StatusLabel }}</span>
+            {{ if eq .Attendance "GOING" }}<span class="rounded bg-moss/40 px-2 py-0.5 text-label-mono uppercase tracking-[0.08em] text-pine">{{ t "rsvp.done" }}</span>{{ end }}
           </div>
           <span class="text-body-sm text-muted">{{ .Title }}</span>
           <span class="truncate text-label-mono text-muted">{{ .GuestEmail }}</span>
@@ -129,7 +130,7 @@
           <span class="text-label-mono text-muted">{{ .DateLabel }}</span>
           <div class="flex flex-wrap items-center gap-3">
             {{ if .MeetingURL }}
-            <a href="{{ .MeetingURL }}" target="_blank" rel="noopener" data-amarra-skip class="text-label-mono uppercase tracking-[0.08em] text-pine transition-colors hover:text-pine-hover">{{ t "call.join" }}</a>
+            <a href="/bookings/{{ .ID }}/join" data-amarra-skip class="text-label-mono uppercase tracking-[0.08em] text-pine transition-colors hover:text-pine-hover">{{ t "call.join" }}</a>
             {{ end }}
             {{ if .IsUpcoming }}
             <a href="/bookings/{{ .ID }}/reschedule" class="text-label-mono uppercase tracking-[0.08em] text-slate transition-colors hover:text-foam">{{ t "dashboard.reschedule" }}</a>

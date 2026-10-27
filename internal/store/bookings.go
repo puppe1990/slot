@@ -18,7 +18,7 @@ const defaultHoldTTL = 10 * time.Minute
 
 const bookingSelect = `SELECT b.id, b.meeting_type_id, b.guest_name, b.guest_email, b.guest_notes,
 		b.guest_timezone, b.start_time_utc, b.end_time_utc, b.status, b.hold_expires_at,
-		b.cancellation_reason, b.calendar_event_id, b.meeting_url, b.created_at, b.updated_at,
+		b.cancellation_reason, b.calendar_event_id, b.meeting_url, b.attendance, b.created_at, b.updated_at,
 		mt.slug, mt.title, mt.duration_minutes, mt.location_type,
 		u.name, u.email, u.timezone
 	FROM bookings b
@@ -264,6 +264,15 @@ func (s *SQLiteStore) ReleaseHold(holdToken string) error {
 	return tx.Commit()
 }
 
+func (s *SQLiteStore) SetAttendance(bookingID int64, attendance string) error {
+	_, err := s.db.Exec("UPDATE bookings SET attendance = ?, updated_at = strftime('%s', 'now') WHERE id = ?",
+		attendance, bookingID)
+	if err != nil {
+		return fmt.Errorf("set attendance for booking %d: %w", bookingID, err)
+	}
+	return nil
+}
+
 func (s *SQLiteStore) AttachMeetingURL(bookingID int64, meetingURL string) error {
 	_, err := s.db.Exec("UPDATE bookings SET meeting_url = ?, updated_at = strftime('%s', 'now') WHERE id = ?",
 		meetingURL, bookingID)
@@ -505,7 +514,7 @@ func scanBooking(scanner interface{ Scan(...any) error }, requestedID int64) (mo
 	err := scanner.Scan(
 		&booking.ID, &booking.MeetingTypeID, &booking.GuestName, &booking.GuestEmail,
 		&booking.GuestNotes, &booking.GuestTimezone, &startUnix, &endUnix, &status, &holdExpires,
-		&booking.CancellationReason, &booking.CalendarEventID, &booking.MeetingURL, &createdAt, &updatedAt,
+		&booking.CancellationReason, &booking.CalendarEventID, &booking.MeetingURL, &booking.Attendance, &createdAt, &updatedAt,
 		&booking.MeetingTypeSlug, &booking.MeetingTypeTitle, &booking.MeetingTypeDuration,
 		&booking.MeetingTypeLocation, &booking.OwnerName, &booking.OwnerEmail, &booking.OwnerTimezone,
 	)

@@ -31,11 +31,28 @@
     </div>
     {{ end }}
 
+    {{ if not .Booking.Cancelled }}
+    <div class="mt-space-md flex flex-wrap items-center justify-between gap-3 rounded-lg border border-line bg-elevated p-3">
+      <div class="flex flex-col gap-0.5">
+        <span class="text-body-sm font-medium text-foam">{{ t "rsvp.title" }}</span>
+        {{ if eq .Booking.Attendance "GOING" }}
+        <span class="text-label-mono uppercase tracking-[0.08em] text-pine">{{ t "rsvp.done" }}</span>
+        {{ end }}
+      </div>
+      {{ if ne .Booking.Attendance "GOING" }}
+      <form method="post" action="{{ .ManagePath }}/rsvp">
+        <input type="hidden" name="csrf_token" value="{{ .CSRFToken }}" />
+        <button type="submit" class="inline-flex h-9 items-center rounded-full border border-pine/40 px-4 text-label-ui uppercase tracking-[0.08em] text-pine transition-colors hover:border-pine hover:bg-moss/30">{{ t "rsvp.cta" }}</button>
+      </form>
+      {{ end }}
+    </div>
+    {{ end }}
+
     <div class="mt-space-md flex flex-wrap items-center justify-between gap-2 border-t border-line pt-space-sm">
       <span class="text-body-sm text-muted">{{ .Booking.LocationLabel }}{{ with .MeetingType.LocationDetails }} · {{ . }}{{ end }}</span>
       <div class="flex flex-wrap items-center gap-2">
         {{ if .Booking.MeetingURL }}
-        <a href="{{ .Booking.MeetingURL }}" target="_blank" rel="noopener" data-amarra-skip class="inline-flex h-9 items-center gap-1.5 rounded-full bg-pine px-4 text-label-ui uppercase tracking-[0.08em] text-white transition-transform active:scale-[0.985]">
+        <a href="{{ .ManagePath }}/join" data-amarra-skip class="inline-flex h-9 items-center gap-1.5 rounded-full bg-pine px-4 text-label-ui uppercase tracking-[0.08em] text-white transition-transform active:scale-[0.985]">
           {{ t "call.join" }}
         </a>
         {{ end }}
