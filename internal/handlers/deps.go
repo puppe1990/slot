@@ -13,6 +13,7 @@ import (
 	"github.com/puppe1990/amarra-cais/pkg/cais/session"
 
 	"github.com/puppe1990/slot/internal/calendar"
+	"github.com/puppe1990/slot/internal/call"
 	"github.com/puppe1990/slot/internal/guesttoken"
 	"github.com/puppe1990/slot/internal/models"
 	"github.com/puppe1990/slot/internal/notify"
@@ -29,6 +30,7 @@ type Deps struct {
 	Catalog  *i18n.Catalog
 	Config   cais.Config
 	Calendar calendar.Provider
+	Call     call.Provider
 	Notifier notify.Notifier
 	Signer   *guesttoken.Signer
 	Clock    func() time.Time
@@ -41,6 +43,9 @@ type base struct {
 func newBase(deps Deps) base {
 	if deps.Calendar == nil {
 		deps.Calendar = calendar.NewFake()
+	}
+	if deps.Call == nil {
+		deps.Call = call.None{}
 	}
 	if deps.Notifier == nil {
 		deps.Notifier = notify.NewOutbox()

@@ -66,6 +66,7 @@ type Booking struct {
 	HoldExpiresAt      time.Time
 	CancellationReason string
 	CalendarEventID    string
+	MeetingURL         string
 	CreatedAt          time.Time
 	UpdatedAt          time.Time
 

@@ -154,6 +154,7 @@ func (h *DashboardHandler) writeCalendar(w http.ResponseWriter, l localeText, bo
 			Summary:        booking.MeetingTypeTitle + " · " + booking.GuestName,
 			Description:    bookingNotes(booking),
 			Location:       meetingLocation(booking, l),
+			URL:            booking.MeetingURL,
 			OrganizerName:  booking.OwnerName,
 			OrganizerEmail: booking.OwnerEmail,
 			AttendeeName:   booking.GuestName,

@@ -20,6 +20,7 @@ type bookingView struct {
 	GuestTZLabel  string
 	HostTZLabel   string
 	LocationLabel string
+	MeetingURL    string
 	DurationLabel string
 	Start         time.Time
 	IsUpcoming    bool
@@ -44,6 +45,7 @@ func presentBooking(booking models.Booking, ownerLocation, guestLocation *time.L
 		GuestTZLabel:  formatTimezone(booking.StartUTC, guestLocation),
 		HostTZLabel:   formatTimezone(booking.StartUTC, ownerLocation),
 		LocationLabel: l.locationLabel(booking.MeetingTypeLocation),
+		MeetingURL:    booking.MeetingURL,
 		DurationLabel: l.durationUpper(booking.MeetingTypeDuration),
 		Start:         booking.StartUTC,
 		IsUpcoming:    booking.StartUTC.After(now) && booking.Active(),

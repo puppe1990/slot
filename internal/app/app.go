@@ -21,6 +21,7 @@ import (
 	"github.com/puppe1990/amarra-cais/pkg/cais/netutil"
 
 	"github.com/puppe1990/slot/internal/calendar"
+	"github.com/puppe1990/slot/internal/call"
 	"github.com/puppe1990/slot/internal/guesttoken"
 	appi18n "github.com/puppe1990/slot/internal/i18n"
 	"github.com/puppe1990/slot/internal/notify"
@@ -45,6 +46,7 @@ type Deps struct {
 	// Scheduling adapters. Nil values pick the development defaults (fake
 	// calendar, in-memory outbox) so an app without credentials still boots.
 	Calendar calendar.Provider
+	Call     call.Provider
 	Notifier notify.Notifier
 	Signer   *guesttoken.Signer
 	Clock    func() time.Time
@@ -88,6 +90,16 @@ func New(cfg cais.Config, deps Deps) (*App, error) {
 		}
 		deps.Calendar = provider
 	}
+	callProvider, err := call.New(call.Config{
+		Provider:     os.Getenv("CALL_PROVIDER"),
+		DailyAPIKey:  os.Getenv("DAILY_API_KEY"),
+		DailyBaseURL: os.Getenv("DAILY_BASE_URL"),
+		JitsiBaseURL: os.Getenv("JITSI_BASE_URL"),
+	})
+	if err != nil {
+		return nil, fmt.Errorf("call provider: %w", err)
+	}
+	deps.Call = callProvider
 	if deps.Notifier == nil {
 		deps.Notifier = notify.NewOutbox()
 	}

@@ -61,6 +61,8 @@ var enMessages = map[string]string{
 	"common.previous_week": "Previous week",
 	"common.next_week":     "Next week",
 
+	"call.join": "Join room",
+
 	// Booking states and locations
 	"status.confirmed":   "Confirmed",
 	"status.cancelled":   "Cancelled",
