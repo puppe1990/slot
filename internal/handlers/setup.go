@@ -190,47 +190,22 @@ func (h *SetupHandler) AddBlock(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/setup", http.StatusSeeOther)
 	}
 
-	weekdays := models.ParseWeekdays(strings.Join(r.Form["weekdays"], ","))
-	if len(weekdays) == 0 {
-		fail(l.t("setup.error_weekday"))
+	block, errs := buildRecurringBlock(
+		owner.User.ID,
+		r.FormValue("title"),
+		models.ParseWeekdays(strings.Join(r.Form["weekdays"], ",")),
+		strings.TrimSpace(r.FormValue("start_time")),
+		strings.TrimSpace(r.FormValue("end_time")),
+		formInt(r, "interval_weeks", 2),
+		strings.TrimSpace(r.FormValue("anchor_date")),
+		h.now().In(mustLocation(owner.User.Timezone)).Format(dateKeyLayout),
+		l,
+	)
+	if errs.Any() {
+		fail(firstError(errs))
 		return
 	}
-	start := strings.TrimSpace(r.FormValue("start_time"))
-	end := strings.TrimSpace(r.FormValue("end_time"))
-	startHour, startMinute, err := scheduling.ParseClock(start)
-	if err != nil {
-		fail(l.t("setup.error_start"))
-		return
-	}
-	endHour, endMinute, err := scheduling.ParseClock(end)
-	if err != nil || endHour*60+endMinute <= startHour*60+startMinute {
-		fail(l.t("setup.error_clock"))
-		return
-	}
-	interval := formInt(r, "interval_weeks", 2)
-	if interval < 1 || interval > 8 {
-		fail(l.t("setup.error_interval"))
-		return
-	}
-	anchor := strings.TrimSpace(r.FormValue("anchor_date"))
-	if anchor == "" {
-		anchor = h.now().In(mustLocation(owner.User.Timezone)).Format(dateKeyLayout)
-	}
-	if _, err := time.Parse(dateKeyLayout, anchor); err != nil {
-		fail(l.t("setup.error_anchor"))
-		return
-	}
-
-	_, err = h.deps.Store.CreateRecurringBlock(models.RecurringBlock{
-		UserID:        owner.User.ID,
-		Title:         strings.TrimSpace(r.FormValue("title")),
-		Weekdays:      weekdays,
-		StartTime:     start,
-		EndTime:       end,
-		IntervalWeeks: interval,
-		AnchorDate:    anchor,
-	})
-	if err != nil {
+	if _, err := h.deps.Store.CreateRecurringBlock(block); err != nil {
 		h.serverError(w, r, err)
 		return
 	}

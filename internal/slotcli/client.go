@@ -219,3 +219,61 @@ func orDefault(value, fallback int) int {
 	}
 	return value
 }
+
+type Account struct {
+	Email    string `json:"email"`
+	Name     string `json:"name"`
+	Timezone string `json:"timezone"`
+	AppURL   string `json:"app_url"`
+}
+
+type Block struct {
+	ID            int64  `json:"id"`
+	Title         string `json:"title"`
+	Weekdays      []int  `json:"weekdays"`
+	StartTime     string `json:"start_time"`
+	EndTime       string `json:"end_time"`
+	IntervalWeeks int    `json:"interval_weeks"`
+	AnchorDate    string `json:"anchor_date"`
+}
+
+type CreateBlockInput struct {
+	Title         string `json:"title"`
+	Weekdays      []int  `json:"weekdays"`
+	StartTime     string `json:"start_time"`
+	EndTime       string `json:"end_time"`
+	IntervalWeeks int    `json:"interval_weeks"`
+	AnchorDate    string `json:"anchor_date,omitempty"`
+}
+
+func (c *Client) Me(ctx context.Context) (Account, error) {
+	var account Account
+	if err := c.do(ctx, http.MethodGet, "/api/admin/me", nil, &account); err != nil {
+		return Account{}, err
+	}
+	return account, nil
+}
+
+func (c *Client) Blocks(ctx context.Context) ([]Block, error) {
+	var payload struct {
+		Blocks []Block `json:"blocks"`
+	}
+	if err := c.do(ctx, http.MethodGet, "/api/admin/blocks", nil, &payload); err != nil {
+		return nil, err
+	}
+	return payload.Blocks, nil
+}
+
+func (c *Client) CreateBlock(ctx context.Context, input CreateBlockInput) (Block, error) {
+	var payload struct {
+		Block Block `json:"block"`
+	}
+	if err := c.do(ctx, http.MethodPost, "/api/admin/blocks", input, &payload); err != nil {
+		return Block{}, err
+	}
+	return payload.Block, nil
+}
+
+func (c *Client) DeleteBlock(ctx context.Context, id int64) error {
+	return c.do(ctx, http.MethodPost, "/api/admin/blocks/"+strconv.FormatInt(id, 10)+"/delete", map[string]string{}, nil)
+}
