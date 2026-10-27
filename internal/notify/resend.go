@@ -49,6 +49,7 @@ func (r *Resend) Send(ctx context.Context, message Message) error {
 		"to":      []string{message.To},
 		"subject": message.Subject,
 		"text":    message.Body,
+		"html":    message.HTML,
 	})
 	if err != nil {
 		return fmt.Errorf("encode resend message: %w", err)

@@ -15,6 +15,8 @@ type Message struct {
 	To      string
 	Subject string
 	Body    string
+	// HTML is optional; clients that block HTML fall back to Body.
+	HTML string
 }
 
 type Notifier interface {
