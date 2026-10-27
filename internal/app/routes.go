@@ -51,6 +51,10 @@ func registerRoutes(r *cais.Router, deps Deps, cfg cais.Config) {
 	r.Post("/locale", handlers.PostLocale(cfg))
 
 	r.Get("/dashboard", owner(dashboard.ServeHTTP))
+	r.Get("/dashboard/export.ics", owner(dashboard.Export))
+	r.Get("/bookings/{id}/invite.ics", owner(dashboard.Invite))
+	r.Get("/bookings/{id}/reschedule", owner(dashboard.ReschedulePage))
+	r.Post("/bookings/{id}/reschedule", owner(dashboard.Reschedule))
 	r.Post("/bookings/{id}/cancel", owner(dashboard.Cancel))
 
 	notFound := handlers.NewNotFoundHandler(handlerDeps)

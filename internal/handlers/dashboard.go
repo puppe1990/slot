@@ -31,10 +31,17 @@ func (h *DashboardHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	now := h.now()
-	upcoming, err := h.deps.Store.ListBookings(owner.User.ID, store.BookingFilter{
-		From:  now,
-		To:    now.AddDate(0, 0, 90),
-		Limit: 60,
+	filter := parseDashboardFilter(r)
+	bookings, err := h.deps.Store.ListBookings(owner.User.ID, filter.storeFilter(now))
+	if err != nil {
+		h.serverError(w, r, err)
+		return
+	}
+	// KPIs stay global: the filter changes the list, not the desk summary.
+	stats, err := h.deps.Store.ListBookings(owner.User.ID, store.BookingFilter{
+		Statuses: []models.BookingStatus{models.BookingStatusConfirmed, models.BookingStatusRescheduled},
+		From:     now,
+		To:       now.AddDate(0, 0, 90),
 	})
 	if err != nil {
 		h.serverError(w, r, err)
@@ -47,21 +54,20 @@ func (h *DashboardHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	l := h.localeFor(r)
-	views := make([]bookingView, 0, len(upcoming))
+	views := make([]bookingView, 0, len(bookings))
+	for _, booking := range bookings {
+		views = append(views, presentBooking(booking, owner.Location, owner.Location, now, l))
+	}
+
 	var minutes int
 	var next *bookingView
-	for _, booking := range upcoming {
-		if booking.Status == models.BookingStatusCancelled {
-			continue
-		}
-		view := presentBooking(booking, owner.Location, owner.Location, now, l)
-		views = append(views, view)
-		if view.IsUpcoming {
-			minutes += booking.MeetingTypeDuration
-			if next == nil {
-				candidate := view
-				next = &candidate
-			}
+	upcomingCount := 0
+	for _, booking := range stats {
+		minutes += booking.MeetingTypeDuration
+		upcomingCount++
+		if next == nil {
+			candidate := presentBooking(booking, owner.Location, owner.Location, now, l)
+			next = &candidate
 		}
 	}
 
@@ -71,12 +77,17 @@ func (h *DashboardHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		"ActiveNav":      "dashboard",
 		"Owner":          owner.User,
 		"Bookings":       views,
+		"ListCount":      len(views),
 		"MeetingTypes":   presentMeetingTypes(types, l),
-		"UpcomingCount":  countUpcoming(views),
+		"UpcomingCount":  upcomingCount,
 		"UpcomingHours":  l.duration(minutes),
 		"NextBooking":    next,
 		"PublicPath":     publicPath(published),
 		"HasMeetingType": published.ID != 0,
+		"Filter":         filter,
+		"StatusOptions":  filter.statusOptions(),
+		"DayOptions":     filter.dayOptions(),
+		"ExportURL":      filterExportURL(filter),
 		"Now":            now,
 	}
 	h.page(w, r, "app", "dashboard", data, 0)
@@ -145,16 +156,6 @@ func presentMeetingTypes(types []models.MeetingType, l localeText) []meetingType
 		out = append(out, presentMeetingType(meetingType, l))
 	}
 	return out
-}
-
-func countUpcoming(views []bookingView) int {
-	count := 0
-	for _, view := range views {
-		if view.IsUpcoming {
-			count++
-		}
-	}
-	return count
 }
 
 func publicPath(meetingType models.MeetingType) string {

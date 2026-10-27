@@ -185,7 +185,7 @@ func (h *BookingHandler) Confirm(w http.ResponseWriter, r *http.Request) {
 		Start:     booking.StartUTC,
 		End:       booking.EndUTC,
 		Attendees: []string{email, booking.OwnerEmail},
-		Location:  meetingLocation(booking),
+		Location:  meetingLocation(booking, h.localeFor(r)),
 	})
 	if err != nil {
 		// The slot is already committed; a calendar hiccup must not lose the
@@ -310,11 +310,8 @@ func bookingNotes(booking models.Booking) string {
 	return notes
 }
 
-func meetingLocation(booking models.Booking) string {
-	if booking.MeetingTypeLocation == models.LocationPhone {
-		return "Phone call"
-	}
-	return booking.MeetingTypeLocation
+func meetingLocation(booking models.Booking, l localeText) string {
+	return l.locationLabel(booking.MeetingTypeLocation)
 }
 
 func (h *BookingHandler) notifyGuest(r *http.Request, booking models.Booking, manageURL string) {

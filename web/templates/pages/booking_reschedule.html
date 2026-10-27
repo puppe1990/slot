@@ -1,0 +1,92 @@
+{{ define "content" }}
+<div class="mx-auto flex w-full max-w-[880px] flex-col gap-space-lg">
+  <section class="flex flex-wrap items-end justify-between gap-3">
+    <div class="flex flex-col gap-1">
+      <span class="text-label-mono uppercase tracking-[0.14em] text-muted">{{ t "owner_reschedule.eyebrow" }}</span>
+      <h1 class="text-headline-lg font-semibold tracking-tight text-foam">{{ t "owner_reschedule.title" }}</h1>
+      <p class="text-body-sm text-muted">{{ t "owner_reschedule.current" .Booking.DateLabel .Booking.HostRange }}</p>
+    </div>
+    <a href="/dashboard" class="text-label-ui uppercase tracking-[0.08em] text-slate hover:text-foam">{{ t "common.back" }}</a>
+  </section>
+
+  <section class="rounded-xl border border-line bg-surface p-space-md">
+    <div class="flex flex-wrap items-center justify-between gap-2">
+      <div class="flex min-w-0 flex-col gap-1">
+        <span class="text-body-md font-semibold text-foam">{{ .Booking.GuestName }}</span>
+        <span class="truncate text-label-mono text-muted">{{ .Booking.GuestEmail }}</span>
+        <span class="text-body-sm text-muted">{{ .MeetingType.Title }}</span>
+      </div>
+      <span class="rounded bg-moss/70 px-2 py-0.5 text-label-mono uppercase tracking-[0.08em] text-pine">{{ .Booking.StatusLabel }}</span>
+    </div>
+  </section>
+
+  {{ with fieldError .Errors "slot" }}
+  <div class="rounded-xl border border-clay/40 bg-clay-tint/40 p-space-md text-body-sm text-clay">{{ . }}</div>
+  {{ end }}
+
+  <section class="rounded-xl border border-line bg-surface p-space-md">
+    <form method="get" action="{{ .PagePath }}" class="flex flex-wrap items-center justify-between gap-2">
+      <div class="flex min-w-0 items-center gap-2">
+        <span class="flex h-8 w-8 items-center justify-center rounded-full border border-line bg-container-low text-slate">
+          <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M12 3a9 9 0 100 18 9 9 0 000-18zm0 0v9l5 3" /></svg>
+        </span>
+        <span class="text-label-mono text-muted">{{ .Slots.GuestTZLabel }}</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <input type="hidden" name="date" value="{{ .Slots.SelectedDate }}" />
+        <select name="tz" class="h-9 max-w-[220px] rounded-lg border border-line bg-canvas px-2 text-label-mono text-foam outline-none focus:border-pine">
+          {{ range .GuestOptions }}
+          <option value="{{ .Value }}" {{ if .Selected }}selected{{ end }}>{{ .Label }}</option>
+          {{ end }}
+        </select>
+        <button type="submit" class="h-9 rounded-lg border border-line px-3 text-label-ui uppercase tracking-[0.08em] text-slate hover:border-slate hover:text-foam">{{ t "common.set" }}</button>
+      </div>
+    </form>
+
+    <div class="mt-space-md flex items-center justify-between">
+      <span class="text-label-ui uppercase tracking-[0.08em] text-muted">{{ .Slots.DateLabel }}</span>
+      <div class="flex items-center gap-1">
+        <a href="{{ .PagePath }}?tz={{ .GuestTZ }}&date={{ .Slots.PrevDate }}" class="flex h-8 w-8 items-center justify-center rounded text-muted hover:bg-canvas hover:text-foam" aria-label="{{ t "common.previous_week" }}">‹</a>
+        <a href="{{ .PagePath }}?tz={{ .GuestTZ }}&date={{ .Slots.NextDate }}" class="flex h-8 w-8 items-center justify-center rounded text-muted hover:bg-canvas hover:text-foam" aria-label="{{ t "common.next_week" }}">›</a>
+      </div>
+    </div>
+
+    <div class="no-scrollbar mt-2 flex gap-2 overflow-x-auto pb-2">
+      {{ range .Slots.Days }}
+        {{ if .HasSlots }}
+        <a href="{{ $.PagePath }}?tz={{ $.GuestTZ }}&date={{ .Date }}"
+           class="flex h-[72px] w-14 shrink-0 flex-col items-center justify-center gap-0.5 rounded-lg border {{ if .IsSelected }}border-pine bg-pine text-white{{ else }}border-line bg-elevated text-foam{{ end }}">
+          <span class="text-body-sm {{ if .IsSelected }}text-moss{{ else }}text-muted{{ end }}">{{ .Weekday }}</span>
+          <span class="text-headline-sm font-semibold">{{ .DayNumber }}</span>
+        </a>
+        {{ else }}
+        <span class="flex h-[72px] w-14 shrink-0 flex-col items-center justify-center rounded-lg border border-line bg-canvas/40 text-muted opacity-35">
+          <span class="text-body-sm">{{ .Weekday }}</span>
+          <span class="text-headline-sm">{{ .DayNumber }}</span>
+        </span>
+        {{ end }}
+      {{ end }}
+    </div>
+
+    {{ if .Slots.Selected.Slots }}
+    <div class="mt-space-md grid gap-2 sm:grid-cols-2">
+      {{ range .Slots.Selected.Slots }}
+      <form method="post" action="{{ $.FormAction }}">
+        <input type="hidden" name="csrf_token" value="{{ $.CSRFToken }}" />
+        <input type="hidden" name="slot" value="{{ .StartISO }}" />
+        <button type="submit" class="flex w-full items-center justify-between rounded-lg border border-line bg-elevated px-3 py-3 text-left transition-transform hover:border-pine hover:bg-moss/20 active:scale-[0.985]">
+          <span class="flex flex-col">
+            <span class="text-label-mono-lg font-semibold text-foam">{{ .GuestClock }}</span>
+            <span class="text-label-mono text-muted">{{ t "book.host_suffix" .HostClock }}</span>
+          </span>
+          <span class="text-label-ui uppercase tracking-[0.08em] text-pine">{{ t "owner_reschedule.move" }}</span>
+        </button>
+      </form>
+      {{ end }}
+    </div>
+    {{ else }}
+    <p class="mt-space-md text-body-sm text-muted">{{ t "manage.no_slots" .Slots.DateLabel }}</p>
+    {{ end }}
+  </section>
+</div>
+{{ end }}

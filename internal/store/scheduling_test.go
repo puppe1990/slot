@@ -622,3 +622,54 @@ func TestStoreReleaseHoldFreesTheSlotImmediately(t *testing.T) {
 		t.Fatalf("ReleaseHold on an unknown token = %v, want nil", err)
 	}
 }
+
+func TestStoreListBookingsFiltersByStatusSet(t *testing.T) {
+	s := newTestStore(t)
+	ownerID := seedOwner(t, s)
+	meetingType := seedMeetingType(t, s, ownerID, 30)
+
+	book := func(start string, token string) models.Booking {
+		t.Helper()
+		_, holdToken, err := s.CreateHold(HoldInput{
+			MeetingTypeID: meetingType.ID,
+			Start:         at(start),
+			End:           at(start).Add(30 * time.Minute),
+			GuestEmail:    token + "@example.com",
+			GuestTimezone: "UTC",
+			ExpiresAt:     fixedNow.Add(10 * time.Minute),
+			Now:           fixedNow,
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		booking, err := s.ConfirmHold(holdToken, GuestInput{Name: token}, guesttoken.Hash(holdToken), fixedNow)
+		if err != nil {
+			t.Fatal(err)
+		}
+		return booking
+	}
+
+	kept := book("2026-10-27T13:00:00Z", "kept")
+	dropped := book("2026-10-28T13:00:00Z", "dropped")
+	if err := s.CancelBooking(dropped.ID, models.ActorOwner, "test"); err != nil {
+		t.Fatal(err)
+	}
+
+	active, err := s.ListBookings(ownerID, BookingFilter{
+		Statuses: []models.BookingStatus{models.BookingStatusConfirmed, models.BookingStatusRescheduled},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(active) != 1 || active[0].ID != kept.ID {
+		t.Fatalf("active list = %+v, want only booking %d", active, kept.ID)
+	}
+
+	cancelled, err := s.ListBookings(ownerID, BookingFilter{Statuses: []models.BookingStatus{models.BookingStatusCancelled}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(cancelled) != 1 || cancelled[0].ID != dropped.ID {
+		t.Fatalf("cancelled list = %+v, want only booking %d", cancelled, dropped.ID)
+	}
+}

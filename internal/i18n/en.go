@@ -136,6 +136,24 @@ var enMessages = map[string]string{
 	"setup.error_name":       "Your guests need a name to greet",
 	"setup.error_window":     "Open at least one window so guests can book",
 
+	// Dashboard filters
+	"dashboard.filter":           "Filter",
+	"dashboard.period":           "Period",
+	"dashboard.status_upcoming":  "Upcoming",
+	"dashboard.status_past":      "Past",
+	"dashboard.status_cancelled": "Cancelled",
+	"dashboard.status_all":       "All",
+	"dashboard.days_7":           "7 days",
+	"dashboard.days_30":          "30 days",
+	"dashboard.days_90":          "90 days",
+	"dashboard.apply":            "Apply",
+	"dashboard.export":           "Export .ics",
+	"dashboard.empty_filtered":   "No bookings match this filter.",
+	"dashboard.reschedule":       "Reschedule",
+	"dashboard.ics":              "iCal",
+	"dashboard.list_count_one":   "1 booking",
+	"dashboard.list_count":       "%d bookings",
+
 	// Formats list
 	"formats.eyebrow":                 "Formats",
 	"formats.title":                   "What guests can book",
@@ -236,6 +254,17 @@ var enMessages = map[string]string{
 	"manage.error_cancelled":    "This booking is cancelled and can no longer move.",
 	"manage.error_pick":         "Pick a new time",
 	"manage.error_taken":        "That time is no longer free. Pick another slot.",
+
+	"owner_reschedule.eyebrow":     "Reschedule",
+	"owner_reschedule.title":       "Move the session",
+	"owner_reschedule.current":     "Now: %s · %s",
+	"owner_reschedule.move":        "Move session",
+	"owner_reschedule.saved":       "Session moved and the guest was notified.",
+	"owner_reschedule.error":       "Pick a new slot.",
+	"owner_reschedule.unavailable": "That time was just taken.",
+	"owner_reschedule.cancelled":   "This booking is cancelled.",
+	"owner_reschedule.subject":     "Session moved",
+	"owner_reschedule.body":        "The host moved the session to %s.",
 
 	// Landing and 404
 	"landing.eyebrow": "Slot",
