@@ -20,11 +20,12 @@ import (
 )
 
 var (
-	ErrEmailTaken          = errors.New("email already registered")
-	ErrSlugTaken           = errors.New("meeting type slug already used")
-	ErrMeetingTypeNotFound = errors.New("meeting type not found")
-	ErrConnectionNotFound  = errors.New("calendar connection not found")
-	ErrBookingNotFound     = errors.New("booking not found")
+	ErrEmailTaken             = errors.New("email already registered")
+	ErrSlugTaken              = errors.New("meeting type slug already used")
+	ErrMeetingTypeNotFound    = errors.New("meeting type not found")
+	ErrConnectionNotFound     = errors.New("calendar connection not found")
+	ErrBookingNotFound        = errors.New("booking not found")
+	ErrRecurringBlockNotFound = errors.New("recurring block not found")
 	// ErrSlotUnavailable is the 409 the UI must surface: another guest either
 	// confirmed or is holding an overlapping interval.
 	ErrSlotUnavailable = errors.New("slot unavailable")
@@ -62,6 +63,10 @@ type Store interface {
 	ListDateOverrides(userID int64, fromDate, toDate string) ([]models.DateOverride, error)
 	UpsertDateOverride(userID int64, override models.DateOverride) (int64, error)
 	DeleteDateOverride(userID, id int64) error
+
+	ListRecurringBlocks(userID int64) ([]models.RecurringBlock, error)
+	CreateRecurringBlock(block models.RecurringBlock) (int64, error)
+	DeleteRecurringBlock(userID, id int64) error
 
 	CreateHold(input HoldInput) (models.Booking, string, error)
 	ConfirmHold(holdToken string, guest GuestInput, guestTokenHash string, now time.Time) (models.Booking, error)
@@ -235,6 +240,61 @@ func (s *SQLiteStore) CountUsers() (int, error) {
 		return 0, fmt.Errorf("count users: %w", err)
 	}
 	return count, nil
+}
+
+// ListRecurringBlocks returns the owner's repeating closed windows, oldest
+// first.
+func (s *SQLiteStore) ListRecurringBlocks(userID int64) ([]models.RecurringBlock, error) {
+	rows, err := s.db.Query(`SELECT id, user_id, title, weekdays, start_time, end_time, interval_weeks, anchor_date
+		FROM recurring_blocks WHERE user_id = ? ORDER BY id`, userID)
+	if err != nil {
+		return nil, fmt.Errorf("list recurring blocks for user %d: %w", userID, err)
+	}
+	defer func() { _ = rows.Close() }()
+
+	blocks := []models.RecurringBlock{}
+	for rows.Next() {
+		var block models.RecurringBlock
+		var weekdays string
+		if err := rows.Scan(&block.ID, &block.UserID, &block.Title, &weekdays,
+			&block.StartTime, &block.EndTime, &block.IntervalWeeks, &block.AnchorDate); err != nil {
+			return nil, fmt.Errorf("scan recurring block: %w", err)
+		}
+		block.Weekdays = models.ParseWeekdays(weekdays)
+		blocks = append(blocks, block)
+	}
+	return blocks, rows.Err()
+}
+
+func (s *SQLiteStore) CreateRecurringBlock(block models.RecurringBlock) (int64, error) {
+	result, err := s.db.Exec(`INSERT INTO recurring_blocks
+		(user_id, title, weekdays, start_time, end_time, interval_weeks, anchor_date, created_at)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+		block.UserID, block.Title, block.WeekdayCSV(), block.StartTime, block.EndTime,
+		block.IntervalWeeks, block.AnchorDate, time.Now().UTC().Format(time.RFC3339))
+	if err != nil {
+		return 0, fmt.Errorf("create recurring block for user %d: %w", block.UserID, err)
+	}
+	id, err := result.LastInsertId()
+	if err != nil {
+		return 0, fmt.Errorf("recurring block id: %w", err)
+	}
+	return id, nil
+}
+
+func (s *SQLiteStore) DeleteRecurringBlock(userID, id int64) error {
+	result, err := s.db.Exec("DELETE FROM recurring_blocks WHERE id = ? AND user_id = ?", id, userID)
+	if err != nil {
+		return fmt.Errorf("delete recurring block %d: %w", id, err)
+	}
+	affected, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("delete recurring block %d: %w", id, err)
+	}
+	if affected == 0 {
+		return fmt.Errorf("delete recurring block %d for user %d: %w", id, userID, ErrRecurringBlockNotFound)
+	}
+	return nil
 }
 
 // UpdatePassword replaces the owner's password hash. The caller verifies the

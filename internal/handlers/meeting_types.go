@@ -243,10 +243,25 @@ func formInt(r *http.Request, key string, fallback int) int {
 	return value
 }
 
+// numberInPath finds the id segment when the router is not in the way, which
+// is how handlers are exercised in tests.
+func numberInPath(path string) string {
+	parts := strings.Split(strings.Trim(path, "/"), "/")
+	for i := len(parts) - 1; i >= 0; i-- {
+		if _, err := strconv.ParseInt(parts[i], 10, 64); err == nil {
+			return parts[i]
+		}
+	}
+	return ""
+}
+
 func intParam(r *http.Request, key string) (int64, bool) {
 	raw := r.PathValue(key)
 	if raw == "" {
 		raw = r.FormValue(key)
+	}
+	if raw == "" {
+		raw = numberInPath(r.URL.Path)
 	}
 	value, err := strconv.ParseInt(raw, 10, 64)
 	if err != nil || value <= 0 {

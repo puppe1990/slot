@@ -81,6 +81,81 @@
   </form>
 
   <section class="rounded-xl border border-line bg-surface p-space-md">
+    <h2 class="text-headline-sm font-medium text-foam">{{ t "setup.recurring" }}</h2>
+    <p class="mt-1 text-body-sm text-muted">{{ t "setup.recurring_intro" }}</p>
+
+    {{ if .RecurringBlocks }}
+    <ul class="mt-space-md flex flex-col gap-2">
+      {{ range .RecurringBlocks }}
+      <li class="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-line bg-elevated px-3 py-2">
+        <div class="flex flex-wrap items-center gap-2">
+          <span class="text-body-md font-medium text-foam">{{ if .Title }}{{ .Title }}{{ else }}{{ t "setup.recurring_untitled" }}{{ end }}</span>
+          <span class="text-label-mono text-muted">
+            {{ range $i, $day := .Weekdays }}{{ if $i }} · {{ end }}{{ t (printf "weekday.%d" $day) }}{{ end }}
+            · {{ .StartTime }}–{{ .EndTime }}
+            · {{ if eq .IntervalWeeks 1 }}{{ t "setup.recurring_every_one" }}{{ else }}{{ t "setup.recurring_every" .IntervalWeeks }}{{ end }}
+          </span>
+        </div>
+        <form action="/setup/blocks/{{ .ID }}/delete" method="post">
+          <input type="hidden" name="csrf_token" value="{{ $.CSRFToken }}" />
+          <button type="submit" class="text-label-mono uppercase tracking-[0.08em] text-muted transition-colors hover:text-clay">{{ t "common.remove" }}</button>
+        </form>
+      </li>
+      {{ end }}
+    </ul>
+    {{ else }}
+    <p class="mt-space-md text-body-sm text-muted">{{ t "setup.recurring_empty" }}</p>
+    {{ end }}
+
+    <form action="/setup/blocks" method="post" class="mt-space-md flex flex-col gap-space-sm">
+      <input type="hidden" name="csrf_token" value="{{ .CSRFToken }}" />
+
+      <div class="grid gap-space-sm sm:grid-cols-[1fr_auto_auto_auto]">
+        <label class="flex flex-col gap-1">
+          <span class="text-label-ui uppercase tracking-[0.08em] text-muted">{{ t "setup.recurring_name" }}</span>
+          <input name="title" class="h-11 rounded-lg border border-line bg-canvas px-3 text-body-md text-foam outline-none focus:border-pine" placeholder="Morning Icaro Time" />
+        </label>
+        <label class="flex flex-col gap-1">
+          <span class="text-label-ui uppercase tracking-[0.08em] text-muted">{{ t "setup.recurring_start" }}</span>
+          <input name="start_time" type="time" value="07:00" required class="h-11 rounded-lg border border-line bg-canvas px-3 text-label-mono-lg text-foam outline-none focus:border-pine" />
+        </label>
+        <label class="flex flex-col gap-1">
+          <span class="text-label-ui uppercase tracking-[0.08em] text-muted">{{ t "setup.recurring_end" }}</span>
+          <input name="end_time" type="time" value="11:00" required class="h-11 rounded-lg border border-line bg-canvas px-3 text-label-mono-lg text-foam outline-none focus:border-pine" />
+        </label>
+        <label class="flex flex-col gap-1">
+          <span class="text-label-ui uppercase tracking-[0.08em] text-muted">{{ t "setup.recurring_weeks" }}</span>
+          <select name="interval_weeks" class="h-11 rounded-lg border border-line bg-canvas px-3 text-body-md text-foam outline-none focus:border-pine">
+            <option value="1">1</option>
+            <option value="2" selected>2</option>
+            <option value="3">3</option>
+            <option value="4">4</option>
+          </select>
+        </label>
+      </div>
+
+      <div class="flex flex-wrap items-end justify-between gap-space-sm">
+        <div class="flex flex-col gap-1">
+          <span class="text-label-ui uppercase tracking-[0.08em] text-muted">{{ t "setup.recurring_weekdays" }}</span>
+          <div class="flex flex-wrap gap-1">
+            {{ range $day := .WeekdayIndexes }}
+            <label class="flex h-9 items-center gap-1.5 rounded-lg border border-line bg-canvas px-2.5">
+              <input type="checkbox" name="weekdays" value="{{ $day }}" {{ if and (ge $day 1) (le $day 5) }}checked{{ end }} class="h-3.5 w-3.5 accent-[#1B382B]" />
+              <span class="text-label-mono text-slate">{{ t (printf "weekday.%d" $day) }}</span>
+            </label>
+            {{ end }}
+          </div>
+        </div>
+        <label class="flex flex-col gap-1">
+          <span class="text-label-ui uppercase tracking-[0.08em] text-muted">{{ t "setup.recurring_anchor" }}</span>
+          <input name="anchor_date" type="date" value="{{ .Today }}" required class="h-11 rounded-lg border border-line bg-canvas px-3 text-label-mono-lg text-foam outline-none focus:border-pine" />
+        </label>
+        <button type="submit" class="h-11 rounded-lg border border-line px-4 text-label-ui uppercase tracking-[0.08em] text-foam transition-colors hover:border-line-strong">{{ t "setup.recurring_add" }}</button>
+      </div>
+    </form>
+  </section>
+
+  <section class="rounded-xl border border-line bg-surface p-space-md">
     <div class="flex flex-wrap items-center justify-between gap-2">
       <h2 class="text-headline-sm font-medium text-foam">{{ t "setup.overrides" }}</h2>
       <span class="text-label-mono uppercase tracking-[0.08em] text-muted">{{ t "setup.overrides_range" }}</span>

@@ -125,3 +125,10 @@ amarra-cais pwa --bump     # after HTML changes when testing on a phone
 - `internal/slotcli` — HTTP client used by both `cmd/slot` and `cmd/slot-mcp`. Never duplicate request code in the binaries.
 - Booking side effects (calendar, room, notices) live in `base.finalizeBooking` / `cancelBooking` / `rescheduleBooking` so the web flow, the CLI and the MCP cannot drift.
 - MCP stdio = newline-delimited JSON-RPC. Notifications (no `id`) never get a reply; tool failures come back as `result.isError`, not as RPC errors.
+
+## Recurring blocks
+
+- `internal/scheduling/recurring.go` — `ExpandRecurringBlocks` turns "weekdays + clock + every N weeks + anchor date" into busy intervals; the gap check then reuses the normal collision path.
+- Weeks are counted from **Monday of the anchor week** and the day difference uses noon UTC, so a DST transition cannot flip the parity.
+- Blocks are busy windows, not extra availability: they subtract from the weekly hours. If "open hours on the off week" is ever needed, that is a new feature, not a flag.
+- `buildSlots` is the only place that expands them; the public page, the dashboard and the admin API all inherit the behaviour.
