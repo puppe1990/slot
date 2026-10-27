@@ -16,6 +16,7 @@ type timezoneOption struct {
 }
 
 type slotView struct {
+	Date       string
 	StartISO   string
 	EndISO     string
 	GuestClock string
@@ -48,6 +49,9 @@ type slotPageData struct {
 	NextDate        string
 	TimezoneOptions []timezoneOption
 	TotalAvailable  int
+	// All carries every slot in the horizon (date + labels), used by the CLI
+	// and the MCP server, which need the list rather than the 7-day strip.
+	All []slotView
 }
 
 func (b base) buildSlots(ctx context.Context, meetingType models.MeetingType, guestTimezone, requestedDate string, excludeBookingID int64, l localeText) (slotPageData, error) {
@@ -106,16 +110,20 @@ func (b base) buildSlots(ctx context.Context, meetingType models.MeetingType, gu
 	}
 
 	byDate := map[string][]slotView{}
+	all := make([]slotView, 0, len(slots))
 	for _, slot := range slots {
 		key := formatDateKey(slot.Start, ownerLocation)
-		byDate[key] = append(byDate[key], slotView{
+		view := slotView{
+			Date:       key,
 			StartISO:   slot.Start.Format(time.RFC3339),
 			EndISO:     slot.End.Format(time.RFC3339),
 			GuestClock: l.clock(slot.Start, guestLocation),
 			GuestRange: l.clockRange(slot.Start, slot.End, guestLocation),
 			HostClock:  l.clock(slot.Start, ownerLocation),
 			HostRange:  l.clockRange(slot.Start, slot.End, ownerLocation),
-		})
+		}
+		byDate[key] = append(byDate[key], view)
+		all = append(all, view)
 	}
 
 	today := time.Date(now.In(ownerLocation).Year(), now.In(ownerLocation).Month(), now.In(ownerLocation).Day(), 0, 0, 0, 0, ownerLocation)
@@ -171,6 +179,7 @@ func (b base) buildSlots(ctx context.Context, meetingType models.MeetingType, gu
 		NextDate:        nextDate.Format(dateKeyLayout),
 		TimezoneOptions: buildTimezoneOptions(guestTimezone),
 		TotalAvailable:  len(slots),
+		All:             all,
 	}, nil
 }
 

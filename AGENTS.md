@@ -118,3 +118,10 @@ amarra-cais pwa --bump     # after HTML changes when testing on a phone
 - Grow files past ~500 lines
 - Ship a feature without a headless test
 - Log raw hold/guest tokens
+
+## Machine surface
+
+- `internal/handlers/admin_api.go` — JSON under `/api/admin/*`, behind `middleware.AdminAuth` (Bearer `ADMIN_TOKEN`). It acts as `FirstOwner()`: single-owner app, no per-token scopes.
+- `internal/slotcli` — HTTP client used by both `cmd/slot` and `cmd/slot-mcp`. Never duplicate request code in the binaries.
+- Booking side effects (calendar, room, notices) live in `base.finalizeBooking` / `cancelBooking` / `rescheduleBooking` so the web flow, the CLI and the MCP cannot drift.
+- MCP stdio = newline-delimited JSON-RPC. Notifications (no `id`) never get a reply; tool failures come back as `result.isError`, not as RPC errors.

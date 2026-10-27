@@ -36,6 +36,7 @@ var (
 type Store interface {
 	FindUserByEmail(email string) (models.User, error)
 	GetUser(id int64) (models.User, error)
+	FirstOwner() (models.User, error)
 	CreateUser(email, passwordHash string) (int64, error)
 	CountUsers() (int, error)
 	UpdateOwnerProfile(userID int64, name, timezone string) error
@@ -150,6 +151,16 @@ func (s *SQLiteStore) FindUserByEmail(email string) (models.User, error) {
 		return models.User{}, fmt.Errorf("find user: %w", err)
 	}
 	return u, nil
+}
+
+// FirstOwner is the single account this app serves. The CLI and the MCP
+// server act on its behalf.
+func (s *SQLiteStore) FirstOwner() (models.User, error) {
+	var id int64
+	if err := s.db.QueryRow("SELECT id FROM users ORDER BY id LIMIT 1").Scan(&id); err != nil {
+		return models.User{}, fmt.Errorf("first owner: %w", err)
+	}
+	return s.GetUser(id)
 }
 
 func (s *SQLiteStore) GetUser(id int64) (models.User, error) {

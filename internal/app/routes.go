@@ -27,6 +27,7 @@ func registerRoutes(r *cais.Router, deps Deps, cfg cais.Config) {
 	dashboard := handlers.NewDashboardHandler(handlerDeps)
 	setup := handlers.NewSetupHandler(handlerDeps)
 	settings := handlers.NewSettingsHandler(handlerDeps)
+	adminAPI := handlers.NewAdminAPI(handlerDeps)
 	meetingTypes := handlers.NewMeetingTypeHandler(handlerDeps)
 	booking := handlers.NewBookingHandler(handlerDeps)
 	manage := handlers.NewManageHandler(handlerDeps)
@@ -62,6 +63,16 @@ func registerRoutes(r *cais.Router, deps Deps, cfg cais.Config) {
 
 	notFound := handlers.NewNotFoundHandler(handlerDeps)
 	r.NotFound(notFound.ServeHTTP)
+
+	// Machine surface for the CLI and the MCP server: Bearer ADMIN_TOKEN only.
+	r.Group(middleware.AdminAuth(cfg), func(g *cais.Router) {
+		g.Get("/api/admin/bookings", adminAPI.Bookings)
+		g.Get("/api/admin/formats", adminAPI.Formats)
+		g.Get("/api/admin/slots", adminAPI.Slots)
+		g.Post("/api/admin/bookings", adminAPI.CreateBooking)
+		g.Post("/api/admin/bookings/{id}/cancel", adminAPI.CancelBooking)
+		g.Post("/api/admin/bookings/{id}/reschedule", adminAPI.RescheduleBooking)
+	})
 
 	r.Get("/settings", owner(settings.Show))
 	r.Post("/settings", owner(settings.Save))

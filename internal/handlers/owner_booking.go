@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"errors"
-	"log"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -206,8 +205,7 @@ func (h *DashboardHandler) Reschedule(w http.ResponseWriter, r *http.Request) {
 			validate.FieldErrors{"slot": l.t("owner_reschedule.error")}, http.StatusUnprocessableEntity)
 		return
 	}
-	end := start.Add(time.Duration(booking.MeetingTypeDuration) * time.Minute)
-	if err := h.deps.Store.RescheduleBooking(booking.ID, start.UTC(), end.UTC(), models.ActorOwner, "Owner rescheduled", h.now()); err != nil {
+	if err := h.rescheduleBooking(r, booking, start, models.ActorOwner, "Owner rescheduled", ""); err != nil {
 		if errors.Is(err, store.ErrSlotUnavailable) {
 			h.renderReschedule(w, r, owner.User.ID, booking,
 				validate.FieldErrors{"slot": l.t("owner_reschedule.unavailable")}, http.StatusConflict)
@@ -216,14 +214,6 @@ func (h *DashboardHandler) Reschedule(w http.ResponseWriter, r *http.Request) {
 		h.serverError(w, r, err)
 		return
 	}
-
-	if booking.CalendarEventID != "" {
-		if err := h.deps.Calendar.UpdateEvent(r.Context(), booking.CalendarEventID, start.UTC(), end.UTC()); err != nil {
-			log.Printf("slot: update calendar event for booking %d: %v", booking.ID, err)
-		}
-	}
-	h.sendMoved(r, booking, "")
-	h.sendOwnerMoved(r, booking)
 	flash.Set(w, "notice", l.t("owner_reschedule.saved"), h.deps.Config.CookieSecure())
 	http.Redirect(w, r, "/dashboard", http.StatusSeeOther)
 }

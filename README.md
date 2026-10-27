@@ -30,21 +30,64 @@ make ci                    # tests + golangci-lint + prettier check
 
 ## Routes
 
-| Route                                                      | Purpose                                                              |
-| ---------------------------------------------------------- | -------------------------------------------------------------------- |
-| `/`                                                        | Owner → `/dashboard`; visitor → first published format               |
-| `/login`, `/signup`, `/forgot-password`, `/reset-password` | Owner auth (session + password)                                      |
-| `/dashboard`                                               | Upcoming bookings, volume, committed time, public link               |
-| `/setup`                                                   | Name, home timezone, weekly hours, date overrides, calendar provider |
-| `/meeting-types`                                           | List/create formats, pause/publish                                   |
-| `/meeting-types/:id/edit`                                  | Duration, buffers, notice, horizon, modality                         |
-| `/book/:slug`                                              | Public booking page (date strip + slots)                             |
-| `POST /book/:slug/hold`                                    | Create a 10-minute hold; token goes to an HttpOnly cookie            |
-| `/book/:slug/confirm`                                      | Guest form for the held slot                                         |
-| `POST /book/:slug/confirm`                                 | Atomically converts the hold into a confirmed booking                |
-| `/manage/:token`                                           | Guest self-serve reschedule/cancel                                   |
-| `GET /manage/:token/invite.ics`                            | Calendar file                                                        |
-| `/api/health`                                              | DB probe JSON                                                        |
+| Route                                                      | Purpose                                                        |
+| ---------------------------------------------------------- | -------------------------------------------------------------- |
+| `/`                                                        | Owner → `/dashboard`; visitor → first published format         |
+| `/login`, `/signup`, `/forgot-password`, `/reset-password` | Owner auth (session + password)                                |
+| `/dashboard`                                               | Upcoming bookings, volume, committed time, public link         |
+| `/settings`                                                | Account: display name, home timezone, password                 |
+| `/setup`                                                   | Weekly hours, date overrides, calendar provider                |
+| `/meeting-types`                                           | List/create formats, pause/publish                             |
+| `/meeting-types/:id/edit`                                  | Duration, buffers, notice, horizon, modality                   |
+| `/book/:slug`                                              | Public booking page (date strip + slots)                       |
+| `POST /book/:slug/hold`                                    | Create a 10-minute hold; token goes to an HttpOnly cookie      |
+| `/book/:slug/confirm`                                      | Guest form for the held slot                                   |
+| `POST /book/:slug/confirm`                                 | Atomically converts the hold into a confirmed booking          |
+| `/manage/:token`                                           | Guest self-serve reschedule/cancel                             |
+| `GET /manage/:token/invite.ics`                            | Calendar file                                                  |
+| `/api/health`                                              | DB probe JSON                                                  |
+| `/api/admin/*`                                             | JSON API for the CLI and the MCP server (Bearer `ADMIN_TOKEN`) |
+
+## CLI
+
+```bash
+go install github.com/puppe1990/slot/cmd/slot@latest
+
+export SLOT_URL=https://slot.apps.gestaobem.com
+export SLOT_TOKEN=<ADMIN_TOKEN>     # the app's ADMIN_TOKEN
+
+slot formats
+slot slots --format 30min --days 7 --tz America/Sao_Paulo
+slot book --format 30min --slot 2026-10-28T13:00:00Z \
+  --name "Marina Costa" --email marina@example.com --whatsapp "+5511999998888"
+slot bookings --status upcoming --days 30
+slot cancel 12 --reason "conflict"
+slot reschedule 12 --slot 2026-10-29T15:00:00Z
+```
+
+Every command accepts `--json` for scripting and `--url` / `--token` to override the env.
+
+## MCP
+
+`slot-mcp` speaks MCP over stdio and calls the same admin API, so an agent can read the agenda, find a free slot, book, move or cancel sessions.
+
+```json
+{
+  "mcpServers": {
+    "slot": {
+      "command": "slot-mcp",
+      "env": {
+        "SLOT_URL": "https://slot.apps.gestaobem.com",
+        "SLOT_TOKEN": "<ADMIN_TOKEN>"
+      }
+    }
+  }
+}
+```
+
+Tools: `slot_formats_list`, `slot_slots_list`, `slot_bookings_list`, `slot_booking_create`, `slot_booking_reschedule`, `slot_booking_cancel`.
+
+Both clients are thin: the authorisation, the double-booking rules and the e-mail/video side effects all live in the app.
 
 ## Data model
 
