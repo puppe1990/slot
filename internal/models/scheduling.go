@@ -58,6 +58,7 @@ type Booking struct {
 	MeetingTypeID      int64
 	GuestName          string
 	GuestEmail         string
+	GuestWhatsApp      string
 	GuestNotes         string
 	GuestTimezone      string
 	StartUTC           time.Time
