@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"errors"
-	"log"
 	"net/http"
 	"strings"
 	"time"
@@ -10,8 +9,6 @@ import (
 	"github.com/puppe1990/amarra-cais/pkg/cais/httpx"
 	"github.com/puppe1990/amarra-cais/pkg/cais/validate"
 
-	"github.com/puppe1990/slot/internal/calendar"
-	"github.com/puppe1990/slot/internal/call"
 	"github.com/puppe1990/slot/internal/guesttoken"
 	"github.com/puppe1990/slot/internal/models"
 	"github.com/puppe1990/slot/internal/store"
@@ -184,42 +181,7 @@ func (h *BookingHandler) Confirm(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	event, err := h.deps.Calendar.CreateEvent(r.Context(), calendar.Event{
-		Summary:   booking.MeetingTypeTitle + " · " + name,
-		Details:   bookingNotes(booking),
-		Start:     booking.StartUTC,
-		End:       booking.EndUTC,
-		Attendees: []string{email, booking.OwnerEmail},
-		Location:  meetingLocation(booking, h.localeFor(r)),
-	})
-	if err != nil {
-		// The slot is already committed; a calendar hiccup must not lose the
-		// guest's confirmation. The owner still sees the booking in the app.
-		log.Printf("slot: create calendar event for booking %d: %v", booking.ID, err)
-	} else if err := h.deps.Store.AttachCalendarEvent(booking.ID, event.ID); err != nil {
-		log.Printf("slot: attach calendar event %s to booking %d: %v", event.ID, booking.ID, err)
-	}
-
-	room, err := h.deps.Call.CreateRoom(r.Context(), call.Input{
-		BookingID: booking.ID,
-		Title:     booking.MeetingTypeTitle,
-		Start:     booking.StartUTC,
-		End:       booking.EndUTC,
-	})
-	if err != nil {
-		// Same rule as the calendar: the slot is already committed, so a
-		// vendor hiccup must not lose the confirmation.
-		log.Printf("slot: create room for booking %d: %v", booking.ID, err)
-	} else if room.URL != "" {
-		if err := h.deps.Store.AttachMeetingURL(booking.ID, room.URL); err != nil {
-			log.Printf("slot: attach room to booking %d: %v", booking.ID, err)
-		}
-		booking.MeetingURL = room.URL
-	}
-
-	manageURL := h.absoluteURL(r, "/manage/"+guestToken)
-	h.sendConfirmed(r, booking, manageURL)
-	h.sendOwnerNew(r, booking)
+	h.finalizeBooking(r, booking, guestToken)
 
 	h.clearHoldCookie(w)
 	http.Redirect(w, r, "/manage/"+guestToken, http.StatusSeeOther)

@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"errors"
-	"log"
 	"net/http"
 	"strings"
 	"time"
@@ -150,7 +149,7 @@ func (h *DashboardHandler) Cancel(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	reason := strings.TrimSpace(r.FormValue("reason"))
-	if err := h.deps.Store.CancelBooking(booking.ID, models.ActorOwner, reason); err != nil {
+	if err := h.cancelBooking(r, booking, models.ActorOwner, reason, ""); err != nil {
 		if errors.Is(err, store.ErrBookingNotFound) {
 			http.NotFound(w, r)
 			return
@@ -158,18 +157,6 @@ func (h *DashboardHandler) Cancel(w http.ResponseWriter, r *http.Request) {
 		h.serverError(w, r, err)
 		return
 	}
-	if booking.CalendarEventID != "" {
-		if err := h.deps.Calendar.DeleteEvent(r.Context(), booking.CalendarEventID); err != nil {
-			log.Printf("slot: delete calendar event for booking %d: %v", booking.ID, err)
-		}
-	}
-	if booking.MeetingURL != "" {
-		if err := h.deps.Call.EndRoom(r.Context(), call.Room{URL: booking.MeetingURL}); err != nil {
-			log.Printf("slot: end room for booking %d: %v", booking.ID, err)
-		}
-	}
-	h.sendCancelled(r, booking, "", reason)
-	h.sendOwnerCancelled(r, booking, reason)
 	flash.Set(w, "notice", h.localeFor(r).t("dashboard.cancelled_flash"), h.deps.Config.CookieSecure())
 	http.Redirect(w, r, "/dashboard", http.StatusSeeOther)
 }

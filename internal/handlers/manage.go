@@ -88,7 +88,7 @@ func (h *ManageHandler) Cancel(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	reason := strings.TrimSpace(r.FormValue("reason"))
-	if err := h.deps.Store.CancelBooking(booking.ID, models.ActorGuest, reason); err != nil {
+	if err := h.cancelBooking(r, booking, models.ActorGuest, reason, h.absoluteURL(r, h.managePath(r))); err != nil {
 		if errors.Is(err, store.ErrBookingNotFound) {
 			http.NotFound(w, r)
 			return
@@ -96,19 +96,7 @@ func (h *ManageHandler) Cancel(w http.ResponseWriter, r *http.Request) {
 		h.serverError(w, r, err)
 		return
 	}
-	if booking.CalendarEventID != "" {
-		if err := h.deps.Calendar.DeleteEvent(r.Context(), booking.CalendarEventID); err != nil {
-			log.Printf("slot: delete calendar event for booking %d: %v", booking.ID, err)
-		}
-	}
-	if booking.MeetingURL != "" {
-		if err := h.deps.Call.EndRoom(r.Context(), call.Room{URL: booking.MeetingURL}); err != nil {
-			log.Printf("slot: end room for booking %d: %v", booking.ID, err)
-		}
-	}
-	h.sendCancelled(r, booking, h.absoluteURL(r, r.URL.Path), reason)
-	h.sendOwnerCancelled(r, booking, reason)
-	http.Redirect(w, r, r.URL.Path, http.StatusSeeOther)
+	http.Redirect(w, r, h.managePath(r), http.StatusSeeOther)
 }
 
 // Join issues a meeting token for the guest and redirects into the room. The
@@ -190,6 +178,11 @@ func (h *ManageHandler) Invite(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Disposition", `attachment; filename="slot-booking.ics"`)
 	w.WriteHeader(http.StatusOK)
 	_, _ = w.Write(document)
+}
+
+// managePath is the page that owns this request, without the action suffix.
+func (h *ManageHandler) managePath(r *http.Request) string {
+	return strings.TrimSuffix(strings.TrimSuffix(r.URL.Path, "/reschedule"), "/cancel")
 }
 
 // managePathFrom strips the action suffix so an error or a successful action
