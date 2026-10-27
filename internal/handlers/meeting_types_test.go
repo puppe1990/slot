@@ -45,3 +45,37 @@ func TestMeetingTypesListRendersAfterCreate(t *testing.T) {
 		}
 	}
 }
+
+// The editor renders a <select> per modality from locationOptions; a mismatch
+// between the Go struct and the template fields breaks the page at render time
+// (it shipped once as "can't evaluate field Value in type string").
+func TestMeetingTypeEditRenders(t *testing.T) {
+	env := setupTestEnv(t)
+	meetingType := env.seedMeetingType(t, "30min", 30)
+	handler := NewMeetingTypeHandler(env.deps)
+
+	req := httptest.NewRequest(http.MethodGet, "/meeting-types/1/edit", nil)
+	req.SetPathValue("id", "1")
+	req = session.WithUserID(req, env.ownerID)
+	rec := httptest.NewRecorder()
+	handler.Edit(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("edit = %d: %s", rec.Code, rec.Body.String())
+	}
+	body := rec.Body.String()
+	for _, want := range []string{
+		meetingType.Title,
+		`value="GOOGLE_MEET"`,
+		`value="PHONE"`,
+		`value="CUSTOM"`,
+		"Save format",
+	} {
+		if !strings.Contains(body, want) {
+			t.Errorf("edit page missing %q", want)
+		}
+	}
+	if strings.Contains(body, "can't evaluate field") {
+		t.Error("edit page leaked a template error")
+	}
+}
