@@ -24,18 +24,18 @@ Bug fix ⇒ regression test in the same commit.
 
 ## Layout
 
-| Path                     | Responsibility                                 |
-| ------------------------ | ---------------------------------------------- |
-| `internal/scheduling/`   | Pure slot engine (no I/O)                      |
-| `internal/store/`        | SQLite, migrations, transactions               |
-| `internal/guesttoken/`   | HMAC sign/parse + hashing                      |
-| `internal/calendar/`     | Provider interface, fake, Google adapter       |
-| `internal/notify/`       | Notifier interface + outbox                    |
-| `internal/ics/`          | RFC 5545 builder                               |
-| `internal/handlers/`     | HTTP handlers, view models, formatting         |
-| `internal/app/`          | Bootstrap, adapter selection, routes           |
-| `web/templates/layouts/` | `app.html` (owner) and `booking.html` (public) |
-| `web/templates/pages/`   | HTML pages (`{{ define "content" }}`)          |
+| Path                     | Responsibility                                                        |
+| ------------------------ | --------------------------------------------------------------------- |
+| `internal/scheduling/`   | Pure slot engine (no I/O)                                             |
+| `internal/store/`        | SQLite, migrations, transactions                                      |
+| `internal/guesttoken/`   | HMAC sign/parse + hashing                                             |
+| `internal/calendar/`     | Provider interface, fake, Google adapter                              |
+| `internal/notify/`       | Notifier interface + outbox                                           |
+| `internal/ics/`          | RFC 5545 builder                                                      |
+| `internal/handlers/`     | HTTP handlers, view models, formatting                                |
+| `internal/app/`          | Bootstrap, adapter selection, routes                                  |
+| `web/templates/layouts/` | `app.html` (owner, with the account menu) and `booking.html` (public) |
+| `web/templates/pages/`   | HTML pages (`{{ define "content" }}`)                                 |
 
 Handler constructors take `Deps` (store, views, site, config, calendar, notifier, signer, clock). Inject them; never reach for a global or `time.Now()` inside domain logic.
 

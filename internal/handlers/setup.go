@@ -65,14 +65,9 @@ func (h *SetupHandler) Save(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	name := strings.TrimSpace(r.FormValue("name"))
-	timezone := normalizeTimezone(r.FormValue("timezone"), owner.User.Timezone)
 	rules := h.readWeeklyRules(r)
 
 	var errs validate.FieldErrors
-	if name == "" {
-		errs.Add("name", h.localeFor(r).t("setup.error_name"))
-	}
 	if len(rules) == 0 {
 		errs.Add("availability", h.localeFor(r).t("setup.error_window"))
 	}
@@ -82,10 +77,6 @@ func (h *SetupHandler) Save(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := h.deps.Store.UpdateOwnerProfile(owner.User.ID, name, timezone); err != nil {
-		h.serverError(w, r, err)
-		return
-	}
 	if err := h.deps.Store.ReplaceAvailabilityRules(owner.User.ID, rules); err != nil {
 		h.serverError(w, r, err)
 		return
@@ -205,20 +196,16 @@ func (h *SetupHandler) render(w http.ResponseWriter, r *http.Request, owner mode
 
 	published, _ := h.deps.Store.DefaultMeetingType()
 	h.page(w, r, "app", "setup", map[string]any{
-		"Title":             "Availability",
-		"PublicPath":        publicPath(published),
-		"ActiveNav":         "setup",
-		"Owner":             owner,
-		"Weekdays":          buildWeekdayRows(rules),
-		"TimezoneOptions":   buildTimezoneOptions(normalizeTimezone(owner.Timezone, "UTC")),
-		"Connection":        connection,
-		"Overrides":         overrides,
-		"Errors":            errs,
-		"GoogleAvailable":   h.deps.Calendar.Provider() == calendar.ProviderGoogle,
-		"TimezoneAbbrevNow": zoneOffset(now, mustLocation(owner.Timezone)),
-		// A first visit may preselect the browser zone: the account was just
-		// created with the UTC default and nothing was saved yet.
-		"FirstVisit": len(rules) == 0,
+		"Title":           "Availability",
+		"PublicPath":      publicPath(published),
+		"ActiveNav":       "setup",
+		"Owner":           owner,
+		"Profile":         presentProfile(owner),
+		"Weekdays":        buildWeekdayRows(rules),
+		"Connection":      connection,
+		"Overrides":       overrides,
+		"Errors":          errs,
+		"GoogleAvailable": h.deps.Calendar.Provider() == calendar.ProviderGoogle,
 	}, status)
 }
 

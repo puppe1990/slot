@@ -67,12 +67,37 @@
             title="Public booking portal"
           >{{ t "nav.public_portal" }}</a>
           {{ end }}
-          <.form action="/logout" method="post">
+          {{ with .Owner }}
+          <div amarra-hook="dropdown" class="relative">
             <button
-              type="submit"
-              class="h-8 rounded-full border border-line px-3 text-label-ui uppercase tracking-[0.08em] text-slate transition-colors hover:border-slate hover:text-foam"
-            >{{ t "nav.sign_out" }}</button>
-          </.form>
+              type="button"
+              data-amarra-dropdown-button
+              aria-expanded="false"
+              aria-label="{{ t "nav.account" }}"
+              class="flex h-9 items-center gap-2 rounded-full border border-line pl-1 pr-2 transition-colors hover:border-slate"
+            >
+              <span class="flex h-7 w-7 items-center justify-center rounded-full bg-moss/70 text-label-ui font-semibold text-pine">{{ slice .DisplayName 0 1 }}</span>
+              <span class="hidden max-w-[130px] truncate text-label-ui uppercase tracking-[0.08em] text-slate sm:inline">{{ .DisplayName }}</span>
+              <svg class="h-3.5 w-3.5 text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 9l6 6 6-6" /></svg>
+            </button>
+            <div
+              data-amarra-dropdown-menu
+              hidden
+              class="absolute right-0 z-50 mt-2 w-64 rounded-xl border border-line bg-canvas p-1 shadow-layer"
+            >
+              <div class="px-3 py-2">
+                <span class="block truncate text-body-sm font-medium text-foam">{{ .DisplayName }}</span>
+                <span class="block truncate text-label-mono text-muted">{{ .Email }}</span>
+              </div>
+              <a href="/settings" class="block rounded-lg px-3 py-2 text-label-ui uppercase tracking-[0.08em] text-slate transition-colors hover:bg-surface hover:text-foam">{{ t "nav.settings" }}</a>
+              <a href="/setup" class="block rounded-lg px-3 py-2 text-label-ui uppercase tracking-[0.08em] text-slate transition-colors hover:bg-surface hover:text-foam">{{ t "nav.availability" }}</a>
+              <form action="/logout" method="post">
+                <input type="hidden" name="csrf_token" value="{{ $.CSRFToken }}" />
+                <button type="submit" class="block w-full rounded-lg px-3 py-2 text-left text-label-ui uppercase tracking-[0.08em] text-slate transition-colors hover:bg-surface hover:text-foam">{{ t "nav.sign_out" }}</button>
+              </form>
+            </div>
+          </div>
+          {{ end }}
           {{ else }}
           <a href="/login" class="text-label-ui uppercase tracking-[0.08em] text-slate hover:text-foam">{{ t "nav.sign_in" }}</a>
           {{ end }}
