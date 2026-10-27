@@ -114,7 +114,7 @@ func (h *ManageHandler) Invite(w http.ResponseWriter, r *http.Request) {
 		End:            booking.EndUTC,
 		Summary:        booking.MeetingTypeTitle + " · " + booking.OwnerName,
 		Description:    bookingNotes(booking),
-		Location:       meetingLocation(booking),
+		Location:       meetingLocation(booking, h.localeFor(r)),
 		OrganizerName:  booking.OwnerName,
 		OrganizerEmail: booking.OwnerEmail,
 		AttendeeName:   booking.GuestName,

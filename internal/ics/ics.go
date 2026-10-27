@@ -25,12 +25,34 @@ type Event struct {
 }
 
 func Build(event Event) []byte {
+	return BuildCalendar([]Event{event})
+}
+
+// BuildCalendar renders one VCALENDAR with every event — used by the owner's
+// dashboard export, where downloading one file per booking would be absurd.
+func BuildCalendar(events []Event) []byte {
 	lines := []string{
 		"BEGIN:VCALENDAR",
 		"VERSION:2.0",
 		"PRODID:-//Slot//Scheduling//EN",
 		"CALSCALE:GREGORIAN",
 		"METHOD:PUBLISH",
+	}
+	for _, event := range events {
+		lines = append(lines, eventLines(event)...)
+	}
+	lines = append(lines, "END:VCALENDAR")
+
+	var builder strings.Builder
+	for _, line := range lines {
+		builder.WriteString(fold(line))
+		builder.WriteString("\r\n")
+	}
+	return []byte(builder.String())
+}
+
+func eventLines(event Event) []string {
+	lines := []string{
 		"BEGIN:VEVENT",
 		"UID:" + text(event.UID),
 		"DTSTAMP:" + stamp(time.Now().UTC()),
@@ -54,14 +76,7 @@ func Build(event Event) []byte {
 	if event.URL != "" {
 		lines = append(lines, "URL:"+event.URL)
 	}
-	lines = append(lines, "END:VEVENT", "END:VCALENDAR")
-
-	var builder strings.Builder
-	for _, line := range lines {
-		builder.WriteString(fold(line))
-		builder.WriteString("\r\n")
-	}
-	return []byte(builder.String())
+	return append(lines, "END:VEVENT")
 }
 
 func stamp(ts time.Time) string {

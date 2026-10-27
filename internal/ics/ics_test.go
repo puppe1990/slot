@@ -82,3 +82,32 @@ func TestBuildFoldsLongLines(t *testing.T) {
 		}
 	}
 }
+
+func TestBuildCalendarRendersEveryEvent(t *testing.T) {
+	document := string(ics.BuildCalendar([]ics.Event{
+		{
+			UID:     "booking-1@slot",
+			Start:   time.Date(2026, 10, 27, 14, 0, 0, 0, time.UTC),
+			End:     time.Date(2026, 10, 27, 14, 30, 0, 0, time.UTC),
+			Summary: "Advisory one",
+		},
+		{
+			UID:     "booking-2@slot",
+			Start:   time.Date(2026, 10, 28, 15, 0, 0, 0, time.UTC),
+			End:     time.Date(2026, 10, 28, 15, 30, 0, 0, time.UTC),
+			Summary: "Advisory two",
+		},
+	}))
+
+	if got := strings.Count(document, "BEGIN:VEVENT"); got != 2 {
+		t.Fatalf("BEGIN:VEVENT = %d, want 2", got)
+	}
+	if got := strings.Count(document, "BEGIN:VCALENDAR"); got != 1 {
+		t.Fatalf("BEGIN:VCALENDAR = %d, want 1", got)
+	}
+	for _, want := range []string{"UID:booking-1@slot", "UID:booking-2@slot", "SUMMARY:Advisory one", "SUMMARY:Advisory two"} {
+		if !strings.Contains(document, want) {
+			t.Errorf("document missing %q", want)
+		}
+	}
+}

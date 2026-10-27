@@ -136,6 +136,23 @@ var ptMessages = map[string]string{
 	"setup.error_name":       "O convidado precisa de um nome para cumprimentar",
 	"setup.error_window":     "Abra pelo menos uma janela para o convidado agendar",
 
+	"dashboard.filter":           "Filtro",
+	"dashboard.period":           "Período",
+	"dashboard.status_upcoming":  "Próximas",
+	"dashboard.status_past":      "Passadas",
+	"dashboard.status_cancelled": "Canceladas",
+	"dashboard.status_all":       "Todas",
+	"dashboard.days_7":           "7 dias",
+	"dashboard.days_30":          "30 dias",
+	"dashboard.days_90":          "90 dias",
+	"dashboard.apply":            "Aplicar",
+	"dashboard.export":           "Exportar .ics",
+	"dashboard.empty_filtered":   "Nenhuma reserva neste filtro.",
+	"dashboard.reschedule":       "Reagendar",
+	"dashboard.ics":              "iCal",
+	"dashboard.list_count_one":   "1 reserva",
+	"dashboard.list_count":       "%d reservas",
+
 	// Formatos
 	"formats.eyebrow":                 "Formatos",
 	"formats.title":                   "O que o convidado pode agendar",
@@ -236,6 +253,17 @@ var ptMessages = map[string]string{
 	"manage.error_cancelled":    "Esta reserva está cancelada e não pode mais mudar.",
 	"manage.error_pick":         "Escolha um novo horário",
 	"manage.error_taken":        "Esse horário não está mais livre. Escolha outro.",
+
+	"owner_reschedule.eyebrow":     "Reagendar",
+	"owner_reschedule.title":       "Mover a sessão",
+	"owner_reschedule.current":     "Agora: %s · %s",
+	"owner_reschedule.move":        "Mover sessão",
+	"owner_reschedule.saved":       "Sessão movida e o convidado avisado.",
+	"owner_reschedule.error":       "Escolha um novo horário.",
+	"owner_reschedule.unavailable": "Esse horário acabou de ser tomado.",
+	"owner_reschedule.cancelled":   "Esta reserva está cancelada.",
+	"owner_reschedule.subject":     "Sessão remarcada",
+	"owner_reschedule.body":        "O anfitrião moveu a sessão para %s.",
 
 	// Landing e 404
 	"landing.eyebrow": "Slot",

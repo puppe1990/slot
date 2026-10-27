@@ -88,8 +88,29 @@
   <section class="flex flex-col gap-space-sm">
     <div class="flex items-end justify-between gap-3">
       <h2 class="text-headline-sm font-medium text-foam">{{ t "dashboard.bookings" }}</h2>
-      <span class="text-label-mono uppercase tracking-[0.1em] text-muted">{{ t "dashboard.confirmed_count" .UpcomingCount }}</span>
+      <span class="text-label-mono uppercase tracking-[0.1em] text-muted">{{ if eq .ListCount 1 }}{{ t "dashboard.list_count_one" }}{{ else }}{{ t "dashboard.list_count" .ListCount }}{{ end }}</span>
     </div>
+
+    <form action="/dashboard" method="get" class="flex flex-wrap items-end gap-2 rounded-xl border border-line bg-surface px-space-md py-space-sm">
+      <label class="flex flex-col gap-1">
+        <span class="text-label-mono uppercase tracking-[0.08em] text-muted">{{ t "dashboard.filter" }}</span>
+        <select name="status" class="h-9 rounded-lg border border-line bg-canvas px-2 text-label-mono text-foam outline-none focus:border-pine">
+          {{ range .StatusOptions }}
+          <option value="{{ .Value }}" {{ if .Selected }}selected{{ end }}>{{ t .LabelKey }}</option>
+          {{ end }}
+        </select>
+      </label>
+      <label class="flex flex-col gap-1">
+        <span class="text-label-mono uppercase tracking-[0.08em] text-muted">{{ t "dashboard.period" }}</span>
+        <select name="days" class="h-9 rounded-lg border border-line bg-canvas px-2 text-label-mono text-foam outline-none focus:border-pine">
+          {{ range .DayOptions }}
+          <option value="{{ .Value }}" {{ if .Selected }}selected{{ end }}>{{ t .LabelKey }}</option>
+          {{ end }}
+        </select>
+      </label>
+      <button type="submit" class="inline-flex h-9 items-center rounded-lg border border-line px-3 text-label-ui uppercase tracking-[0.08em] text-slate transition-colors hover:border-slate hover:text-foam">{{ t "dashboard.apply" }}</button>
+      <a href="{{ .ExportURL }}" data-amarra-skip class="ml-auto inline-flex h-9 items-center gap-1.5 rounded-lg bg-pine px-3 text-label-ui uppercase tracking-[0.08em] text-white transition-transform active:scale-[0.985]">{{ t "dashboard.export" }}</a>
+    </form>
 
     {{ if .Bookings }}
     <div class="overflow-hidden rounded-xl border border-line bg-surface">
@@ -106,21 +127,31 @@
         <div class="flex flex-col items-start gap-2 sm:items-end">
           <span class="text-label-mono-lg font-medium text-foam">{{ .HostRange }}</span>
           <span class="text-label-mono text-muted">{{ .DateLabel }}</span>
-          {{ if .IsUpcoming }}
-          <form action="/bookings/{{ .ID }}/cancel" method="post">
-            <button
-              type="submit"
-              class="text-label-mono uppercase tracking-[0.08em] text-clay transition-colors hover:text-clay-soft"
-              data-amarra-confirm="{{ t "dashboard.cancel_confirm" }}"
-            >{{ t "common.cancel" }}</button>
-          </form>
-          {{ end }}
+          <div class="flex flex-wrap items-center gap-3">
+            {{ if .IsUpcoming }}
+            <a href="/bookings/{{ .ID }}/reschedule" class="text-label-mono uppercase tracking-[0.08em] text-slate transition-colors hover:text-foam">{{ t "dashboard.reschedule" }}</a>
+            {{ end }}
+            <a href="/bookings/{{ .ID }}/invite.ics" data-amarra-skip class="text-label-mono uppercase tracking-[0.08em] text-slate transition-colors hover:text-foam">{{ t "dashboard.ics" }}</a>
+            {{ if .IsUpcoming }}
+            <form action="/bookings/{{ .ID }}/cancel" method="post">
+              <button
+                type="submit"
+                class="text-label-mono uppercase tracking-[0.08em] text-clay transition-colors hover:text-clay-soft"
+                data-amarra-confirm="{{ t "dashboard.cancel_confirm" }}"
+              >{{ t "common.cancel" }}</button>
+            </form>
+            {{ end }}
+          </div>
         </div>
       </article>
       {{ end }}
     </div>
-    {{ else }}
+    {{ else if eq .Filter.Status "upcoming" }}
     <.empty title="{{ t "dashboard.no_bookings" }}">
+      <p class="text-body-sm text-muted">{{ t "dashboard.no_bookings_body" }}</p>
+    </.empty>
+    {{ else }}
+    <.empty title="{{ t "dashboard.empty_filtered" }}">
       <p class="text-body-sm text-muted">{{ t "dashboard.no_bookings_body" }}</p>
     </.empty>
     {{ end }}

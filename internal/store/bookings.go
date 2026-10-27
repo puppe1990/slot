@@ -44,9 +44,12 @@ type GuestInput struct {
 
 type BookingFilter struct {
 	Status models.BookingStatus
-	From   time.Time
-	To     time.Time
-	Limit  int
+	// Statuses wins over Status when set. The dashboard filter needs to ask
+	// for "confirmed + rescheduled + cancelled" in one query.
+	Statuses []models.BookingStatus
+	From     time.Time
+	To       time.Time
+	Limit    int
 }
 
 type meetingTypeAux struct {
@@ -284,10 +287,18 @@ func (s *SQLiteStore) ListBookings(userID int64, filter BookingFilter) ([]models
 	query := bookingSelect + " WHERE mt.user_id = ?"
 	args := []any{userID}
 
-	if filter.Status != "" {
+	switch {
+	case len(filter.Statuses) > 0:
+		placeholders := make([]string, 0, len(filter.Statuses))
+		for _, status := range filter.Statuses {
+			placeholders = append(placeholders, "?")
+			args = append(args, string(status))
+		}
+		query += " AND b.status IN (" + strings.Join(placeholders, ", ") + ")"
+	case filter.Status != "":
 		query += " AND b.status = ?"
 		args = append(args, string(filter.Status))
-	} else {
+	default:
 		query += " AND b.status <> 'HOLD'"
 	}
 	if !filter.From.IsZero() {
