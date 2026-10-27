@@ -18,12 +18,16 @@
         <.input name="name" label="{{ t "setup.display_name" }}" value="{{ .Owner.Name }}" error="{{ fieldError .Errors "name" }}" />
         <label class="flex flex-col gap-1">
           <span class="text-label-ui uppercase tracking-[0.08em] text-muted">{{ t "setup.timezone" }}</span>
-          <select name="timezone" class="h-11 rounded-lg border border-line bg-canvas px-3 text-body-md text-foam outline-none focus:border-pine">
+          <select id="owner-timezone" name="timezone" data-first-visit="{{ if .FirstVisit }}true{{ else }}false{{ end }}" class="h-11 rounded-lg border border-line bg-canvas px-3 text-body-md text-foam outline-none focus:border-pine">
             {{ range .TimezoneOptions }}
             <option value="{{ .Value }}" {{ if .Selected }}selected{{ end }}>{{ .Label }}</option>
             {{ end }}
           </select>
           <span class="text-label-mono text-muted">{{ t "setup.now" .TimezoneAbbrevNow }}</span>
+          <p id="tz-hint" class="hidden text-label-mono text-slate">
+            {{ t "setup.tz_detected" }} <span id="tz-detected" class="text-foam"></span>
+            · <button type="button" id="tz-use" class="text-pine underline underline-offset-2">{{ t "setup.tz_use" }}</button>
+          </p>
         </label>
       </div>
     </section>

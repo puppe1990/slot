@@ -216,6 +216,9 @@ func (h *SetupHandler) render(w http.ResponseWriter, r *http.Request, owner mode
 		"Errors":            errs,
 		"GoogleAvailable":   h.deps.Calendar.Provider() == calendar.ProviderGoogle,
 		"TimezoneAbbrevNow": zoneOffset(now, mustLocation(owner.Timezone)),
+		// A first visit may preselect the browser zone: the account was just
+		// created with the UTC default and nothing was saved yet.
+		"FirstVisit": len(rules) == 0,
 	}, status)
 }
 

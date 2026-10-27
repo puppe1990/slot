@@ -111,6 +111,8 @@ var enMessages = map[string]string{
 	"setup.profile":          "Profile & timezone",
 	"setup.display_name":     "Display name",
 	"setup.timezone":         "Home timezone",
+	"setup.tz_detected":      "Detected from your browser:",
+	"setup.tz_use":           "Use",
 	"setup.now":              "Now %s",
 	"setup.weekly":           "Weekly hours",
 	"setup.weekly_hint":      "Leave empty to close the day",

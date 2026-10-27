@@ -68,3 +68,43 @@ func TestBuildWeekdayRowsKeepsASavedPartialWeek(t *testing.T) {
 		t.Fatalf("Monday = %+v, want it closed: defaults must not reappear after a save", rows[1])
 	}
 }
+
+// A brand-new owner has no rules; the page marks that so the client script may
+// preselect the browser zone. After the first save the marker must be false,
+// otherwise every visit would overwrite the owner's choice.
+func TestSetupMarksFirstVisitOnlyWithoutRules(t *testing.T) {
+	env := setupTestEnv(t)
+	userID, err := env.store.CreateUser("tz@example.com", "hash")
+	if err != nil {
+		t.Fatal(err)
+	}
+	setup := NewSetupHandler(env.deps)
+
+	render := func() string {
+		t.Helper()
+		req := httptest.NewRequest(http.MethodGet, "/setup", nil)
+		req = session.WithUserID(req, userID)
+		rec := httptest.NewRecorder()
+		setup.Show(rec, req)
+		if rec.Code != http.StatusOK {
+			t.Fatalf("status = %d: %s", rec.Code, rec.Body.String())
+		}
+		return rec.Body.String()
+	}
+
+	if body := render(); !strings.Contains(body, `data-first-visit="true"`) {
+		t.Error("new owner should be marked as a first visit")
+	}
+	if body := render(); !strings.Contains(body, `id="tz-hint"`) {
+		t.Error("setup is missing the timezone hint")
+	}
+
+	if err := env.store.ReplaceAvailabilityRules(userID, []models.AvailabilityRule{
+		{DayOfWeek: 1, StartTime: "09:00", EndTime: "17:00", IsActive: true},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if body := render(); !strings.Contains(body, `data-first-visit="false"`) {
+		t.Error("owner with saved rules must not be treated as a first visit")
+	}
+}
