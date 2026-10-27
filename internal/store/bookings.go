@@ -16,7 +16,7 @@ import (
 // slot returns to the pool.
 const defaultHoldTTL = 10 * time.Minute
 
-const bookingSelect = `SELECT b.id, b.meeting_type_id, b.guest_name, b.guest_email, b.guest_notes,
+const bookingSelect = `SELECT b.id, b.meeting_type_id, b.guest_name, b.guest_email, b.guest_whatsapp, b.guest_notes,
 		b.guest_timezone, b.start_time_utc, b.end_time_utc, b.status, b.hold_expires_at,
 		b.cancellation_reason, b.calendar_event_id, b.meeting_url, b.attendance, b.created_at, b.updated_at,
 		mt.slug, mt.title, mt.duration_minutes, mt.location_type,
@@ -38,6 +38,7 @@ type HoldInput struct {
 type GuestInput struct {
 	Name     string
 	Email    string
+	WhatsApp string
 	Notes    string
 	Timezone string
 }
@@ -180,11 +181,11 @@ func (s *SQLiteStore) ConfirmHold(holdToken string, guest GuestInput, guestToken
 	}
 
 	_, err = tx.Exec(`UPDATE bookings SET status = 'CONFIRMED', guest_name = ?, guest_email = ?,
-		guest_notes = ?, guest_timezone = ?, guest_token_hash = ?, hold_token_hash = NULL,
-		hold_expires_at = NULL, updated_at = strftime('%s', 'now')
+		guest_whatsapp = ?, guest_notes = ?, guest_timezone = ?, guest_token_hash = ?,
+		hold_token_hash = NULL, hold_expires_at = NULL, updated_at = strftime('%s', 'now')
 		WHERE id = ?`,
-		strings.TrimSpace(guest.Name), strings.TrimSpace(guest.Email), strings.TrimSpace(guest.Notes),
-		guest.Timezone, guestTokenHash, bookingID,
+		strings.TrimSpace(guest.Name), strings.TrimSpace(guest.Email), strings.TrimSpace(guest.WhatsApp),
+		strings.TrimSpace(guest.Notes), guest.Timezone, guestTokenHash, bookingID,
 	)
 	if err != nil {
 		return models.Booking{}, fmt.Errorf("confirm hold %d: %w", bookingID, err)
@@ -513,7 +514,7 @@ func scanBooking(scanner interface{ Scan(...any) error }, requestedID int64) (mo
 	var startUnix, endUnix, createdAt, updatedAt int64
 	err := scanner.Scan(
 		&booking.ID, &booking.MeetingTypeID, &booking.GuestName, &booking.GuestEmail,
-		&booking.GuestNotes, &booking.GuestTimezone, &startUnix, &endUnix, &status, &holdExpires,
+		&booking.GuestWhatsApp, &booking.GuestNotes, &booking.GuestTimezone, &startUnix, &endUnix, &status, &holdExpires,
 		&booking.CancellationReason, &booking.CalendarEventID, &booking.MeetingURL, &booking.Attendance, &createdAt, &updatedAt,
 		&booking.MeetingTypeSlug, &booking.MeetingTypeTitle, &booking.MeetingTypeDuration,
 		&booking.MeetingTypeLocation, &booking.OwnerName, &booking.OwnerEmail, &booking.OwnerTimezone,

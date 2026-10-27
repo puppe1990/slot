@@ -48,6 +48,10 @@
       <input type="hidden" name="tz" value="{{ .GuestTZ }}" />
       <.input name="name" label="{{ t "confirm.name" }}" value="" error="{{ fieldError .Errors "name" }}" />
       <.input name="email" type="email" label="{{ t "confirm.email" }}" value="" error="{{ fieldError .Errors "email" }}" />
+      <div class="flex flex-col gap-1">
+        <.input name="whatsapp" type="tel" label="{{ t "confirm.whatsapp" }}" value="" error="{{ fieldError .Errors "whatsapp" }}" />
+        <span class="text-label-mono text-muted">{{ t "confirm.whatsapp_hint" }}</span>
+      </div>
       <label class="flex flex-col gap-1">
         <span class="flex items-center justify-between">
           <span class="text-label-ui uppercase tracking-[0.08em] text-muted">{{ t "confirm.focus" }}</span>

@@ -22,6 +22,8 @@ type bookingView struct {
 	LocationLabel string
 	MeetingURL    string
 	Attendance    string
+	GuestWhatsApp string
+	WhatsAppLink  string
 	DurationLabel string
 	Start         time.Time
 	IsUpcoming    bool
@@ -48,6 +50,8 @@ func presentBooking(booking models.Booking, ownerLocation, guestLocation *time.L
 		LocationLabel: l.locationLabel(booking.MeetingTypeLocation),
 		MeetingURL:    booking.MeetingURL,
 		Attendance:    booking.Attendance,
+		GuestWhatsApp: booking.GuestWhatsApp,
+		WhatsAppLink:  whatsAppLink(booking.GuestWhatsApp),
 		DurationLabel: l.durationUpper(booking.MeetingTypeDuration),
 		Start:         booking.StartUTC,
 		IsUpcoming:    booking.StartUTC.After(now) && booking.Active(),

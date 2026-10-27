@@ -145,6 +145,7 @@ func (h *BookingHandler) Confirm(w http.ResponseWriter, r *http.Request) {
 	name := strings.TrimSpace(r.FormValue("name"))
 	email := strings.TrimSpace(r.FormValue("email"))
 	notes := strings.TrimSpace(r.FormValue("notes"))
+	whatsapp := normalizeWhatsApp(r.FormValue("whatsapp"))
 	guestTimezone := normalizeTimezone(r.FormValue("tz"), hold.GuestTimezone)
 	l := h.localeFor(r)
 
@@ -155,6 +156,9 @@ func (h *BookingHandler) Confirm(w http.ResponseWriter, r *http.Request) {
 	if err := validate.Email(email); err != nil {
 		errs.Add("email", l.t("confirm.error_email"))
 	}
+	if whatsapp != "" && !validWhatsApp(whatsapp) {
+		errs.Add("whatsapp", l.t("confirm.error_whatsapp"))
+	}
 	if errs.Any() {
 		h.renderConfirm(w, r, meetingType, hold, errs, http.StatusUnprocessableEntity)
 		return
@@ -164,6 +168,7 @@ func (h *BookingHandler) Confirm(w http.ResponseWriter, r *http.Request) {
 	booking, err := h.deps.Store.ConfirmHold(holdTokenFromCookie(r), store.GuestInput{
 		Name:     name,
 		Email:    email,
+		WhatsApp: whatsapp,
 		Notes:    notes,
 		Timezone: guestTimezone,
 	}, guesttoken.Hash(guestToken), h.now())
@@ -317,6 +322,34 @@ func holdTokenFromCookie(r *http.Request) string {
 		return ""
 	}
 	return cookie.Value
+}
+
+// normalizeWhatsApp keeps a single leading plus and digits, so the same value
+// works for storage, for wa.me and for display.
+func normalizeWhatsApp(raw string) string {
+	digits := make([]rune, 0, len(raw))
+	for _, char := range raw {
+		if char >= '0' && char <= '9' {
+			digits = append(digits, char)
+		}
+	}
+	if len(digits) == 0 {
+		return ""
+	}
+	return "+" + string(digits)
+}
+
+func validWhatsApp(value string) bool {
+	digits := strings.TrimPrefix(value, "+")
+	return len(digits) >= 8 && len(digits) <= 15
+}
+
+func whatsAppLink(value string) string {
+	digits := strings.TrimPrefix(value, "+")
+	if digits == "" {
+		return ""
+	}
+	return "https://wa.me/" + digits
 }
 
 func bookingNotes(booking models.Booking) string {

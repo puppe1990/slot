@@ -16,6 +16,7 @@
 
     <h1 class="mt-space-md text-headline-md font-medium tracking-tight text-foam">{{ .MeetingType.Title }}</h1>
     <p class="mt-1 text-body-sm text-muted">{{ t "manage.with" .Booking.GuestName .Booking.GuestEmail }}</p>
+    {{ with .Booking.GuestWhatsApp }}<p class="text-label-mono text-muted">{{ t "confirm.whatsapp" }}: {{ . }}</p>{{ end }}
 
     <div class="mt-space-md rounded-lg border border-line bg-elevated p-space-md">
       <span class="block text-headline-sm font-medium text-foam">{{ .DateLabel }}</span>

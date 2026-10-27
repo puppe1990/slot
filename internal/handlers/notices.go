@@ -25,6 +25,7 @@ type bookingEmail struct {
 	CTALabel  string
 	ManageURL string
 	Reason    string
+	WhatsApp  string
 }
 
 func (b base) sendConfirmed(r *http.Request, booking models.Booking, manageURL string) {
@@ -53,6 +54,7 @@ func (b base) sendOwnerNew(r *http.Request, booking models.Booking) {
 		Tone:     "pine",
 		Intro:    l.t("email.owner_new.intro", booking.GuestName, booking.GuestEmail, booking.MeetingTypeTitle),
 		Location: mustLocation(booking.OwnerTimezone),
+		WhatsApp: booking.GuestWhatsApp,
 		CTAURL:   b.absoluteURL(r, "/dashboard"),
 		CTALabel: l.t("email.cta.dashboard"),
 	}))
@@ -136,6 +138,9 @@ func (b base) bookingEmailMessage(r *http.Request, l localeText, booking models.
 	}
 	if email.ManageURL != "" {
 		lines = append(lines, l.t("email.cta.manage")+": "+email.ManageURL)
+	}
+	if email.WhatsApp != "" {
+		lines = append(lines, l.t("confirm.whatsapp")+": "+email.WhatsApp)
 	}
 	if reason != "" {
 		lines = append(lines, "", l.t("email.reason")+": "+reason)

@@ -124,6 +124,7 @@
           </div>
           <span class="text-body-sm text-muted">{{ .Title }}</span>
           <span class="truncate text-label-mono text-muted">{{ .GuestEmail }}</span>
+          {{ if .WhatsAppLink }}<a href="{{ .WhatsAppLink }}" target="_blank" rel="noopener" data-amarra-skip class="text-label-mono uppercase tracking-[0.08em] text-slate transition-colors hover:text-pine">{{ t "dashboard.whatsapp" }} · {{ .GuestWhatsApp }}</a>{{ end }}
         </div>
         <div class="flex flex-col items-start gap-2 sm:items-end">
           <span class="text-label-mono-lg font-medium text-foam">{{ .HostRange }}</span>

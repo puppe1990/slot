@@ -50,6 +50,8 @@ make ci                    # tests + golangci-lint + prettier check
 
 `users` · `calendar_connections` · `meeting_types` · `availability_rules` · `date_overrides` · `bookings` · `audit_logs`
 
+Guests can leave an optional WhatsApp on the confirm form. The number is normalized to `+<digits>`, stored on the booking, shown to the owner as a `wa.me` link on the dashboard and included in the new-booking email.
+
 Booking lifecycle:
 
 ```
