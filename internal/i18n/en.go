@@ -100,6 +100,8 @@ var enMessages = map[string]string{
 	"dashboard.no_bookings":      "No bookings yet",
 	"dashboard.no_bookings_body": "Publish a format and share its link. Holds expire after 10 minutes, so abandoned visits free the slot automatically.",
 	"dashboard.formats":          "Formats",
+	"dashboard.cancel_title":     "Cancel this booking?",
+	"dashboard.cancel_cta":       "Cancel booking",
 	"dashboard.cancel_confirm":   "Cancel this booking? The slot is freed and the guest is notified.",
 
 	// Setup

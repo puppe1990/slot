@@ -1,0 +1,7 @@
+<dialog
+  data-amarra-dialog-target
+  class="m-auto w-full max-w-md rounded-xl border border-line-strong bg-canvas p-0 text-foam shadow-layer backdrop:bg-pine/40 backdrop:backdrop-blur-sm"
+  {{- if .Id }} id="{{ .Id }}"{{ end }}
+>
+  <div class="p-space-lg">{{ .Inner }}</div>
+</dialog>

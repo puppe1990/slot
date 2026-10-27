@@ -123,3 +123,27 @@ func TestNotFoundRendersHTML(t *testing.T) {
 		t.Fatalf("404 body is not the rendered page: %s", rec.Body.String())
 	}
 }
+
+// The owner cancel is a native <dialog> from the kit, not window.confirm:
+// confirm() blocks the page, is unstyled and cannot collect the reason.
+func TestDashboardCancelUsesTheKitModal(t *testing.T) {
+	env := setupTestEnv(t)
+	meetingType := env.seedMeetingType(t, "30min", 30)
+	seedBooking(t, env, meetingType, "2026-10-26T14:00:00Z", "Marina Costa", "marina@example.com")
+
+	dashboard := NewDashboardHandler(env.deps)
+	req := httptest.NewRequest(http.MethodGet, "/dashboard", nil)
+	req = session.WithUserID(req, env.ownerID)
+	rec := httptest.NewRecorder()
+	dashboard.ServeHTTP(rec, req)
+
+	body := rec.Body.String()
+	for _, want := range []string{"data-amarra-dialog-open", "<dialog", `data-amarra-dialog-target`, "cancel-1"} {
+		if !strings.Contains(body, want) {
+			t.Errorf("dashboard is missing the modal marker %q", want)
+		}
+	}
+	if strings.Contains(body, "data-amarra-confirm") {
+		t.Error("dashboard still uses the browser confirm")
+	}
+}

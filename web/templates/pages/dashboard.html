@@ -133,13 +133,32 @@
             {{ end }}
             <a href="/bookings/{{ .ID }}/invite.ics" data-amarra-skip class="text-label-mono uppercase tracking-[0.08em] text-slate transition-colors hover:text-foam">{{ t "dashboard.ics" }}</a>
             {{ if .IsUpcoming }}
-            <form action="/bookings/{{ .ID }}/cancel" method="post">
+            <div amarra-hook="dialog">
               <button
-                type="submit"
+                type="button"
+                data-amarra-dialog-open
                 class="text-label-mono uppercase tracking-[0.08em] text-clay transition-colors hover:text-clay-soft"
-                data-amarra-confirm="{{ t "dashboard.cancel_confirm" }}"
               >{{ t "common.cancel" }}</button>
-            </form>
+              <.modal id="cancel-{{ .ID }}">
+                <form action="/bookings/{{ .ID }}/cancel" method="post" class="flex flex-col gap-space-sm">
+                  <h2 class="text-headline-sm font-medium text-foam">{{ t "dashboard.cancel_title" }}</h2>
+                  <p class="text-body-sm text-muted">{{ t "dashboard.cancel_confirm" }}</p>
+                  <label class="flex flex-col gap-1">
+                    <span class="text-label-ui uppercase tracking-[0.08em] text-muted">{{ t "manage.reason" }}</span>
+                    <input
+                      name="reason"
+                      type="text"
+                      class="h-11 w-full rounded-lg border border-line bg-canvas px-3 text-body-md text-foam outline-none focus:border-clay"
+                      placeholder="{{ t "manage.reason_placeholder" }}"
+                    />
+                  </label>
+                  <div class="mt-space-xs flex justify-end gap-2">
+                    <button type="button" data-amarra-dialog-close class="inline-flex h-10 items-center rounded-lg border border-line px-4 text-label-ui uppercase tracking-[0.08em] text-slate transition-colors hover:border-slate hover:text-foam">{{ t "common.close" }}</button>
+                    <button type="submit" class="inline-flex h-10 items-center rounded-lg border border-clay bg-clay px-4 text-label-ui uppercase tracking-[0.08em] text-white transition-opacity hover:opacity-90">{{ t "dashboard.cancel_cta" }}</button>
+                  </div>
+                </form>
+              </.modal>
+            </div>
             {{ end }}
           </div>
         </div>
