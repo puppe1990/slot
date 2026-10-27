@@ -57,6 +57,11 @@ go install github.com/puppe1990/slot/cmd/slot@latest
 export SLOT_URL=https://slot.apps.gestaobem.com
 export SLOT_TOKEN=<ADMIN_TOKEN>     # the app's ADMIN_TOKEN
 
+slot whoami                        # which account the token talks to
+slot blocks                        # recurring blocked hours
+slot blocks add --title "Morning Icaro Time" --days 1,2,3,4,5 \
+  --start 07:00 --end 11:00 --every 2 --anchor 2026-11-02
+slot blocks rm 3
 slot formats
 slot slots --format 30min --days 7 --tz America/Sao_Paulo
 slot book --format 30min --slot 2026-10-28T13:00:00Z \

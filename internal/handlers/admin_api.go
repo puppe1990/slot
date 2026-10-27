@@ -341,18 +341,12 @@ type adminBooking struct {
 }
 
 // pathBookingID reads the {id} segment. The router fills PathValue; tests call
-// the handler directly, so the path is the fallback.
+// the handler directly, so the last numeric path segment is the fallback.
 func pathBookingID(r *http.Request) string {
 	if id := r.PathValue("id"); id != "" {
 		return id
 	}
-	parts := strings.Split(strings.Trim(r.URL.Path, "/"), "/")
-	for i, part := range parts {
-		if part == "bookings" && i+1 < len(parts) {
-			return parts[i+1]
-		}
-	}
-	return ""
+	return numberInPath(r.URL.Path)
 }
 
 func writeJSON(w http.ResponseWriter, status int, payload any) {
@@ -363,4 +357,111 @@ func writeJSON(w http.ResponseWriter, status int, payload any) {
 
 func writeJSONError(w http.ResponseWriter, status int, message string) {
 	writeJSON(w, status, map[string]string{"error": message})
+}
+
+func (h *AdminAPI) Me(w http.ResponseWriter, r *http.Request) {
+	owner, ok := h.owner(w)
+	if !ok {
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{
+		"email":    owner.Email,
+		"name":     owner.Name,
+		"timezone": owner.Timezone,
+		"app_url":  h.absoluteURL(r, "/"),
+	})
+}
+
+func (h *AdminAPI) Blocks(w http.ResponseWriter, r *http.Request) {
+	owner, ok := h.owner(w)
+	if !ok {
+		return
+	}
+	blocks, err := h.deps.Store.ListRecurringBlocks(owner.ID)
+	if err != nil {
+		h.serverError(w, r, err)
+		return
+	}
+	out := make([]map[string]any, 0, len(blocks))
+	for _, block := range blocks {
+		out = append(out, presentRecurringBlock(block))
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"blocks": out})
+}
+
+type createBlockRequest struct {
+	Title         string `json:"title"`
+	Weekdays      []int  `json:"weekdays"`
+	StartTime     string `json:"start_time"`
+	EndTime       string `json:"end_time"`
+	IntervalWeeks int    `json:"interval_weeks"`
+	AnchorDate    string `json:"anchor_date"`
+}
+
+func (h *AdminAPI) CreateBlock(w http.ResponseWriter, r *http.Request) {
+	owner, ok := h.owner(w)
+	if !ok {
+		return
+	}
+	var input createBlockRequest
+	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
+		writeJSONError(w, http.StatusBadRequest, "invalid json: "+err.Error())
+		return
+	}
+	block, errs := buildRecurringBlock(
+		owner.ID,
+		input.Title,
+		input.Weekdays,
+		strings.TrimSpace(input.StartTime),
+		strings.TrimSpace(input.EndTime),
+		input.IntervalWeeks,
+		strings.TrimSpace(input.AnchorDate),
+		h.now().In(mustLocation(owner.Timezone)).Format(dateKeyLayout),
+		h.localeFor(r),
+	)
+	if errs.Any() {
+		writeJSON(w, http.StatusUnprocessableEntity, map[string]any{"errors": errs})
+		return
+	}
+	id, err := h.deps.Store.CreateRecurringBlock(block)
+	if err != nil {
+		h.serverError(w, r, err)
+		return
+	}
+	block.ID = id
+	writeJSON(w, http.StatusCreated, map[string]any{"block": presentRecurringBlock(block)})
+}
+
+func (h *AdminAPI) DeleteBlock(w http.ResponseWriter, r *http.Request) {
+	owner, ok := h.owner(w)
+	if !ok {
+		return
+	}
+	rawID := pathBookingID(r)
+	id, err := strconv.ParseInt(rawID, 10, 64)
+	if err != nil || id <= 0 {
+		writeJSONError(w, http.StatusBadRequest, "block id is invalid: "+rawID)
+		return
+	}
+	if err := h.deps.Store.DeleteRecurringBlock(owner.ID, id); err != nil {
+		if errors.Is(err, store.ErrRecurringBlockNotFound) {
+			writeJSONError(w, http.StatusNotFound, "block not found: "+rawID)
+			return
+		}
+		h.serverError(w, r, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"deleted": id})
+}
+
+func presentRecurringBlock(block models.RecurringBlock) map[string]any {
+	return map[string]any{
+		"id":             block.ID,
+		"title":          block.Title,
+		"weekdays":       block.Weekdays,
+		"start_time":     block.StartTime,
+		"end_time":       block.EndTime,
+		"interval_weeks": block.IntervalWeeks,
+		"anchor_date":    block.AnchorDate,
+	}
 }

@@ -30,6 +30,10 @@ func run(args []string, out io.Writer) error {
 	}
 
 	switch args[0] {
+	case "whoami":
+		return runWhoami(args[1:], out)
+	case "blocks":
+		return runBlocks(args[1:], out)
 	case "bookings":
 		return runBookings(args[1:], out)
 	case "formats":
@@ -52,6 +56,11 @@ func usage(out io.Writer) {
 	_, _ = fmt.Fprint(out, `slot — Slot scheduling from the terminal
 
 Usage:
+  slot whoami [--json]
+  slot blocks [--json]
+  slot blocks add --title "..." --days 1,2,3,4,5 --start 07:00 --end 11:00
+                 [--every 2] [--anchor 2026-11-02]
+  slot blocks rm <id>
   slot bookings [--status upcoming|past|cancelled|all] [--days 90] [--json]
   slot formats [--json]
   slot slots --format <slug> [--days 7] [--tz America/Sao_Paulo] [--json]
@@ -83,6 +92,139 @@ func addClientFlags(fs *flag.FlagSet) (*string, *string, *bool) {
 	token := fs.String("token", "", "admin token (default $SLOT_TOKEN)")
 	asJSON := fs.Bool("json", false, "print raw JSON")
 	return url, token, asJSON
+}
+
+func runWhoami(args []string, out io.Writer) error {
+	fs := flag.NewFlagSet("whoami", flag.ContinueOnError)
+	fs.SetOutput(io.Discard)
+	url, token, asJSON := addClientFlags(fs)
+	if err := fs.Parse(args); err != nil {
+		return err
+	}
+	account, err := newClient(*url, *token).Me(context.Background())
+	if err != nil {
+		return err
+	}
+	if *asJSON {
+		return printJSON(out, account)
+	}
+	_, _ = fmt.Fprintf(out, "%s <%s>\n%s\n%s\n", account.Name, account.Email, account.Timezone, account.AppURL)
+	return nil
+}
+
+func runBlocks(args []string, out io.Writer) error {
+	if len(args) > 0 && args[0] == "add" {
+		return runAddBlock(args[1:], out)
+	}
+	if len(args) > 0 && (args[0] == "rm" || args[0] == "remove") {
+		return runRemoveBlock(args[1:], out)
+	}
+
+	fs := flag.NewFlagSet("blocks", flag.ContinueOnError)
+	fs.SetOutput(io.Discard)
+	url, token, asJSON := addClientFlags(fs)
+	if err := fs.Parse(args); err != nil {
+		return err
+	}
+	blocks, err := newClient(*url, *token).Blocks(context.Background())
+	if err != nil {
+		return err
+	}
+	if *asJSON {
+		return printJSON(out, blocks)
+	}
+	if len(blocks) == 0 {
+		_, _ = fmt.Fprintln(out, "no recurring blocks")
+		return nil
+	}
+	for _, block := range blocks {
+		_, _ = fmt.Fprintf(out, "%-4d %-24s %-10s %s–%s  every %d week(s), week of %s\n",
+			block.ID, block.Title, weekdayNames(block.Weekdays), block.StartTime, block.EndTime,
+			block.IntervalWeeks, block.AnchorDate)
+	}
+	return nil
+}
+
+func runAddBlock(args []string, out io.Writer) error {
+	fs := flag.NewFlagSet("blocks add", flag.ContinueOnError)
+	fs.SetOutput(io.Discard)
+	url, token, asJSON := addClientFlags(fs)
+	title := fs.String("title", "", "label")
+	days := fs.String("days", "1,2,3,4,5", "weekday numbers, 0 = Sunday")
+	start := fs.String("start", "07:00", "block start")
+	end := fs.String("end", "11:00", "block end")
+	every := fs.Int("every", 2, "weeks between repeats")
+	anchor := fs.String("anchor", "", "first week starts on (default today)")
+	if err := fs.Parse(args); err != nil {
+		return err
+	}
+
+	weekdays, err := parseDays(*days)
+	if err != nil {
+		return err
+	}
+	block, err := newClient(*url, *token).CreateBlock(context.Background(), slotcli.CreateBlockInput{
+		Title:         *title,
+		Weekdays:      weekdays,
+		StartTime:     *start,
+		EndTime:       *end,
+		IntervalWeeks: *every,
+		AnchorDate:    *anchor,
+	})
+	if err != nil {
+		return err
+	}
+	if *asJSON {
+		return printJSON(out, block)
+	}
+	_, _ = fmt.Fprintf(out, "block #%d %s %s–%s every %d week(s), week of %s\n",
+		block.ID, weekdayNames(block.Weekdays), block.StartTime, block.EndTime,
+		block.IntervalWeeks, block.AnchorDate)
+	return nil
+}
+
+func runRemoveBlock(args []string, out io.Writer) error {
+	fs := flag.NewFlagSet("blocks rm", flag.ContinueOnError)
+	fs.SetOutput(io.Discard)
+	url, token, asJSON := addClientFlags(fs)
+	if err := fs.Parse(args); err != nil {
+		return err
+	}
+	id, err := parseID(fs.Arg(0))
+	if err != nil {
+		return err
+	}
+	if err := newClient(*url, *token).DeleteBlock(context.Background(), id); err != nil {
+		return err
+	}
+	if *asJSON {
+		return printJSON(out, map[string]int64{"deleted": id})
+	}
+	_, _ = fmt.Fprintf(out, "removed block #%d\n", id)
+	return nil
+}
+
+func parseDays(raw string) ([]int, error) {
+	days := []int{}
+	for _, part := range strings.Split(raw, ",") {
+		value, err := strconv.Atoi(strings.TrimSpace(part))
+		if err != nil || value < 0 || value > 6 {
+			return nil, fmt.Errorf("weekday %q must be 0..6", part)
+		}
+		days = append(days, value)
+	}
+	return days, nil
+}
+
+func weekdayNames(days []int) string {
+	names := []string{"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"}
+	out := make([]string, 0, len(days))
+	for _, day := range days {
+		if day >= 0 && day < len(names) {
+			out = append(out, names[day])
+		}
+	}
+	return strings.Join(out, ",")
 }
 
 func runBookings(args []string, out io.Writer) error {

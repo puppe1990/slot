@@ -66,6 +66,10 @@ func registerRoutes(r *cais.Router, deps Deps, cfg cais.Config) {
 
 	// Machine surface for the CLI and the MCP server: Bearer ADMIN_TOKEN only.
 	r.Group(middleware.AdminAuth(cfg), func(g *cais.Router) {
+		g.Get("/api/admin/me", adminAPI.Me)
+		g.Get("/api/admin/blocks", adminAPI.Blocks)
+		g.Post("/api/admin/blocks", adminAPI.CreateBlock)
+		g.Post("/api/admin/blocks/{id}/delete", adminAPI.DeleteBlock)
 		g.Get("/api/admin/bookings", adminAPI.Bookings)
 		g.Get("/api/admin/formats", adminAPI.Formats)
 		g.Get("/api/admin/slots", adminAPI.Slots)

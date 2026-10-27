@@ -167,3 +167,72 @@ func TestAdminAPISlots(t *testing.T) {
 		t.Fatal("no slots returned")
 	}
 }
+
+func TestAdminAPIBlocksCRUD(t *testing.T) {
+	env := setupTestEnv(t)
+	api := NewAdminAPI(env.deps)
+
+	me := httptest.NewRecorder()
+	api.Me(me, adminRequest(http.MethodGet, "/api/admin/me", "", "secret"))
+	if me.Code != http.StatusOK || !strings.Contains(me.Body.String(), "owner@example.com") {
+		t.Fatalf("me = %d: %s", me.Code, me.Body.String())
+	}
+
+	created := httptest.NewRecorder()
+	api.CreateBlock(created, adminRequest(http.MethodPost, "/api/admin/blocks", `{
+		"title":"Morning Icaro Time","weekdays":[1,2,3,4,5],
+		"start_time":"07:00","end_time":"11:00","interval_weeks":2,"anchor_date":"2026-11-02"
+	}`, "secret"))
+	if created.Code != http.StatusCreated {
+		t.Fatalf("create = %d: %s", created.Code, created.Body.String())
+	}
+	var payload struct {
+		Block struct {
+			ID            int64  `json:"id"`
+			IntervalWeeks int    `json:"interval_weeks"`
+			AnchorDate    string `json:"anchor_date"`
+		} `json:"block"`
+	}
+	if err := json.Unmarshal(created.Body.Bytes(), &payload); err != nil {
+		t.Fatal(err)
+	}
+	if payload.Block.ID == 0 || payload.Block.IntervalWeeks != 2 || payload.Block.AnchorDate != "2026-11-02" {
+		t.Fatalf("block = %+v", payload.Block)
+	}
+
+	list := httptest.NewRecorder()
+	api.Blocks(list, adminRequest(http.MethodGet, "/api/admin/blocks", "", "secret"))
+	if list.Code != http.StatusOK || !strings.Contains(list.Body.String(), "Morning Icaro Time") {
+		t.Fatalf("list = %d: %s", list.Code, list.Body.String())
+	}
+
+	remove := httptest.NewRecorder()
+	api.DeleteBlock(remove, adminRequest(http.MethodPost,
+		"/api/admin/blocks/"+strconv.FormatInt(payload.Block.ID, 10)+"/delete", `{}`, "secret"))
+	if remove.Code != http.StatusOK {
+		t.Fatalf("delete = %d: %s", remove.Code, remove.Body.String())
+	}
+	blocks, _ := env.store.ListRecurringBlocks(env.ownerID)
+	if len(blocks) != 0 {
+		t.Fatalf("blocks left = %+v", blocks)
+	}
+}
+
+func TestAdminAPIBlockValidation(t *testing.T) {
+	env := setupTestEnv(t)
+	api := NewAdminAPI(env.deps)
+
+	rec := httptest.NewRecorder()
+	api.CreateBlock(rec, adminRequest(http.MethodPost, "/api/admin/blocks",
+		`{"weekdays":[],"start_time":"07:00","end_time":"11:00","interval_weeks":2}`, "secret"))
+	if rec.Code != http.StatusUnprocessableEntity {
+		t.Fatalf("empty weekdays = %d, want 422: %s", rec.Code, rec.Body.String())
+	}
+
+	backwards := httptest.NewRecorder()
+	api.CreateBlock(backwards, adminRequest(http.MethodPost, "/api/admin/blocks",
+		`{"weekdays":[1],"start_time":"11:00","end_time":"07:00","interval_weeks":2}`, "secret"))
+	if backwards.Code != http.StatusUnprocessableEntity {
+		t.Fatalf("backwards clock = %d, want 422", backwards.Code)
+	}
+}
