@@ -27,6 +27,14 @@ type emailView struct {
 	Zone            string
 	ReasonLabel     string
 	Reason          string
+	GuestName       string
+	GuestEmail      string
+	GuestWhatsApp   string
+	GuestNotes      string
+	GuestLabel      string
+	EmailLabel      string
+	WhatsAppLabel   string
+	MessageLabel    string
 	CTAURL          string
 	CTALabel        string
 	ManageURL       string
@@ -76,6 +84,23 @@ var emailTemplate = template.Must(template.New("email").Parse(`<!doctype html>
               </table>
             </td>
           </tr>
+          {{ if .GuestName }}
+          <tr>
+            <td style="padding:16px 28px 0 28px;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#FFFFFF;border:1px solid #E5E3DC;border-radius:16px;">
+                <tr>
+                  <td style="padding:16px 18px;">
+                    <div style="font-family:'Hanken Grotesk','Segoe UI',Helvetica,Arial,sans-serif;font-size:11px;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:#64625D;">{{ .GuestLabel }}</div>
+                    <div style="margin-top:8px;font-family:'Hanken Grotesk','Segoe UI',Helvetica,Arial,sans-serif;font-size:15px;color:#1A1A1A;">{{ .GuestName }}</div>
+                    <div style="margin-top:4px;font-family:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;color:#64625D;">{{ .EmailLabel }}: {{ .GuestEmail }}</div>
+                    {{ if .GuestWhatsApp }}<div style="margin-top:2px;font-family:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;color:#64625D;">{{ .WhatsAppLabel }}: {{ .GuestWhatsApp }}</div>{{ end }}
+                    {{ if .GuestNotes }}<div style="margin-top:12px;padding-top:10px;border-top:1px solid #E5E3DC;font-family:'Hanken Grotesk','Segoe UI',Helvetica,Arial,sans-serif;font-size:11px;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:#64625D;">{{ .MessageLabel }}</div><div style="margin-top:4px;font-family:'Hanken Grotesk','Segoe UI',Helvetica,Arial,sans-serif;font-size:14px;line-height:1.55;color:#1A1A1A;white-space:pre-wrap;">{{ .GuestNotes }}</div>{{ end }}
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          {{ end }}
           {{ if .CTAURL }}
           <tr>
             <td align="center" style="padding:24px 28px 0 28px;">

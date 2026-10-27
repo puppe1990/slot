@@ -26,6 +26,11 @@ type bookingEmail struct {
 	ManageURL string
 	Reason    string
 	WhatsApp  string
+	// Guest block: owner-facing notices show who is coming, how to reach them
+	// and what they asked for.
+	GuestEmail    string
+	GuestWhatsApp string
+	GuestNotes    string
 }
 
 func (b base) sendConfirmed(r *http.Request, booking models.Booking, manageURL string) {
@@ -47,16 +52,19 @@ func (b base) sendConfirmed(r *http.Request, booking models.Booking, manageURL s
 func (b base) sendOwnerNew(r *http.Request, booking models.Booking) {
 	l := b.localeFor(r)
 	b.send(r, b.bookingEmailMessage(r, l, booking, bookingEmail{
-		Kind:     "booking.owner_new",
-		To:       booking.OwnerEmail,
-		Subject:  l.t("email.owner_new.subject", booking.GuestName),
-		Heading:  l.t("email.heading.owner_new"),
-		Tone:     "pine",
-		Intro:    l.t("email.owner_new.intro", booking.GuestName, booking.GuestEmail, booking.MeetingTypeTitle),
-		Location: mustLocation(booking.OwnerTimezone),
-		WhatsApp: booking.GuestWhatsApp,
-		CTAURL:   b.absoluteURL(r, "/dashboard"),
-		CTALabel: l.t("email.cta.dashboard"),
+		Kind:          "booking.owner_new",
+		To:            booking.OwnerEmail,
+		Subject:       l.t("email.owner_new.subject", booking.GuestName),
+		Heading:       l.t("email.heading.owner_new"),
+		Tone:          "pine",
+		Intro:         l.t("email.owner_new.intro", booking.GuestName, booking.MeetingTypeTitle),
+		Location:      mustLocation(booking.OwnerTimezone),
+		WhatsApp:      booking.GuestWhatsApp,
+		GuestEmail:    booking.GuestEmail,
+		GuestWhatsApp: booking.GuestWhatsApp,
+		GuestNotes:    booking.GuestNotes,
+		CTAURL:        b.absoluteURL(r, "/dashboard"),
+		CTALabel:      l.t("email.cta.dashboard"),
 	}))
 }
 
@@ -139,7 +147,15 @@ func (b base) bookingEmailMessage(r *http.Request, l localeText, booking models.
 	if email.ManageURL != "" {
 		lines = append(lines, l.t("email.cta.manage")+": "+email.ManageURL)
 	}
-	if email.WhatsApp != "" {
+	if email.GuestEmail != "" {
+		lines = append(lines, "", l.t("email.guest")+":", email.GuestEmail)
+		if email.GuestWhatsApp != "" {
+			lines = append(lines, l.t("confirm.whatsapp")+": "+email.GuestWhatsApp)
+		}
+		if notes := strings.TrimSpace(email.GuestNotes); notes != "" {
+			lines = append(lines, l.t("email.message")+": "+notes)
+		}
+	} else if email.WhatsApp != "" {
 		lines = append(lines, l.t("confirm.whatsapp")+": "+email.WhatsApp)
 	}
 	if reason != "" {
@@ -147,22 +163,30 @@ func (b base) bookingEmailMessage(r *http.Request, l localeText, booking models.
 	}
 
 	html := renderEmail(emailView{
-		Lang:        l.tag,
-		Eyebrow:     booking.MeetingTypeTitle,
-		Heading:     email.Heading,
-		Tone:        email.Tone,
-		Intro:       email.Intro,
-		When:        when,
-		Range:       clockRange,
-		Zone:        zone,
-		ReasonLabel: l.t("email.reason"),
-		Reason:      reason,
-		CTAURL:      email.CTAURL,
-		CTALabel:    email.CTALabel,
-		ManageURL:   email.ManageURL,
-		ManageLabel: l.t("email.cta.manage"),
-		Footer:      l.t("layout.footer"),
-		FooterNote:  l.t("layout.footer_note"),
+		Lang:          l.tag,
+		Eyebrow:       booking.MeetingTypeTitle,
+		Heading:       email.Heading,
+		Tone:          email.Tone,
+		Intro:         email.Intro,
+		When:          when,
+		Range:         clockRange,
+		Zone:          zone,
+		ReasonLabel:   l.t("email.reason"),
+		Reason:        reason,
+		GuestName:     booking.GuestName,
+		GuestEmail:    email.GuestEmail,
+		GuestWhatsApp: email.GuestWhatsApp,
+		GuestNotes:    strings.TrimSpace(email.GuestNotes),
+		GuestLabel:    l.t("email.guest"),
+		EmailLabel:    l.t("confirm.email"),
+		WhatsAppLabel: l.t("confirm.whatsapp"),
+		MessageLabel:  l.t("email.message"),
+		CTAURL:        email.CTAURL,
+		CTALabel:      email.CTALabel,
+		ManageURL:     email.ManageURL,
+		ManageLabel:   l.t("email.cta.manage"),
+		Footer:        l.t("layout.footer"),
+		FooterNote:    l.t("layout.footer_note"),
 	})
 
 	return notify.Message{
