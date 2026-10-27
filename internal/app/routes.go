@@ -26,6 +26,7 @@ func registerRoutes(r *cais.Router, deps Deps, cfg cais.Config) {
 	home := handlers.NewHomeHandler(handlerDeps)
 	dashboard := handlers.NewDashboardHandler(handlerDeps)
 	setup := handlers.NewSetupHandler(handlerDeps)
+	settings := handlers.NewSettingsHandler(handlerDeps)
 	meetingTypes := handlers.NewMeetingTypeHandler(handlerDeps)
 	booking := handlers.NewBookingHandler(handlerDeps)
 	manage := handlers.NewManageHandler(handlerDeps)
@@ -61,6 +62,10 @@ func registerRoutes(r *cais.Router, deps Deps, cfg cais.Config) {
 
 	notFound := handlers.NewNotFoundHandler(handlerDeps)
 	r.NotFound(notFound.ServeHTTP)
+
+	r.Get("/settings", owner(settings.Show))
+	r.Post("/settings", owner(settings.Save))
+	r.Post("/settings/password", owner(settings.Password))
 
 	r.Get("/setup", owner(setup.Show))
 	r.Post("/setup", owner(setup.Save))

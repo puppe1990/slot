@@ -39,6 +39,7 @@ type Store interface {
 	CreateUser(email, passwordHash string) (int64, error)
 	CountUsers() (int, error)
 	UpdateOwnerProfile(userID int64, name, timezone string) error
+	UpdatePassword(userID int64, passwordHash string) error
 	CreatePasswordResetToken(userID int64) (string, error)
 	ClearPasswordResetTokens(userID int64) error
 	FindPasswordResetUserID(token string) (int64, bool)
@@ -223,4 +224,13 @@ func (s *SQLiteStore) CountUsers() (int, error) {
 		return 0, fmt.Errorf("count users: %w", err)
 	}
 	return count, nil
+}
+
+// UpdatePassword replaces the owner's password hash. The caller verifies the
+// current password; the store never sees it.
+func (s *SQLiteStore) UpdatePassword(userID int64, passwordHash string) error {
+	if _, err := s.db.Exec("UPDATE users SET password_hash = ? WHERE id = ?", passwordHash, userID); err != nil {
+		return fmt.Errorf("update password for user %d: %w", userID, err)
+	}
+	return nil
 }

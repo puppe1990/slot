@@ -12,24 +12,15 @@
   <form action="/setup" method="post" class="flex flex-col gap-space-md">
     <input type="hidden" name="csrf_token" value="{{ .CSRFToken }}" />
 
-    <section class="rounded-xl border border-line bg-surface p-space-md">
-      <h2 class="text-headline-sm font-medium text-foam">{{ t "setup.profile" }}</h2>
-      <div class="mt-space-md grid gap-space-sm sm:grid-cols-2">
-        <.input name="name" label="{{ t "setup.display_name" }}" value="{{ .Owner.Name }}" error="{{ fieldError .Errors "name" }}" />
-        <label class="flex flex-col gap-1">
-          <span class="text-label-ui uppercase tracking-[0.08em] text-muted">{{ t "setup.timezone" }}</span>
-          <select id="owner-timezone" name="timezone" data-first-visit="{{ if .FirstVisit }}true{{ else }}false{{ end }}" class="h-11 rounded-lg border border-line bg-canvas px-3 text-body-md text-foam outline-none focus:border-pine">
-            {{ range .TimezoneOptions }}
-            <option value="{{ .Value }}" {{ if .Selected }}selected{{ end }}>{{ .Label }}</option>
-            {{ end }}
-          </select>
-          <span class="text-label-mono text-muted">{{ t "setup.now" .TimezoneAbbrevNow }}</span>
-          <p id="tz-hint" class="hidden text-label-mono text-slate">
-            {{ t "setup.tz_detected" }} <span id="tz-detected" class="text-foam"></span>
-            · <button type="button" id="tz-use" class="text-pine underline underline-offset-2">{{ t "setup.tz_use" }}</button>
-          </p>
-        </label>
+    <section class="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-line bg-surface p-space-md">
+      <div class="flex min-w-0 items-center gap-3">
+        <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-moss/70 text-label-ui font-semibold text-pine">{{ slice .Profile.Name 0 1 }}</span>
+        <div class="flex min-w-0 flex-col">
+          <span class="truncate text-body-md font-medium text-foam">{{ .Profile.Name }}</span>
+          <span class="truncate text-label-mono text-muted">{{ .Profile.TimezoneHint }}</span>
+        </div>
       </div>
+      <a href="/settings" class="text-label-ui uppercase tracking-[0.08em] text-slate hover:text-foam">{{ t "settings.edit_profile" }} →</a>
     </section>
 
     <section class="rounded-xl border border-line bg-surface p-space-md">

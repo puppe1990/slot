@@ -69,23 +69,23 @@ func TestBuildWeekdayRowsKeepsASavedPartialWeek(t *testing.T) {
 	}
 }
 
-// A brand-new owner has no rules; the page marks that so the client script may
+// A brand-new owner has no rules; /settings marks that so the client script may
 // preselect the browser zone. After the first save the marker must be false,
 // otherwise every visit would overwrite the owner's choice.
-func TestSetupMarksFirstVisitOnlyWithoutRules(t *testing.T) {
+func TestSettingsMarksFirstVisitOnlyWithoutRules(t *testing.T) {
 	env := setupTestEnv(t)
 	userID, err := env.store.CreateUser("tz@example.com", "hash")
 	if err != nil {
 		t.Fatal(err)
 	}
-	setup := NewSetupHandler(env.deps)
+	settings := NewSettingsHandler(env.deps)
 
 	render := func() string {
 		t.Helper()
-		req := httptest.NewRequest(http.MethodGet, "/setup", nil)
+		req := httptest.NewRequest(http.MethodGet, "/settings", nil)
 		req = session.WithUserID(req, userID)
 		rec := httptest.NewRecorder()
-		setup.Show(rec, req)
+		settings.Show(rec, req)
 		if rec.Code != http.StatusOK {
 			t.Fatalf("status = %d: %s", rec.Code, rec.Body.String())
 		}
@@ -96,7 +96,7 @@ func TestSetupMarksFirstVisitOnlyWithoutRules(t *testing.T) {
 		t.Error("new owner should be marked as a first visit")
 	}
 	if body := render(); !strings.Contains(body, `id="tz-hint"`) {
-		t.Error("setup is missing the timezone hint")
+		t.Error("settings is missing the timezone hint")
 	}
 
 	if err := env.store.ReplaceAvailabilityRules(userID, []models.AvailabilityRule{
