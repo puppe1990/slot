@@ -12,6 +12,7 @@ import (
 	"github.com/puppe1990/amarra-cais/pkg/cais/session"
 
 	"github.com/puppe1990/slot/internal/call"
+	"github.com/puppe1990/slot/internal/models"
 )
 
 type fakeCall struct {
@@ -25,6 +26,16 @@ func (f *fakeCall) CreateRoom(_ context.Context, input call.Input) (call.Room, e
 	roomURL := fmt.Sprintf("https://call.example/%d", input.BookingID)
 	f.created = append(f.created, roomURL)
 	return call.Room{URL: roomURL, Provider: "fake"}, nil
+}
+
+func (f *fakeCall) RoomURL(_ context.Context, room call.Room, viewer call.Viewer) (string, error) {
+	if room.URL == "" {
+		return "", nil
+	}
+	if viewer.Owner {
+		return room.URL + "?t=owner", nil
+	}
+	return room.URL + "?t=guest", nil
 }
 
 func (f *fakeCall) EndRoom(_ context.Context, room call.Room) error {
@@ -77,16 +88,19 @@ func TestConfirmIssuesRoomAndCancelEndsIt(t *testing.T) {
 	manageReq.SetPathValue("token", token)
 	manageRec := httptest.NewRecorder()
 	NewManageHandler(env.deps).Show(manageRec, manageReq)
-	if !strings.Contains(manageRec.Body.String(), fake.created[0]) {
-		t.Error("manage page is missing the join link")
+	// The page links to the signed join route, never to the private room.
+	joinPath := "/manage/" + token + "/join"
+	if !strings.Contains(manageRec.Body.String(), joinPath) {
+		t.Errorf("manage page is missing %s", joinPath)
 	}
 
 	inviteReq := httptest.NewRequest(http.MethodGet, "/manage/"+token+"/invite.ics", nil)
 	inviteReq.SetPathValue("token", token)
 	inviteRec := httptest.NewRecorder()
 	NewManageHandler(env.deps).Invite(inviteRec, inviteReq)
-	if !strings.Contains(inviteRec.Body.String(), "URL:"+fake.created[0]) {
-		t.Errorf("ics is missing URL:%s", fake.created[0])
+	wantInviteURL := "URL:https://slot.example.com" + joinPath
+	if !strings.Contains(inviteRec.Body.String(), wantInviteURL) {
+		t.Errorf("ics is missing %s", wantInviteURL)
 	}
 
 	cancelReq := postForm("/bookings/1/cancel", url.Values{}, nil)
@@ -171,5 +185,107 @@ func TestConfirmationEmailsCarryRoomAndManageLink(t *testing.T) {
 	}
 	if !strings.Contains(owner.Subject, "Marina Costa") {
 		t.Errorf("owner subject = %q, want the guest name", owner.Subject)
+	}
+}
+
+func bookingForJoin(t *testing.T, env *testEnv) (models.Booking, string) {
+	t.Helper()
+	meetingType := env.seedMeetingType(t, "30min", 30)
+	_ = meetingType
+	bookingHandler := NewBookingHandler(env.deps)
+
+	holdReq := postForm("/book/30min/hold", url.Values{"slot": {"2026-10-26T14:00:00Z"}}, nil)
+	holdReq.SetPathValue("slug", "30min")
+	holdRec := httptest.NewRecorder()
+	bookingHandler.Hold(holdRec, holdReq)
+
+	confirmReq := postForm("/book/30min/confirm", url.Values{
+		"name":  {"Marina Costa"},
+		"email": {"marina@example.com"},
+	}, holdCookie(holdRec))
+	confirmReq.SetPathValue("slug", "30min")
+	confirmRec := httptest.NewRecorder()
+	bookingHandler.Confirm(confirmRec, confirmReq)
+	if confirmRec.Code != http.StatusSeeOther {
+		t.Fatalf("confirm = %d: %s", confirmRec.Code, confirmRec.Body.String())
+	}
+	booking, err := env.store.GetBooking(env.ownerID, 1)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return booking, strings.TrimPrefix(confirmRec.Header().Get("Location"), "/manage/")
+}
+
+func TestGuestJoinRedirectsWithToken(t *testing.T) {
+	env := setupTestEnv(t)
+	env.deps.Call = &fakeCall{}
+	_, token := bookingForJoin(t, env)
+
+	req := httptest.NewRequest(http.MethodGet, "/manage/"+token+"/join", nil)
+	req.SetPathValue("token", token)
+	rec := httptest.NewRecorder()
+	NewManageHandler(env.deps).Join(rec, req)
+
+	if rec.Code != http.StatusSeeOther {
+		t.Fatalf("join = %d: %s", rec.Code, rec.Body.String())
+	}
+	if location := rec.Header().Get("Location"); location != "https://call.example/1?t=guest" {
+		t.Fatalf("Location = %q", location)
+	}
+}
+
+func TestOwnerJoinGetsOwnerToken(t *testing.T) {
+	env := setupTestEnv(t)
+	env.deps.Call = &fakeCall{}
+	bookingForJoin(t, env)
+
+	req := httptest.NewRequest(http.MethodGet, "/bookings/1/join", nil)
+	req.SetPathValue("id", "1")
+	req = session.WithUserID(req, env.ownerID)
+	rec := httptest.NewRecorder()
+	NewDashboardHandler(env.deps).Join(rec, req)
+
+	if rec.Code != http.StatusSeeOther {
+		t.Fatalf("join = %d: %s", rec.Code, rec.Body.String())
+	}
+	if location := rec.Header().Get("Location"); location != "https://call.example/1?t=owner" {
+		t.Fatalf("Location = %q, want the owner token", location)
+	}
+}
+
+func TestRSVPRecordsAttendance(t *testing.T) {
+	env := setupTestEnv(t)
+	_, token := bookingForJoin(t, env)
+
+	req := postForm("/manage/"+token+"/rsvp", url.Values{}, nil)
+	req.SetPathValue("token", token)
+	rec := httptest.NewRecorder()
+	NewManageHandler(env.deps).RSVP(rec, req)
+
+	if rec.Code != http.StatusSeeOther || rec.Header().Get("Location") != "/manage/"+token {
+		t.Fatalf("rsvp = %d %q", rec.Code, rec.Header().Get("Location"))
+	}
+	booking, err := env.store.GetBooking(env.ownerID, 1)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if booking.Attendance != models.AttendanceGoing {
+		t.Fatalf("attendance = %q, want GOING", booking.Attendance)
+	}
+
+	pageReq := httptest.NewRequest(http.MethodGet, "/manage/"+token, nil)
+	pageReq.SetPathValue("token", token)
+	pageRec := httptest.NewRecorder()
+	NewManageHandler(env.deps).Show(pageRec, pageReq)
+	if !strings.Contains(pageRec.Body.String(), "Attendance confirmed") {
+		t.Error("manage page does not show the RSVP state")
+	}
+
+	dashReq := httptest.NewRequest(http.MethodGet, "/dashboard", nil)
+	dashReq = session.WithUserID(dashReq, env.ownerID)
+	dashRec := httptest.NewRecorder()
+	NewDashboardHandler(env.deps).ServeHTTP(dashRec, dashReq)
+	if !strings.Contains(dashRec.Body.String(), "Attendance confirmed") {
+		t.Error("dashboard does not show the RSVP badge")
 	}
 }

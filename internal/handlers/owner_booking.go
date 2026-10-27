@@ -120,7 +120,7 @@ func (h *DashboardHandler) Invite(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	h.writeCalendar(w, h.localeFor(r), []models.Booking{booking}, "slot-booking.ics")
+	h.writeCalendar(w, r, h.localeFor(r), []models.Booking{booking}, "slot-booking.ics")
 }
 
 // Export downloads the current filter as a single VCALENDAR, so the owner can
@@ -137,10 +137,10 @@ func (h *DashboardHandler) Export(w http.ResponseWriter, r *http.Request) {
 		h.serverError(w, r, err)
 		return
 	}
-	h.writeCalendar(w, h.localeFor(r), bookings, "slot-bookings.ics")
+	h.writeCalendar(w, r, h.localeFor(r), bookings, "slot-bookings.ics")
 }
 
-func (h *DashboardHandler) writeCalendar(w http.ResponseWriter, l localeText, bookings []models.Booking, filename string) {
+func (h *DashboardHandler) writeCalendar(w http.ResponseWriter, r *http.Request, l localeText, bookings []models.Booking, filename string) {
 	events := make([]ics.Event, 0, len(bookings))
 	for _, booking := range bookings {
 		if booking.Status == models.BookingStatusCancelled {
@@ -153,7 +153,7 @@ func (h *DashboardHandler) writeCalendar(w http.ResponseWriter, l localeText, bo
 			Summary:        booking.MeetingTypeTitle + " · " + booking.GuestName,
 			Description:    bookingNotes(booking),
 			Location:       meetingLocation(booking, l),
-			URL:            booking.MeetingURL,
+			URL:            h.absoluteURL(r, "/bookings/"+strconv.FormatInt(booking.ID, 10)+"/join"),
 			OrganizerName:  booking.OwnerName,
 			OrganizerEmail: booking.OwnerEmail,
 			AttendeeName:   booking.GuestName,

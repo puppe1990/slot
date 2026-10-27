@@ -32,6 +32,10 @@ func (j *Jitsi) CreateRoom(_ context.Context, input Input) (Room, error) {
 	}, nil
 }
 
+func (j *Jitsi) RoomURL(_ context.Context, room Room, _ Viewer) (string, error) {
+	return room.URL, nil
+}
+
 // EndRoom is a no-op: a Jitsi room exists only while someone is in it.
 func (j *Jitsi) EndRoom(context.Context, Room) error { return nil }
 

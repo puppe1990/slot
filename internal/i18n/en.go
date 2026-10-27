@@ -61,7 +61,12 @@ var enMessages = map[string]string{
 	"common.previous_week": "Previous week",
 	"common.next_week":     "Next week",
 
-	"call.join": "Join room",
+	"call.unavailable": "This booking has no room yet.",
+	"rsvp.title":       "Will you make it?",
+	"rsvp.cta":         "I'll be there",
+	"rsvp.done":        "Attendance confirmed",
+	"rsvp.flash":       "See you there.",
+	"call.join":        "Join room",
 
 	// Booking states and locations
 	"status.confirmed":   "Confirmed",

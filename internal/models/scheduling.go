@@ -67,6 +67,7 @@ type Booking struct {
 	CancellationReason string
 	CalendarEventID    string
 	MeetingURL         string
+	Attendance         string
 	CreatedAt          time.Time
 	UpdatedAt          time.Time
 
@@ -79,6 +80,9 @@ type Booking struct {
 	OwnerEmail          string
 	OwnerTimezone       string
 }
+
+// AttendanceGoing is the guest's RSVP. Empty means "did not answer yet".
+const AttendanceGoing = "GOING"
 
 func (b Booking) Active() bool {
 	return b.Status == BookingStatusConfirmed || b.Status == BookingStatusRescheduled

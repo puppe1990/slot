@@ -327,9 +327,8 @@ func bookingNotes(booking models.Booking) string {
 	return notes
 }
 
+// meetingLocation is the modality label. The room URL never lands here: with a
+// private room it only works after a token, so the join routes own it.
 func meetingLocation(booking models.Booking, l localeText) string {
-	if booking.MeetingURL != "" {
-		return booking.MeetingURL
-	}
 	return l.locationLabel(booking.MeetingTypeLocation)
 }

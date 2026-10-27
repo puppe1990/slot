@@ -61,7 +61,12 @@ var ptMessages = map[string]string{
 	"common.previous_week": "Semana anterior",
 	"common.next_week":     "Próxima semana",
 
-	"call.join": "Entrar na sala",
+	"call.unavailable": "Esta reserva ainda não tem sala.",
+	"rsvp.title":       "Você vai comparecer?",
+	"rsvp.cta":         "Vou comparecer",
+	"rsvp.done":        "Presença confirmada",
+	"rsvp.flash":       "Até lá.",
+	"call.join":        "Entrar na sala",
 
 	// Estados de reserva e locais
 	"status.confirmed":   "Confirmada",

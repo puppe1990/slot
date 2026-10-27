@@ -20,6 +20,14 @@ type Room struct {
 	Provider string
 }
 
+// Viewer is who is trying to join: the guest or the owner. Daily turns this
+// into a meeting token, so the room URL in an email is useless on its own.
+type Viewer struct {
+	Name      string
+	Owner     bool
+	ExpiresAt time.Time
+}
+
 type Input struct {
 	BookingID int64
 	Title     string
@@ -30,6 +38,9 @@ type Input struct {
 type Provider interface {
 	Provider() string
 	CreateRoom(ctx context.Context, input Input) (Room, error)
+	// RoomURL returns the URL the viewer should open. Providers that control
+	// access append a short-lived token; Jitsi returns the room as is.
+	RoomURL(ctx context.Context, room Room, viewer Viewer) (string, error)
 	// EndRoom is best effort: a vendor that has no room lifecycle (Jitsi)
 	// simply returns nil.
 	EndRoom(ctx context.Context, room Room) error
@@ -66,5 +77,7 @@ func (None) Provider() string { return ProviderNone }
 func (None) CreateRoom(context.Context, Input) (Room, error) {
 	return Room{}, nil
 }
+
+func (None) RoomURL(context.Context, Room, Viewer) (string, error) { return "", nil }
 
 func (None) EndRoom(context.Context, Room) error { return nil }

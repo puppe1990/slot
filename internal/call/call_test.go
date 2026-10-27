@@ -83,6 +83,9 @@ func TestDailyCreateRoom(t *testing.T) {
 	if int64(exp) != testInput().End.Add(time.Hour).Unix() {
 		t.Fatalf("exp = %v, want end + 1h", properties["exp"])
 	}
+	if seenBody["privacy"] != "private" {
+		t.Fatalf("privacy = %v, want private", seenBody["privacy"])
+	}
 }
 
 func TestDailyCreateRoomSurfacesStatusWithoutKey(t *testing.T) {
@@ -165,5 +168,87 @@ func TestJitsiRoomIsUniqueAndUnguessable(t *testing.T) {
 	}
 	if strings.Contains(first.URL, "42") {
 		t.Fatalf("url %q leaks the booking id", first.URL)
+	}
+}
+
+func TestDailyRoomURLIssuesGuestToken(t *testing.T) {
+	var seenPath string
+	var seenBody map[string]any
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		seenPath = r.Method + " " + r.URL.Path
+		_ = json.NewDecoder(r.Body).Decode(&seenBody)
+		_ = json.NewEncoder(w).Encode(map[string]string{"token": "jwt-token"})
+	}))
+	t.Cleanup(server.Close)
+
+	provider, err := call.NewDaily("key", server.URL)
+	if err != nil {
+		t.Fatal(err)
+	}
+	room := call.Room{URL: "https://team.daily.co/slot-9-abcd"}
+	got, err := provider.RoomURL(context.Background(), room, call.Viewer{
+		Name:      "Marina Costa",
+		ExpiresAt: testInput().End,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got != "https://team.daily.co/slot-9-abcd?t=jwt-token" {
+		t.Fatalf("url = %q", got)
+	}
+	if seenPath != "POST /meeting-tokens" {
+		t.Fatalf("request = %q", seenPath)
+	}
+	properties, _ := seenBody["properties"].(map[string]any)
+	if properties["room_name"] != "slot-9-abcd" || properties["user_name"] != "Marina Costa" {
+		t.Fatalf("properties = %v", properties)
+	}
+	if properties["is_owner"] != false {
+		t.Fatalf("is_owner = %v, want false", properties["is_owner"])
+	}
+	exp, _ := properties["exp"].(float64)
+	if int64(exp) != testInput().End.Unix() {
+		t.Fatalf("exp = %v", properties["exp"])
+	}
+}
+
+func TestDailyRoomURLMarksTheOwner(t *testing.T) {
+	var seenBody map[string]any
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_ = json.NewDecoder(r.Body).Decode(&seenBody)
+		_ = json.NewEncoder(w).Encode(map[string]string{"token": "owner-token"})
+	}))
+	t.Cleanup(server.Close)
+
+	provider, err := call.NewDaily("key", server.URL)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := provider.RoomURL(context.Background(), call.Room{URL: "https://team.daily.co/slot-9-abcd"},
+		call.Viewer{Name: "Alex", Owner: true}); err != nil {
+		t.Fatal(err)
+	}
+	properties, _ := seenBody["properties"].(map[string]any)
+	if properties["is_owner"] != true {
+		t.Fatalf("is_owner = %v, want true", properties["is_owner"])
+	}
+}
+
+func TestJitsiRoomURLIsTheRoom(t *testing.T) {
+	provider, err := call.NewJitsi("")
+	if err != nil {
+		t.Fatal(err)
+	}
+	room, err := provider.CreateRoom(context.Background(), testInput())
+	if err != nil {
+		t.Fatal(err)
+	}
+	got, err := provider.RoomURL(context.Background(), room, call.Viewer{Name: "Guest"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got != room.URL {
+		t.Fatalf("url = %q, want %q", got, room.URL)
 	}
 }

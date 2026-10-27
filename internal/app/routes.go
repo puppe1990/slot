@@ -54,6 +54,7 @@ func registerRoutes(r *cais.Router, deps Deps, cfg cais.Config) {
 	r.Get("/dashboard", owner(dashboard.ServeHTTP))
 	r.Get("/dashboard/export.ics", owner(dashboard.Export))
 	r.Get("/bookings/{id}/invite.ics", owner(dashboard.Invite))
+	r.Get("/bookings/{id}/join", owner(dashboard.Join))
 	r.Get("/bookings/{id}/reschedule", owner(dashboard.ReschedulePage))
 	r.Post("/bookings/{id}/reschedule", owner(dashboard.Reschedule))
 	r.Post("/bookings/{id}/cancel", owner(dashboard.Cancel))
@@ -80,6 +81,8 @@ func registerRoutes(r *cais.Router, deps Deps, cfg cais.Config) {
 
 	r.Get("/manage/{token}", manage.Show)
 	r.Get("/manage/{token}/invite.ics", manage.Invite)
+	r.Get("/manage/{token}/join", manage.Join)
+	r.Post("/manage/{token}/rsvp", bookingLimit.Middleware(http.HandlerFunc(manage.RSVP)).ServeHTTP)
 	r.Post("/manage/{token}/reschedule", bookingLimit.Middleware(http.HandlerFunc(manage.Reschedule)).ServeHTTP)
 	r.Post("/manage/{token}/cancel", bookingLimit.Middleware(http.HandlerFunc(manage.Cancel)).ServeHTTP)
 }

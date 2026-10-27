@@ -115,7 +115,7 @@ Each confirmed booking can get a real room instead of a dead "Google Meet" label
 | `jitsi`          | —               | `https://meet.jit.si/slot-<random>`, no API call        |
 | `daily`          | `DAILY_API_KEY` | `POST /v1/rooms` with an expiry at the session end + 1h |
 
-The room URL is stored on the booking (`meeting_url`), shown as **Join room** on the manage page and the dashboard, and exported in the `.ics` as `URL`/`LOCATION`. Cancelling the booking calls `EndRoom` (Daily deletes the room; Jitsi is a no-op). A vendor failure logs and never loses the booking — same rule as the calendar event.
+The room URL is stored on the booking (`meeting_url`) but never linked directly: **Join room** points at the signed route, which asks Daily for a short-lived meeting token (`is_owner` for the consultant) and redirects with it. A forwarded email therefore cannot walk into someone else's room. The `.ics` carries the join route, not the room. Cancelling the booking calls `EndRoom` (Daily deletes the room; Jitsi is a no-op). Guests can also RSVP ("I'll be there") from the manage page; the answer is stored on `bookings.attendance` and shows as a badge on the dashboard. A vendor failure logs and never loses the booking — same rule as the calendar event.
 
 Adding a provider is one file in `internal/call/` plus a case in `call.New`; the handlers only know the interface.
 

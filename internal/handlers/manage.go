@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/puppe1990/amarra-cais/pkg/cais/flash"
 	"github.com/puppe1990/amarra-cais/pkg/cais/httpx"
 	"github.com/puppe1990/amarra-cais/pkg/cais/validate"
 
@@ -110,7 +111,64 @@ func (h *ManageHandler) Cancel(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, r.URL.Path, http.StatusSeeOther)
 }
 
+// Join issues a meeting token for the guest and redirects into the room. The
+// email only carries this page's signed link, so a forwarded invite cannot be
+// used to walk into someone else's call.
+func (h *ManageHandler) Join(w http.ResponseWriter, r *http.Request) {
+	booking, ok := h.load(w, r)
+	if !ok {
+		return
+	}
+	if booking.MeetingURL == "" {
+		flash.Set(w, "error", h.localeFor(r).t("call.unavailable"), h.deps.Config.CookieSecure())
+		http.Redirect(w, r, managePathFrom(r, "/join"), http.StatusSeeOther)
+		return
+	}
+	roomURL, err := h.deps.Call.RoomURL(r.Context(), call.Room{URL: booking.MeetingURL}, call.Viewer{
+		Name:      booking.GuestName,
+		ExpiresAt: booking.EndUTC.Add(30 * time.Minute),
+	})
+	if err != nil {
+		h.serverError(w, r, err)
+		return
+	}
+	if roomURL == "" {
+		flash.Set(w, "error", h.localeFor(r).t("call.unavailable"), h.deps.Config.CookieSecure())
+		http.Redirect(w, r, managePathFrom(r, "/join"), http.StatusSeeOther)
+		return
+	}
+	http.Redirect(w, r, roomURL, http.StatusSeeOther)
+}
+
+// RSVP is a POST on purpose: a GET in an email body gets prefetched by mail
+// scanners, which would confirm attendance without the guest.
+func (h *ManageHandler) RSVP(w http.ResponseWriter, r *http.Request) {
+	booking, ok := h.load(w, r)
+	if !ok {
+		return
+	}
+	l := h.localeFor(r)
+	if !booking.Active() {
+		h.renderManage(w, r, booking, validate.FieldErrors{"slot": l.t("manage.error_cancelled")}, http.StatusConflict)
+		return
+	}
+	if err := h.deps.Store.SetAttendance(booking.ID, models.AttendanceGoing); err != nil {
+		h.serverError(w, r, err)
+		return
+	}
+	if err := h.deps.Store.RecordAudit(models.AuditLog{
+		BookingID: booking.ID,
+		Action:    "ATTENDANCE_CONFIRMED",
+		Actor:     models.ActorGuest,
+	}); err != nil {
+		log.Printf("slot: audit rsvp for booking %d: %v", booking.ID, err)
+	}
+	flash.Set(w, "notice", l.t("rsvp.flash"), h.deps.Config.CookieSecure())
+	http.Redirect(w, r, managePathFrom(r, "/rsvp"), http.StatusSeeOther)
+}
+
 func (h *ManageHandler) Invite(w http.ResponseWriter, r *http.Request) {
+	l := h.localeFor(r)
 	booking, ok := h.load(w, r)
 	if !ok {
 		return
@@ -121,8 +179,8 @@ func (h *ManageHandler) Invite(w http.ResponseWriter, r *http.Request) {
 		End:            booking.EndUTC,
 		Summary:        booking.MeetingTypeTitle + " · " + booking.OwnerName,
 		Description:    bookingNotes(booking),
-		Location:       meetingLocation(booking, h.localeFor(r)),
-		URL:            booking.MeetingURL,
+		Location:       meetingLocation(booking, l),
+		URL:            h.absoluteURL(r, strings.TrimSuffix(r.URL.Path, "/invite.ics")+"/join"),
 		OrganizerName:  booking.OwnerName,
 		OrganizerEmail: booking.OwnerEmail,
 		AttendeeName:   booking.GuestName,
@@ -132,6 +190,12 @@ func (h *ManageHandler) Invite(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Disposition", `attachment; filename="slot-booking.ics"`)
 	w.WriteHeader(http.StatusOK)
 	_, _ = w.Write(document)
+}
+
+// managePathFrom strips the action suffix so an error or a successful action
+// lands on the page that owns it instead of re-running the action.
+func managePathFrom(r *http.Request, suffix string) string {
+	return strings.TrimSuffix(r.URL.Path, suffix)
 }
 
 func (h *ManageHandler) renderManage(w http.ResponseWriter, r *http.Request, booking models.Booking, errs validate.FieldErrors, status int) {
