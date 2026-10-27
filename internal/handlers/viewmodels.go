@@ -85,8 +85,13 @@ func presentMeetingType(meetingType models.MeetingType, l localeText) meetingTyp
 
 // locationOptions is the modality picker. Only the values are stable; the
 // labels are translated in the template through the location.* catalog keys.
-var locationOptions = []string{
-	models.LocationGoogleMeet,
-	models.LocationPhone,
-	models.LocationCustom,
+var locationOptions = []selectOption{
+	{Value: models.LocationGoogleMeet, Key: "location.meet"},
+	{Value: models.LocationPhone, Key: "location.phone"},
+	{Value: models.LocationCustom, Key: "location.custom"},
+}
+
+type selectOption struct {
+	Value string
+	Key   string
 }
