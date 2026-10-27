@@ -100,6 +100,8 @@ var ptMessages = map[string]string{
 	"dashboard.no_bookings":      "Nenhuma reserva ainda",
 	"dashboard.no_bookings_body": "Publique um formato e compartilhe o link. O hold expira em 10 minutos, então visitas abandonadas liberam o horário sozinhas.",
 	"dashboard.formats":          "Formatos",
+	"dashboard.cancel_title":     "Cancelar esta reserva?",
+	"dashboard.cancel_cta":       "Cancelar reserva",
 	"dashboard.cancel_confirm":   "Cancelar esta reserva? O horário é liberado e o convidado é avisado.",
 
 	// Disponibilidade
