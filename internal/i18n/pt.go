@@ -111,6 +111,8 @@ var ptMessages = map[string]string{
 	"setup.profile":          "Perfil e fuso",
 	"setup.display_name":     "Nome de exibição",
 	"setup.timezone":         "Fuso principal",
+	"setup.tz_detected":      "Detectado no seu navegador:",
+	"setup.tz_use":           "Usar",
 	"setup.now":              "Agora %s",
 	"setup.weekly":           "Horários da semana",
 	"setup.weekly_hint":      "Deixe vazio para fechar o dia",
