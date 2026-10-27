@@ -169,14 +169,25 @@ func TestConfirmationEmailsCarryRoomAndManageLink(t *testing.T) {
 		t.Fatalf("confirm = %d: %s", confirmRec.Code, confirmRec.Body.String())
 	}
 
+	joinPath := confirmRec.Header().Get("Location") + "/join"
+
 	guest, ok := env.outbox.LastFor("marina@example.com")
 	if !ok {
 		t.Fatal("guest email was not queued")
 	}
-	for _, want := range []string{fake.created[0], "/manage/", "30-Minute Strategy Advisory"} {
+	for _, want := range []string{joinPath, "/manage/", "30-Minute Strategy Advisory"} {
 		if !strings.Contains(guest.Body, want) && !strings.Contains(guest.Subject, want) {
 			t.Errorf("guest email missing %q: %s", want, guest.Body)
 		}
+	}
+
+	for _, want := range []string{"#FAF9F6", "#1B382B", "Slot", joinPath} {
+		if !strings.Contains(guest.HTML, want) {
+			t.Errorf("guest html missing %q", want)
+		}
+	}
+	if guest.HTML == "" {
+		t.Fatal("guest email has no html part")
 	}
 
 	owner, ok := env.outbox.LastFor("owner@example.com")

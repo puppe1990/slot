@@ -103,6 +103,8 @@ Transactional mail goes through a `Notifier` picked by env:
 | `outbox` (default) | —                               | memory only; development and tests   |
 | `resend`           | `RESEND_API_KEY` + `EMAIL_FROM` | real delivery through the Resend API |
 
+Every notice goes out as **plain text and HTML**. The HTML part uses the Calm Conviction palette (canvas, stone, pine, clay) with a table layout and inline styles only — Gmail strips `<style>` and ignores web fonts, so the fallbacks are system fonts. The header badge follows the tone: moss/pine for confirmed, slate for moved, clay for cancelled.
+
 `EMAIL_FROM` must sit on a domain verified in Resend (e.g. `Slot <slot@gestaobem.com>`). Confirmation, reschedule and cancellation notices are composed in `internal/handlers/notices.go` and follow the locale of the request that triggered them — a guest who booked in pt-BR gets a Portuguese email. A delivery failure logs and never fails the booking.
 
 ## Video rooms

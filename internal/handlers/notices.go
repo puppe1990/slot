@@ -10,105 +10,171 @@ import (
 	"github.com/puppe1990/slot/internal/notify"
 )
 
-// Email copy lives here so a subject change never drifts between the confirm,
-// the manage page and the dashboard. Bodies follow the request locale, which is
-// the language the guest booked in.
+// bookingEmail is one notice, in both flavours. Email copy lives here so a
+// subject change never drifts between confirm, manage and dashboard, and the
+// body follows the locale the guest booked in.
+type bookingEmail struct {
+	Kind      string
+	To        string
+	Subject   string
+	Heading   string
+	Tone      string
+	Intro     string
+	Location  *time.Location
+	CTAURL    string
+	CTALabel  string
+	ManageURL string
+	Reason    string
+}
+
 func (b base) sendConfirmed(r *http.Request, booking models.Booking, manageURL string) {
 	l := b.localeFor(r)
-	loc := mustLocation(normalizeTimezone(booking.GuestTimezone, booking.OwnerTimezone))
-	b.send(r, notify.Message{
-		Kind:    "booking.confirmed",
-		To:      booking.GuestEmail,
-		Subject: l.t("email.confirmed.subject", booking.MeetingTypeTitle),
-		Body: b.bookingEmailBody(l, booking, loc,
-			l.t("email.confirmed.intro", booking.MeetingTypeTitle, booking.OwnerName), manageURL),
-	})
+	b.send(r, b.bookingEmailMessage(r, l, booking, bookingEmail{
+		Kind:      "booking.confirmed",
+		To:        booking.GuestEmail,
+		Subject:   l.t("email.confirmed.subject", booking.MeetingTypeTitle),
+		Heading:   l.t("email.heading.confirmed"),
+		Tone:      "pine",
+		Intro:     l.t("email.confirmed.intro", booking.MeetingTypeTitle, booking.OwnerName),
+		Location:  mustLocation(normalizeTimezone(booking.GuestTimezone, booking.OwnerTimezone)),
+		CTAURL:    joinURL(manageURL, booking.MeetingURL),
+		CTALabel:  l.t("call.join"),
+		ManageURL: manageURL,
+	}))
 }
 
 func (b base) sendOwnerNew(r *http.Request, booking models.Booking) {
 	l := b.localeFor(r)
-	loc := mustLocation(booking.OwnerTimezone)
-	b.send(r, notify.Message{
-		Kind:    "booking.owner_new",
-		To:      booking.OwnerEmail,
-		Subject: l.t("email.owner_new.subject", booking.GuestName),
-		Body: b.bookingEmailBody(l, booking, loc,
-			l.t("email.owner_new.intro", booking.GuestName, booking.GuestEmail, booking.MeetingTypeTitle), ""),
-	})
+	b.send(r, b.bookingEmailMessage(r, l, booking, bookingEmail{
+		Kind:     "booking.owner_new",
+		To:       booking.OwnerEmail,
+		Subject:  l.t("email.owner_new.subject", booking.GuestName),
+		Heading:  l.t("email.heading.owner_new"),
+		Tone:     "pine",
+		Intro:    l.t("email.owner_new.intro", booking.GuestName, booking.GuestEmail, booking.MeetingTypeTitle),
+		Location: mustLocation(booking.OwnerTimezone),
+		CTAURL:   b.absoluteURL(r, "/dashboard"),
+		CTALabel: l.t("email.cta.dashboard"),
+	}))
 }
 
 func (b base) sendMoved(r *http.Request, booking models.Booking, manageURL string) {
 	l := b.localeFor(r)
-	loc := mustLocation(normalizeTimezone(booking.GuestTimezone, booking.OwnerTimezone))
-	b.send(r, notify.Message{
-		Kind:    "booking.moved",
-		To:      booking.GuestEmail,
-		Subject: l.t("email.moved.subject", booking.MeetingTypeTitle),
-		Body: b.bookingEmailBody(l, booking, loc,
-			l.t("email.moved.intro", booking.MeetingTypeTitle), manageURL),
-	})
+	b.send(r, b.bookingEmailMessage(r, l, booking, bookingEmail{
+		Kind:      "booking.moved",
+		To:        booking.GuestEmail,
+		Subject:   l.t("email.moved.subject", booking.MeetingTypeTitle),
+		Heading:   l.t("email.heading.moved"),
+		Tone:      "slate",
+		Intro:     l.t("email.moved.intro", booking.MeetingTypeTitle),
+		Location:  mustLocation(normalizeTimezone(booking.GuestTimezone, booking.OwnerTimezone)),
+		CTAURL:    joinURL(manageURL, booking.MeetingURL),
+		CTALabel:  l.t("call.join"),
+		ManageURL: manageURL,
+	}))
 }
 
 func (b base) sendOwnerMoved(r *http.Request, booking models.Booking) {
 	l := b.localeFor(r)
-	loc := mustLocation(booking.OwnerTimezone)
-	b.send(r, notify.Message{
-		Kind:    "booking.owner_moved",
-		To:      booking.OwnerEmail,
-		Subject: l.t("email.owner_moved.subject", booking.GuestName),
-		Body: b.bookingEmailBody(l, booking, loc,
-			l.t("email.owner_moved.intro", booking.GuestName, booking.MeetingTypeTitle), ""),
-	})
+	b.send(r, b.bookingEmailMessage(r, l, booking, bookingEmail{
+		Kind:     "booking.owner_moved",
+		To:       booking.OwnerEmail,
+		Subject:  l.t("email.owner_moved.subject", booking.GuestName),
+		Heading:  l.t("email.heading.owner_moved"),
+		Tone:     "slate",
+		Intro:    l.t("email.owner_moved.intro", booking.GuestName, booking.MeetingTypeTitle),
+		Location: mustLocation(booking.OwnerTimezone),
+		CTAURL:   b.absoluteURL(r, "/dashboard"),
+		CTALabel: l.t("email.cta.dashboard"),
+	}))
 }
 
 func (b base) sendCancelled(r *http.Request, booking models.Booking, manageURL, reason string) {
 	l := b.localeFor(r)
-	loc := mustLocation(normalizeTimezone(booking.GuestTimezone, booking.OwnerTimezone))
-	b.send(r, notify.Message{
-		Kind:    "booking.cancelled",
-		To:      booking.GuestEmail,
-		Subject: l.t("email.cancelled.subject", booking.MeetingTypeTitle),
-		Body: b.bookingEmailBody(l, booking, loc,
-			l.t("email.cancelled.intro", booking.MeetingTypeTitle), manageURL) +
-			reasonLine(l, reason),
-	})
+	b.send(r, b.bookingEmailMessage(r, l, booking, bookingEmail{
+		Kind:      "booking.cancelled",
+		To:        booking.GuestEmail,
+		Subject:   l.t("email.cancelled.subject", booking.MeetingTypeTitle),
+		Heading:   l.t("email.heading.cancelled"),
+		Tone:      "clay",
+		Intro:     l.t("email.cancelled.intro", booking.MeetingTypeTitle),
+		Location:  mustLocation(normalizeTimezone(booking.GuestTimezone, booking.OwnerTimezone)),
+		ManageURL: manageURL,
+		Reason:    reason,
+	}))
 }
 
 func (b base) sendOwnerCancelled(r *http.Request, booking models.Booking, reason string) {
 	l := b.localeFor(r)
-	loc := mustLocation(booking.OwnerTimezone)
-	b.send(r, notify.Message{
-		Kind:    "booking.owner_cancelled",
-		To:      booking.OwnerEmail,
-		Subject: l.t("email.owner_cancelled.subject", booking.GuestName),
-		Body: b.bookingEmailBody(l, booking, loc,
-			l.t("email.owner_cancelled.intro", booking.GuestName, booking.MeetingTypeTitle), "") +
-			reasonLine(l, reason),
+	b.send(r, b.bookingEmailMessage(r, l, booking, bookingEmail{
+		Kind:     "booking.owner_cancelled",
+		To:       booking.OwnerEmail,
+		Subject:  l.t("email.owner_cancelled.subject", booking.GuestName),
+		Heading:  l.t("email.heading.owner_cancelled"),
+		Tone:     "clay",
+		Intro:    l.t("email.owner_cancelled.intro", booking.GuestName, booking.MeetingTypeTitle),
+		Location: mustLocation(booking.OwnerTimezone),
+		CTAURL:   b.absoluteURL(r, "/dashboard"),
+		CTALabel: l.t("email.cta.dashboard"),
+		Reason:   reason,
+	}))
+}
+
+func (b base) bookingEmailMessage(r *http.Request, l localeText, booking models.Booking, email bookingEmail) notify.Message {
+	loc := email.Location
+	if loc == nil {
+		loc = mustLocation(booking.OwnerTimezone)
+	}
+	reason := strings.TrimSpace(email.Reason)
+	when := l.longDate(booking.StartUTC, loc)
+	clockRange := l.clockRange(booking.StartUTC, booking.EndUTC, loc)
+	zone := formatTimezone(booking.StartUTC, loc)
+
+	lines := []string{email.Intro, "", when + " · " + clockRange + " (" + zone + ")"}
+	if email.CTAURL != "" {
+		lines = append(lines, "", email.CTALabel+": "+email.CTAURL)
+	}
+	if email.ManageURL != "" {
+		lines = append(lines, l.t("email.cta.manage")+": "+email.ManageURL)
+	}
+	if reason != "" {
+		lines = append(lines, "", l.t("email.reason")+": "+reason)
+	}
+
+	html := renderEmail(emailView{
+		Lang:        l.tag,
+		Eyebrow:     booking.MeetingTypeTitle,
+		Heading:     email.Heading,
+		Tone:        email.Tone,
+		Intro:       email.Intro,
+		When:        when,
+		Range:       clockRange,
+		Zone:        zone,
+		ReasonLabel: l.t("email.reason"),
+		Reason:      reason,
+		CTAURL:      email.CTAURL,
+		CTALabel:    email.CTALabel,
+		ManageURL:   email.ManageURL,
+		ManageLabel: l.t("email.cta.manage"),
+		Footer:      l.t("layout.footer"),
+		FooterNote:  l.t("layout.footer_note"),
 	})
+
+	return notify.Message{
+		Kind:    email.Kind,
+		To:      email.To,
+		Subject: email.Subject,
+		Body:    strings.Join(lines, "\n"),
+		HTML:    html,
+	}
 }
 
-func (b base) bookingEmailBody(l localeText, booking models.Booking, loc *time.Location, intro, manageURL string) string {
-	lines := []string{
-		intro,
-		"",
-		l.longDate(booking.StartUTC, loc) + " · " + l.clockRange(booking.StartUTC, booking.EndUTC, loc) +
-			" (" + formatTimezone(booking.StartUTC, loc) + ")",
-	}
-	if booking.MeetingURL != "" {
-		lines = append(lines, l.t("email.join")+": "+booking.MeetingURL)
-	}
-	if manageURL != "" {
-		lines = append(lines, l.t("email.manage")+": "+manageURL)
-	}
-	return strings.Join(lines, "\n")
-}
-
-func reasonLine(l localeText, reason string) string {
-	reason = strings.TrimSpace(reason)
-	if reason == "" {
+// joinURL is the signed route, never the private room.
+func joinURL(manageURL, roomURL string) string {
+	if roomURL == "" || manageURL == "" {
 		return ""
 	}
-	return "\n" + l.t("email.reason") + ": " + reason
+	return strings.TrimRight(manageURL, "/") + "/join"
 }
 
 // send never fails a request: the booking is already committed and a mail

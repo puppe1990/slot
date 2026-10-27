@@ -32,6 +32,7 @@ func TestResendSendPostsMessage(t *testing.T) {
 		To:      "guest@example.com",
 		Subject: "Confirmed: Advisory",
 		Body:    "See you there",
+		HTML:    "<p>See you there</p>",
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -48,6 +49,9 @@ func TestResendSendPostsMessage(t *testing.T) {
 	}
 	if seenBody["subject"] != "Confirmed: Advisory" || seenBody["text"] != "See you there" {
 		t.Fatalf("body = %v", seenBody)
+	}
+	if seenBody["html"] != "<p>See you there</p>" {
+		t.Fatalf("html = %v", seenBody["html"])
 	}
 	to, _ := seenBody["to"].([]any)
 	if len(to) != 1 || to[0] != "guest@example.com" {
