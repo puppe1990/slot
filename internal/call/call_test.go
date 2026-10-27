@@ -2,6 +2,7 @@ package call_test
 
 import (
 	"context"
+	"encoding/hex"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -166,8 +167,14 @@ func TestJitsiRoomIsUniqueAndUnguessable(t *testing.T) {
 	if first.URL == second.URL {
 		t.Fatal("two rooms got the same url")
 	}
-	if strings.Contains(first.URL, "42") {
-		t.Fatalf("url %q leaks the booking id", first.URL)
+	// The suffix is random hex, so a booking id can appear by chance; assert
+	// the shape instead of scanning for digits.
+	suffix := strings.TrimPrefix(first.URL, "https://meet.jit.si/slot-")
+	if len(suffix) != 24 {
+		t.Fatalf("suffix = %q, want 24 hex chars", suffix)
+	}
+	if _, err := hex.DecodeString(suffix); err != nil {
+		t.Fatalf("suffix %q is not hex: %v", suffix, err)
 	}
 }
 

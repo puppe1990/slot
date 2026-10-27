@@ -159,8 +159,10 @@ func TestConfirmationEmailsCarryRoomAndManageLink(t *testing.T) {
 	bookingHandler.Hold(holdRec, holdReq)
 
 	confirmReq := postForm("/book/30min/confirm", url.Values{
-		"name":  {"Marina Costa"},
-		"email": {"marina@example.com"},
+		"name":     {"Marina Costa"},
+		"email":    {"marina@example.com"},
+		"whatsapp": {"+55 11 99999-8888"},
+		"notes":    {"Review the migration plan."},
 	}, holdCookie(holdRec))
 	confirmReq.SetPathValue("slug", "30min")
 	confirmRec := httptest.NewRecorder()
@@ -196,6 +198,19 @@ func TestConfirmationEmailsCarryRoomAndManageLink(t *testing.T) {
 	}
 	if !strings.Contains(owner.Subject, "Marina Costa") {
 		t.Errorf("owner subject = %q, want the guest name", owner.Subject)
+	}
+	// The owner needs the guest's contacts and brief without opening the app.
+	// html/template escapes the leading + as &#43;; the digits are the stable part.
+	for _, want := range []string{"marina@example.com", "5511999998888", "Review the migration plan."} {
+		if !strings.Contains(owner.Body, want) {
+			t.Errorf("owner body missing %q: %s", want, owner.Body)
+		}
+		if !strings.Contains(owner.HTML, want) {
+			t.Errorf("owner html missing %q", want)
+		}
+	}
+	if !strings.Contains(owner.HTML, "Guest") {
+		t.Error("owner html is missing the guest block")
 	}
 }
 
