@@ -1,6 +1,10 @@
 package models
 
-import "time"
+import (
+	"strconv"
+	"strings"
+	"time"
+)
 
 type MeetingType struct {
 	ID                  int64
@@ -42,6 +46,47 @@ type DateOverride struct {
 	IsUnavailable   bool
 	CustomStartTime string
 	CustomEndTime   string
+}
+
+// RecurringBlock closes a wall-clock window on the chosen weekdays, repeating
+// every IntervalWeeks from the week of AnchorDate. It is how a two-week rota
+// ("this week mornings, next week nights") stops being a manual chore.
+type RecurringBlock struct {
+	ID            int64
+	UserID        int64
+	Title         string
+	Weekdays      []int
+	StartTime     string
+	EndTime       string
+	IntervalWeeks int
+	AnchorDate    string
+}
+
+// WeekdayCSV is the storage form: "1,2,3,4,5".
+func (b RecurringBlock) WeekdayCSV() string {
+	parts := make([]string, 0, len(b.Weekdays))
+	for _, day := range b.Weekdays {
+		parts = append(parts, strconv.Itoa(day))
+	}
+	return strings.Join(parts, ",")
+}
+
+// ParseWeekdays reads the storage form, dropping anything outside 0..6.
+func ParseWeekdays(csv string) []int {
+	days := make([]int, 0, 7)
+	seen := map[int]struct{}{}
+	for _, part := range strings.Split(csv, ",") {
+		day, err := strconv.Atoi(strings.TrimSpace(part))
+		if err != nil || day < 0 || day > 6 {
+			continue
+		}
+		if _, dup := seen[day]; dup {
+			continue
+		}
+		seen[day] = struct{}{}
+		days = append(days, day)
+	}
+	return days
 }
 
 type BookingStatus string

@@ -80,6 +80,8 @@ func registerRoutes(r *cais.Router, deps Deps, cfg cais.Config) {
 
 	r.Get("/setup", owner(setup.Show))
 	r.Post("/setup", owner(setup.Save))
+	r.Post("/setup/blocks", owner(setup.AddBlock))
+	r.Post("/setup/blocks/{id}/delete", owner(setup.DeleteBlock))
 	r.Post("/setup/overrides", owner(setup.AddOverride))
 	r.Post("/setup/overrides/{id}/delete", owner(setup.DeleteOverride))
 

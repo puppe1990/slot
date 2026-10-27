@@ -89,6 +89,15 @@ func (b base) buildSlots(ctx context.Context, meetingType models.MeetingType, gu
 	if err != nil {
 		return slotPageData{}, fmt.Errorf("load busy intervals: %w", err)
 	}
+	recurring, err := b.deps.Store.ListRecurringBlocks(owner.ID)
+	if err != nil {
+		return slotPageData{}, fmt.Errorf("load recurring blocks: %w", err)
+	}
+	recurringBusy, err := scheduling.ExpandRecurringBlocks(now, horizonEnd, ownerLocation, toRecurringBlocks(recurring))
+	if err != nil {
+		return slotPageData{}, fmt.Errorf("expand recurring blocks: %w", err)
+	}
+	busy = append(busy, recurringBusy...)
 
 	slots, err := scheduling.AvailableSlots(scheduling.Query{
 		OwnerTZ:   ownerLocation,
@@ -228,6 +237,20 @@ func toWeeklyRules(rules []models.AvailabilityRule) []scheduling.WeeklyRule {
 			DayOfWeek: rule.DayOfWeek,
 			StartTime: rule.StartTime,
 			EndTime:   rule.EndTime,
+		})
+	}
+	return out
+}
+
+func toRecurringBlocks(blocks []models.RecurringBlock) []scheduling.RecurringBlock {
+	out := make([]scheduling.RecurringBlock, 0, len(blocks))
+	for _, block := range blocks {
+		out = append(out, scheduling.RecurringBlock{
+			Weekdays:      block.Weekdays,
+			StartTime:     block.StartTime,
+			EndTime:       block.EndTime,
+			IntervalWeeks: block.IntervalWeeks,
+			AnchorDate:    block.AnchorDate,
 		})
 	}
 	return out

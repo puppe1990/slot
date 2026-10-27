@@ -51,7 +51,12 @@ func (h *SetupHandler) Show(w http.ResponseWriter, r *http.Request) {
 		h.serverError(w, r, err)
 		return
 	}
-	h.render(w, r, owner.User, rules, connection, nil, 0)
+	blocks, err := h.deps.Store.ListRecurringBlocks(owner.User.ID)
+	if err != nil {
+		h.serverError(w, r, err)
+		return
+	}
+	h.render(w, r, owner.User, rules, blocks, connection, nil, 0)
 }
 
 func (h *SetupHandler) Save(w http.ResponseWriter, r *http.Request) {
@@ -73,7 +78,8 @@ func (h *SetupHandler) Save(w http.ResponseWriter, r *http.Request) {
 	}
 	if errs.Any() {
 		connection, _ := h.deps.Store.GetCalendarConnection(owner.User.ID)
-		h.render(w, r, owner.User, rules, connection, errs, http.StatusUnprocessableEntity)
+		blocks, _ := h.deps.Store.ListRecurringBlocks(owner.User.ID)
+		h.render(w, r, owner.User, rules, blocks, connection, errs, http.StatusUnprocessableEntity)
 		return
 	}
 
@@ -166,6 +172,95 @@ func (h *SetupHandler) DeleteOverride(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/setup", http.StatusSeeOther)
 }
 
+func (h *SetupHandler) AddBlock(w http.ResponseWriter, r *http.Request) {
+	owner, ok := h.owner(r)
+	if !ok {
+		http.Redirect(w, r, "/login", http.StatusSeeOther)
+		return
+	}
+	if err := httpx.ParseFormOrJSON(r); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	l := h.localeFor(r)
+	cookieSecure := h.deps.Config.CookieSecure()
+
+	fail := func(message string) {
+		flash.Set(w, "error", message, cookieSecure)
+		http.Redirect(w, r, "/setup", http.StatusSeeOther)
+	}
+
+	weekdays := models.ParseWeekdays(strings.Join(r.Form["weekdays"], ","))
+	if len(weekdays) == 0 {
+		fail(l.t("setup.error_weekday"))
+		return
+	}
+	start := strings.TrimSpace(r.FormValue("start_time"))
+	end := strings.TrimSpace(r.FormValue("end_time"))
+	startHour, startMinute, err := scheduling.ParseClock(start)
+	if err != nil {
+		fail(l.t("setup.error_start"))
+		return
+	}
+	endHour, endMinute, err := scheduling.ParseClock(end)
+	if err != nil || endHour*60+endMinute <= startHour*60+startMinute {
+		fail(l.t("setup.error_clock"))
+		return
+	}
+	interval := formInt(r, "interval_weeks", 2)
+	if interval < 1 || interval > 8 {
+		fail(l.t("setup.error_interval"))
+		return
+	}
+	anchor := strings.TrimSpace(r.FormValue("anchor_date"))
+	if anchor == "" {
+		anchor = h.now().In(mustLocation(owner.User.Timezone)).Format(dateKeyLayout)
+	}
+	if _, err := time.Parse(dateKeyLayout, anchor); err != nil {
+		fail(l.t("setup.error_anchor"))
+		return
+	}
+
+	_, err = h.deps.Store.CreateRecurringBlock(models.RecurringBlock{
+		UserID:        owner.User.ID,
+		Title:         strings.TrimSpace(r.FormValue("title")),
+		Weekdays:      weekdays,
+		StartTime:     start,
+		EndTime:       end,
+		IntervalWeeks: interval,
+		AnchorDate:    anchor,
+	})
+	if err != nil {
+		h.serverError(w, r, err)
+		return
+	}
+	flash.Set(w, "notice", l.t("setup.recurring_saved"), cookieSecure)
+	http.Redirect(w, r, "/setup", http.StatusSeeOther)
+}
+
+func (h *SetupHandler) DeleteBlock(w http.ResponseWriter, r *http.Request) {
+	owner, ok := h.owner(r)
+	if !ok {
+		http.Redirect(w, r, "/login", http.StatusSeeOther)
+		return
+	}
+	id, ok := intParam(r, "id")
+	if !ok {
+		http.NotFound(w, r)
+		return
+	}
+	if err := h.deps.Store.DeleteRecurringBlock(owner.User.ID, id); err != nil {
+		if errors.Is(err, store.ErrRecurringBlockNotFound) {
+			http.NotFound(w, r)
+			return
+		}
+		h.serverError(w, r, err)
+		return
+	}
+	flash.Set(w, "notice", h.localeFor(r).t("setup.recurring_removed"), h.deps.Config.CookieSecure())
+	http.Redirect(w, r, "/setup", http.StatusSeeOther)
+}
+
 func (h *SetupHandler) readWeeklyRules(r *http.Request) []models.AvailabilityRule {
 	rules := make([]models.AvailabilityRule, 0, 7)
 	for day := 0; day < 7; day++ {
@@ -184,7 +279,7 @@ func (h *SetupHandler) readWeeklyRules(r *http.Request) []models.AvailabilityRul
 	return rules
 }
 
-func (h *SetupHandler) render(w http.ResponseWriter, r *http.Request, owner models.User, rules []models.AvailabilityRule, connection models.CalendarConnection, errs validate.FieldErrors, status int) {
+func (h *SetupHandler) render(w http.ResponseWriter, r *http.Request, owner models.User, rules []models.AvailabilityRule, blocks []models.RecurringBlock, connection models.CalendarConnection, errs validate.FieldErrors, status int) {
 	now := h.now()
 	from := now.Format(dateKeyLayout)
 	to := now.AddDate(0, 0, 120).Format(dateKeyLayout)
@@ -204,6 +299,9 @@ func (h *SetupHandler) render(w http.ResponseWriter, r *http.Request, owner mode
 		"Weekdays":        buildWeekdayRows(rules),
 		"Connection":      connection,
 		"Overrides":       overrides,
+		"RecurringBlocks": blocks,
+		"WeekdayIndexes":  []int{0, 1, 2, 3, 4, 5, 6},
+		"Today":           now.In(mustLocation(owner.Timezone)).Format(dateKeyLayout),
 		"Errors":          errs,
 		"GoogleAvailable": h.deps.Calendar.Provider() == calendar.ProviderGoogle,
 	}, status)
