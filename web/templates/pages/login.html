@@ -1,7 +1,7 @@
 {{ define "content" }}
 <div class="flex items-center justify-center min-h-[calc(100vh-12rem)] px-4 py-8">
 <div class="w-full max-w-md mx-auto rounded-xl border border-line bg-surface p-6 md:p-7 shadow-layer">
-  <h2 class="text-headline-md font-semibold text-pine">{{ t "auth.login_title" }}</h2>
+  <h2 class="text-headline-md font-semibold text-foam">{{ t "auth.login_title" }}</h2>
   {{ if eq .Site.Env "development" }}
   <p class="mt-1 text-body-sm text-muted">{{ t "auth.login_hint" }} Demo: demo@example.com / password.</p>
   {{ else }}
@@ -15,9 +15,9 @@
   <p class="mt-4 text-center text-sm text-foam/60 space-y-1">
     <span class="block">
       {{ t "auth.signup_prompt" }}
-      <a class="text-pine hover:text-foam" href="/signup">{{ t "auth.signup_title" }}</a>
+      <a class="text-slate-soft hover:text-foam" href="/signup">{{ t "auth.signup_title" }}</a>
     </span>
-    <a class="text-pine hover:text-foam" href="/forgot-password">{{ t "auth.forgot_password" }}</a>
+    <a class="text-slate-soft hover:text-foam" href="/forgot-password">{{ t "auth.forgot_password" }}</a>
   </p>
 </div>
 </div>

@@ -63,7 +63,21 @@ Every user-facing string goes through a catalog: templates use `{{ t "key" }}`, 
 
 Warm alabaster canvas, deep pine for action, muted clay for destructive states, Hanken Grotesk for prose, JetBrains Mono for every temporal string.
 
-- Palette lives in `input.css` CSS variables (`--amarra-ink/foam/copper/tide/coral`) so the amarra kit keeps working; `tailwind.config.js` maps them plus semantic aliases (`canvas`, `surface`, `pine`, `clay`, `line`, `muted`, `moss`).
+- Palette lives in `input.css` CSS variables (`--amarra-ink/foam/copper/tide/coral`) so the amarra kit keeps working; `tailwind.config.js` maps them plus the role tokens.
+
+### Color roles (do not blend them)
+
+| Role                        | Tokens                                                                              | Use for                                                                                                   |
+| --------------------------- | ----------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| Canvas / Surface / Elevated | `canvas` `#FAF9F6`, `surface` `#F4F3EF`, `elevated` `#FFF`, `container-low…highest` | Page, cards, and wells inside cards. Never color text with these.                                         |
+| Primary                     | `pine`, `pine-hover`, `moss`, `moss-dim`                                            | Primary buttons, active nav/date, confirmed/live/verified markers, the hold banner. Nothing navigational. |
+| Secondary                   | `slate`, `slate-soft`, `slate-tint`                                                 | Ghost buttons, navigational links and paths, disclosure labels, paused state.                             |
+| Tertiary                    | `clay`, `clay-soft`, `clay-tint`                                                    | Cancellation, destructive actions, closed/unavailable, validation errors.                                 |
+| Structure                   | `line`, `line-strong`, `outline`                                                    | 1px borders and dividers. Text never uses these.                                                          |
+| Text                        | `foam` (ink), `muted`, `outline`                                                    | Prose and numbers in ink; metadata in muted; `outline` only for strokes.                                  |
+
+Rule of thumb: if a pine element does not perform an action or confirm a commitment, it is slate. Status pills pair a tint with its text color (`bg-moss/70 text-pine`, `bg-clay-tint/50 text-clay`, `bg-slate-tint text-slate-soft`).
+
 - The app is **light-first**: `:root` and `html.light` carry the same values, and there is no theme toggle.
 - Cards: `rounded-xl border border-line bg-surface`; inputs `rounded-lg border border-line bg-canvas`; buttons 44–48px tall.
 - Times, durations and timezones are always mono; never mix them into prose spacing.

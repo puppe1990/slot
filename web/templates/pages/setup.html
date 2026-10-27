@@ -3,7 +3,7 @@
   <section class="flex flex-wrap items-end justify-between gap-3">
     <div class="flex flex-col gap-1">
       <span class="text-label-mono uppercase tracking-[0.14em] text-muted">{{ t "setup.eyebrow" }}</span>
-      <h1 class="text-headline-lg font-semibold tracking-tight text-pine">{{ t "setup.title" }}</h1>
+      <h1 class="text-headline-lg font-semibold tracking-tight text-foam">{{ t "setup.title" }}</h1>
       <p class="text-body-sm text-muted">{{ t "setup.intro" .Owner.Timezone }}</p>
     </div>
     <a href="/dashboard" class="text-label-ui uppercase tracking-[0.08em] text-muted hover:text-foam">{{ t "common.back" }}</a>
@@ -36,15 +36,15 @@
       {{ with fieldError .Errors "availability" }}<p class="mt-2 text-body-sm text-clay">{{ . }}</p>{{ end }}
       <div class="mt-space-md flex flex-col gap-2">
         {{ range .Weekdays }}
-        <div class="grid grid-cols-[1fr_auto_auto] items-center gap-2 rounded-lg bg-canvas px-3 py-2">
+        <div class="grid grid-cols-[1fr_auto_auto] items-center gap-2 rounded-lg border border-line bg-elevated px-3 py-2">
           <span class="text-body-md {{ if .Open }}font-medium text-foam{{ else }}text-muted{{ end }}">{{ t (printf "weekday.%d" .Index) }}</span>
           <label class="flex items-center gap-1">
             <span class="sr-only">{{ t (printf "weekday.%d" .Index) }}</span>
-            <input name="start_{{ .Index }}" type="time" value="{{ .Start }}" class="h-9 rounded-md border border-line bg-surface px-2 text-label-mono-lg text-foam outline-none focus:border-pine" />
+            <input name="start_{{ .Index }}" type="time" value="{{ .Start }}" class="h-9 rounded-md border border-line bg-canvas px-2 text-label-mono-lg text-foam outline-none focus:border-pine" />
           </label>
           <label class="flex items-center gap-1">
             <span class="sr-only">{{ t (printf "weekday.%d" .Index) }}</span>
-            <input name="end_{{ .Index }}" type="time" value="{{ .End }}" class="h-9 rounded-md border border-line bg-surface px-2 text-label-mono-lg text-foam outline-none focus:border-pine" />
+            <input name="end_{{ .Index }}" type="time" value="{{ .End }}" class="h-9 rounded-md border border-line bg-canvas px-2 text-label-mono-lg text-foam outline-none focus:border-pine" />
           </label>
         </div>
         {{ end }}
@@ -94,13 +94,13 @@
     {{ if .Overrides }}
     <ul class="mt-space-md flex flex-col gap-2">
       {{ range .Overrides }}
-      <li class="flex flex-wrap items-center justify-between gap-2 rounded-lg bg-canvas px-3 py-2">
+      <li class="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-line bg-elevated px-3 py-2">
         <div class="flex items-center gap-2">
           <span class="text-label-mono-lg text-foam">{{ .Date }}</span>
           {{ if .IsUnavailable }}
-          <span class="rounded bg-clay/10 px-2 py-0.5 text-label-mono uppercase tracking-[0.08em] text-clay">{{ t "setup.closed" }}</span>
+          <span class="rounded bg-clay-tint/50 px-2 py-0.5 text-label-mono uppercase tracking-[0.08em] text-clay">{{ t "setup.closed" }}</span>
           {{ else }}
-          <span class="rounded bg-pine/10 px-2 py-0.5 text-label-mono uppercase tracking-[0.08em] text-pine">{{ .CustomStartTime }} – {{ .CustomEndTime }}</span>
+          <span class="rounded bg-moss/70 px-2 py-0.5 text-label-mono uppercase tracking-[0.08em] text-pine">{{ .CustomStartTime }} – {{ .CustomEndTime }}</span>
           {{ end }}
         </div>
         <form action="/setup/overrides/{{ .ID }}/delete" method="post">

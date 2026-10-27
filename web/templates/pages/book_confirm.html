@@ -20,19 +20,19 @@
   <!-- Summary -->
   <section class="rounded-xl border border-line bg-surface p-space-md">
     <div class="flex items-start gap-space-sm">
-      <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-canvas text-pine">
+      <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-line bg-container-low text-slate">
         <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M7 3v3m10-3v3M4 8h16M5 6h14a1 1 0 011 1v13a1 1 0 01-1 1H5a1 1 0 01-1-1V7a1 1 0 011-1z" /></svg>
       </span>
       <div class="flex min-w-0 flex-col">
         <span class="text-headline-sm font-medium text-foam">{{ .DateLabel }}</span>
-        <span class="text-label-mono-lg font-semibold text-pine">{{ .GuestRange }}</span>
+        <span class="text-label-mono-lg font-semibold text-foam">{{ .GuestRange }}</span>
         <span class="text-body-sm text-muted">{{ .GuestLabel }}</span>
-        <span class="mt-2 inline-flex w-fit items-center gap-1.5 rounded bg-canvas px-2 py-1 text-label-mono text-muted">{{ t "common.host" }}: {{ .HostRange }} · {{ .HostLabel }}</span>
+        <span class="mt-2 inline-flex w-fit items-center gap-1.5 rounded border border-line bg-elevated px-2 py-1 text-label-mono text-muted">{{ t "common.host" }}: {{ .HostRange }} · {{ .HostLabel }}</span>
       </div>
     </div>
     <div class="mt-space-md flex flex-wrap items-center justify-between gap-2 border-t border-line pt-space-sm">
       <span class="text-body-sm text-muted">{{ .MeetingType.Title }} · {{ .MeetingType.DurationLabel }}</span>
-      <span class="text-label-mono uppercase tracking-[0.08em] text-pine">{{ .MeetingType.LocationLabel }}</span>
+      <span class="text-label-mono uppercase tracking-[0.08em] text-slate">{{ .MeetingType.LocationLabel }}</span>
     </div>
   </section>
 
@@ -40,7 +40,7 @@
   <section class="rounded-xl border border-line bg-surface p-space-md">
     <div class="flex items-center justify-between gap-2">
       <h2 class="text-headline-sm font-medium text-foam">{{ t "confirm.particulars" }}</h2>
-      <span class="inline-flex items-center gap-1 text-label-mono uppercase tracking-[0.08em] text-pine">{{ t "common.private" }}</span>
+      <span class="inline-flex items-center gap-1 text-label-mono uppercase tracking-[0.08em] text-slate-soft">{{ t "common.private" }}</span>
     </div>
 
     <form method="post" action="{{ .PublicPath }}/confirm" class="mt-space-md flex flex-col gap-space-sm">
@@ -56,8 +56,8 @@
         <textarea name="notes" rows="3" class="w-full resize-none rounded-lg border border-line bg-canvas px-3 py-2.5 text-body-md leading-relaxed text-foam outline-none focus:border-pine" placeholder="{{ t "confirm.notes_placeholder" }}"></textarea>
       </label>
 
-      <div class="flex items-start gap-2.5 rounded-lg bg-canvas p-3">
-        <svg class="mt-0.5 h-4 w-4 shrink-0 text-pine" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M4 6h16v12H4z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M4 7l8 6 8-6"/></svg>
+      <div class="flex items-start gap-2.5 rounded-lg border border-line bg-elevated p-3">
+        <svg class="mt-0.5 h-4 w-4 shrink-0 text-slate" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M4 6h16v12H4z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M4 7l8 6 8-6"/></svg>
         <p class="text-body-sm text-muted">{{ t "confirm.assurance" }}</p>
       </div>
 
@@ -72,7 +72,7 @@
       <form method="post" action="{{ .PublicPath }}/release">
         <input type="hidden" name="csrf_token" value="{{ .CSRFToken }}" />
         <input type="hidden" name="tz" value="{{ .GuestTZ }}" />
-        <button type="submit" class="text-body-sm text-muted underline-offset-4 hover:text-clay hover:underline">{{ t "confirm.release" }}</button>
+        <button type="submit" class="text-body-sm text-clay underline-offset-4 hover:text-clay-soft hover:underline">{{ t "confirm.release" }}</button>
       </form>
       <span class="inline-flex items-center gap-1.5 text-label-mono text-muted"><span class="h-1.5 w-1.5 rounded-full bg-pine"></span>{{ t "common.no_login" }}</span>
     </div>

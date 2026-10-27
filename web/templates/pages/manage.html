@@ -17,15 +17,15 @@
     <h1 class="mt-space-md text-headline-md font-medium tracking-tight text-foam">{{ .MeetingType.Title }}</h1>
     <p class="mt-1 text-body-sm text-muted">{{ t "manage.with" .Booking.GuestName .Booking.GuestEmail }}</p>
 
-    <div class="mt-space-md rounded-lg border border-line bg-canvas p-space-md">
+    <div class="mt-space-md rounded-lg border border-line bg-elevated p-space-md">
       <span class="block text-headline-sm font-medium text-foam">{{ .DateLabel }}</span>
-      <span class="block text-label-mono-lg font-semibold text-pine">{{ .GuestRange }}</span>
+      <span class="block text-label-mono-lg font-semibold text-foam">{{ .GuestRange }}</span>
       <span class="block text-body-sm text-muted">{{ .GuestLabel }}</span>
       <span class="mt-2 inline-flex items-center gap-1.5 rounded bg-surface px-2 py-1 text-label-mono text-muted">{{ t "common.host" }}: {{ .HostRange }} · {{ .HostLabel }}</span>
     </div>
 
     {{ if .Booking.GuestNotes }}
-    <div class="mt-space-sm rounded-lg bg-canvas p-3">
+    <div class="mt-space-sm rounded-lg border border-line bg-elevated p-3">
       <span class="text-label-mono uppercase tracking-[0.08em] text-muted">{{ t "manage.brief" }}</span>
       <p class="mt-1 text-body-sm text-foam">{{ .Booking.GuestNotes }}</p>
     </div>
@@ -49,7 +49,7 @@
   <section class="rounded-xl border border-line bg-surface p-space-md">
     <div class="flex flex-wrap items-center justify-between gap-2">
       <div class="flex items-center gap-2">
-        <span class="flex h-8 w-8 items-center justify-center rounded-full bg-canvas text-pine">
+        <span class="flex h-8 w-8 items-center justify-center rounded-full border border-line bg-container-low text-slate">
           <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M12 3a9 9 0 100 18 9 9 0 000-18zm0 0v9l5 3" /></svg>
         </span>
         <form method="get" action="{{ .ManagePath }}" class="flex items-center gap-2">
@@ -73,7 +73,7 @@
           <span class="text-headline-sm font-medium text-foam">{{ t "manage.reschedule" }}</span>
           <span class="text-body-sm text-muted">{{ t "manage.reschedule_help" }}</span>
         </span>
-        <span class="text-label-ui uppercase tracking-[0.08em] text-pine group-open:hidden">{{ t "common.open" }}</span>
+        <span class="text-label-ui uppercase tracking-[0.08em] text-slate group-open:hidden">{{ t "common.open" }}</span>
         <span class="hidden text-label-ui uppercase tracking-[0.08em] text-muted group-open:inline">{{ t "common.close" }}</span>
       </summary>
 

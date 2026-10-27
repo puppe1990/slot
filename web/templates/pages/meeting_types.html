@@ -3,7 +3,7 @@
   <section class="flex flex-wrap items-end justify-between gap-3">
     <div class="flex flex-col gap-1">
       <span class="text-label-mono uppercase tracking-[0.14em] text-muted">{{ t "formats.eyebrow" }}</span>
-      <h1 class="text-headline-lg font-semibold tracking-tight text-pine">{{ t "formats.title" }}</h1>
+      <h1 class="text-headline-lg font-semibold tracking-tight text-foam">{{ t "formats.title" }}</h1>
       <p class="text-body-sm text-muted">{{ t "formats.intro" }}</p>
     </div>
     <a href="/dashboard" class="text-label-ui uppercase tracking-[0.08em] text-muted hover:text-foam">{{ t "common.back" }}</a>
@@ -18,15 +18,15 @@
             <div class="flex min-w-0 flex-col gap-1">
               <div class="flex flex-wrap items-center gap-2">
                 <span class="text-headline-sm font-medium text-foam">{{ .Title }}</span>
-                <span class="rounded bg-canvas px-2 py-0.5 text-label-mono uppercase tracking-[0.08em] {{ if .IsActive }}text-pine{{ else }}text-clay{{ end }}">
+                <span class="rounded px-2 py-0.5 text-label-mono uppercase tracking-[0.08em] {{ if .IsActive }}bg-moss/70 text-pine{{ else }}bg-slate-tint text-slate-soft{{ end }}">
                   {{ if .IsActive }}{{ t "common.live" }}{{ else }}{{ t "common.paused" }}{{ end }}
                 </span>
               </div>
-              <span class="text-label-mono text-pine">{{ .PublicPath }}</span>
+              <span class="text-label-mono text-slate">{{ .PublicPath }}</span>
               <p class="text-body-sm text-muted">{{ .Description }}</p>
             </div>
             <div class="flex flex-col items-end gap-1">
-              <span class="text-label-mono-lg font-semibold text-pine">{{ .DurationLabel }}</span>
+              <span class="text-label-mono-lg font-semibold text-foam">{{ .DurationLabel }}</span>
               <span class="text-label-mono text-muted">{{ .LocationLabel }}</span>
             </div>
           </div>
@@ -41,12 +41,12 @@
           <div class="mt-space-md flex flex-wrap items-center gap-2">
             <a href="/meeting-types/{{ .ID }}/edit" class="inline-flex h-9 items-center rounded-full bg-pine px-4 text-label-ui uppercase tracking-[0.08em] text-white transition-transform active:scale-[0.98]">{{ t "formats.edit" }}</a>
             {{ if .IsActive }}
-            <a href="{{ .PublicPath }}" class="inline-flex h-9 items-center rounded-full border border-line px-4 text-label-ui uppercase tracking-[0.08em] text-foam transition-colors hover:border-line-strong">{{ t "formats.preview" }}</a>
+            <a href="{{ .PublicPath }}" class="inline-flex h-9 items-center rounded-full border border-line px-4 text-label-ui uppercase tracking-[0.08em] text-slate transition-colors hover:border-slate hover:text-foam">{{ t "formats.preview" }}</a>
             {{ else }}
-            <span class="inline-flex h-9 items-center rounded-full border border-line px-4 text-label-ui uppercase tracking-[0.08em] text-muted" title="Publish this format to get a public link">{{ t "common.paused" }}</span>
+            <span class="inline-flex h-9 items-center rounded-full border border-line px-4 text-label-ui uppercase tracking-[0.08em] text-slate-soft" title="Publish this format to get a public link">{{ t "common.paused" }}</span>
             {{ end }}
             <.form action="/meeting-types/{{ .ID }}/toggle" method="post">
-              <button type="submit" class="inline-flex h-9 items-center rounded-full border px-4 text-label-ui uppercase tracking-[0.08em] transition-colors {{ if .IsActive }}border-clay/40 text-clay hover:border-clay{{ else }}border-line text-foam hover:border-line-strong{{ end }}">
+              <button type="submit" class="inline-flex h-9 items-center rounded-full border px-4 text-label-ui uppercase tracking-[0.08em] transition-colors {{ if .IsActive }}border-line text-slate hover:border-slate{{ else }}border-pine/40 text-pine hover:border-pine hover:bg-moss/30{{ end }}">
                 {{ if .IsActive }}{{ t "formats.pause" }}{{ else }}{{ t "formats.publish" }}{{ end }}
               </button>
             </.form>

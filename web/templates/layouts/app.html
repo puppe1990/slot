@@ -62,18 +62,18 @@
           {{ if .PublicPath }}
           <a
             href="{{ .PublicPath }}"
-            class="hidden h-8 items-center justify-center rounded-full bg-tide px-3 text-label-mono uppercase text-muted transition-colors hover:bg-line sm:flex"
+            class="hidden h-8 items-center justify-center rounded-full border border-line bg-canvas px-3 text-label-mono uppercase text-slate transition-colors hover:border-line-strong sm:flex"
             title="Public booking portal"
           >{{ t "nav.public_portal" }}</a>
           {{ end }}
           <.form action="/logout" method="post">
             <button
               type="submit"
-              class="h-8 rounded-full border border-line px-3 text-label-ui uppercase tracking-[0.08em] text-muted transition-colors hover:border-line-strong hover:text-foam"
+              class="h-8 rounded-full border border-line px-3 text-label-ui uppercase tracking-[0.08em] text-slate transition-colors hover:border-slate hover:text-foam"
             >{{ t "nav.sign_out" }}</button>
           </.form>
           {{ else }}
-          <a href="/login" class="text-label-ui uppercase tracking-[0.08em] text-pine hover:text-foam">{{ t "nav.sign_in" }}</a>
+          <a href="/login" class="text-label-ui uppercase tracking-[0.08em] text-slate hover:text-foam">{{ t "nav.sign_in" }}</a>
           {{ end }}
         </div>
       </div>

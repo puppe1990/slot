@@ -27,23 +27,51 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        /* Calm Conviction (DESIGN.md). The kit components bind to
-           ink/foam/copper/tide/coral, so those keys keep their names and the
-           CSS variables in input.css carry the warm stone palette (#258). */
+        /* Kit components bind to these five names through CSS variables
+           (input.css), so the amarra kit keeps working while the app uses the
+           role tokens below (#258). */
         ink: "rgb(var(--amarra-ink) / <alpha-value>)",
         foam: "rgb(var(--amarra-foam) / <alpha-value>)",
         copper: "rgb(var(--amarra-copper) / <alpha-value>)",
         tide: "rgb(var(--amarra-tide) / <alpha-value>)",
         coral: "rgb(var(--amarra-coral) / <alpha-value>)",
-        canvas: "rgb(var(--amarra-ink) / <alpha-value>)",
-        surface: "rgb(var(--amarra-tide) / <alpha-value>)",
-        pine: "rgb(var(--amarra-copper) / <alpha-value>)",
-        clay: "rgb(var(--amarra-coral) / <alpha-value>)",
-        line: "#E5E3DC",
-        "line-strong": "#D4D1C7",
+
+        /* Layers (DESIGN.md "Elevation & Depth"): canvas → surface → elevated. */
+        canvas: "#FAF9F6",
+        surface: "#F4F3EF",
+        elevated: "#FFFFFF",
+        "container-low": "#F4F3F1",
+        container: "#EFEEEB",
+        "container-high": "#E9E8E5",
+        "container-highest": "#E3E2E0",
+
+        /* Text: ink for prose and numbers, muted for metadata, outline for 1px
+           strokes that are not borders. */
         muted: "#64625D",
+        outline: "#727974",
+        "outline-variant": "#C2C8C2",
+
+        /* Primary — actions, confirmed commitments, active selection, brand. */
+        pine: "#1B382B",
+        "pine-deep": "#042217",
+        "pine-hover": "#142B21",
+        "pine-muted": "#82A291",
         moss: "#C9EAD7",
         "moss-dim": "#ADCEBC",
+
+        /* Secondary — functional controls, navigational links, high-contrast. */
+        slate: "#2C2C2C",
+        "slate-soft": "#5F5E5E",
+        "slate-tint": "#E4E2E1",
+
+        /* Tertiary — destructive, cancellation, unavailable constraint. */
+        clay: "#C26343",
+        "clay-soft": "#E57E5C",
+        "clay-tint": "#FFDBD0",
+
+        /* Structure */
+        line: "#E5E3DC",
+        "line-strong": "#D4D1C7",
       },
       fontFamily: {
         sans: [

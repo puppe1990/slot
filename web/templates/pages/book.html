@@ -3,28 +3,28 @@
   <!-- Host identity -->
   <section class="rounded-xl border border-line bg-surface p-space-md">
     <div class="flex items-start gap-space-md">
-      <div class="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-canvas text-headline-sm font-semibold text-pine">
+      <div class="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-moss text-headline-sm font-semibold text-pine">
         {{ if .MeetingType.UserID }}{{ slice .Owner.DisplayName 0 1 }}{{ else }}S{{ end }}
       </div>
       <div class="flex min-w-0 flex-col">
         <div class="flex flex-wrap items-center gap-2">
           <span class="text-headline-sm font-semibold text-foam">{{ .Owner.DisplayName }}</span>
-          <span class="rounded bg-canvas px-1.5 py-0.5 text-label-mono uppercase tracking-[0.08em] text-muted">{{ t "common.verified" }}</span>
+          <span class="rounded bg-moss/70 px-1.5 py-0.5 text-label-mono uppercase tracking-[0.08em] text-pine">{{ t "common.verified" }}</span>
         </div>
         <p class="text-body-sm text-muted">{{ t "book.consultant" .Owner.Timezone }}</p>
-        <p class="mt-1 text-label-mono text-pine">{{ t "book.calendar_line" }}</p>
+        <p class="mt-1 text-label-mono text-slate-soft">{{ t "book.calendar_line" }}</p>
       </div>
     </div>
 
-    <div class="mt-space-md rounded-lg border border-line bg-canvas p-space-md">
+    <div class="mt-space-md rounded-lg border border-line bg-elevated p-space-md">
       <h1 class="text-headline-md font-medium text-foam">{{ .MeetingType.Title }}</h1>
       {{ if .MeetingType.Description }}<p class="mt-1 text-body-md leading-relaxed text-muted">{{ .MeetingType.Description }}</p>{{ end }}
       <div class="mt-space-sm flex flex-wrap items-center gap-2">
-        <span class="rounded bg-surface px-2.5 py-1 text-label-mono font-medium text-foam">{{ .MeetingType.DurationLabel }}</span>
-        <span class="rounded bg-surface px-2.5 py-1 text-label-mono font-medium text-pine">{{ .MeetingType.LocationLabel }}</span>
-        {{ with .MeetingType.LocationDetails }}<span class="rounded bg-surface px-2.5 py-1 text-label-mono text-muted">{{ . }}</span>{{ end }}
-        <span class="rounded bg-moss/60 px-2.5 py-1 text-label-mono font-medium uppercase text-pine">{{ t "common.complimentary" }}</span>
-        <span class="rounded bg-surface px-2.5 py-1 text-label-mono font-medium text-muted">{{ t "book.horizon" .MeetingType.HorizonLabel }}</span>
+        <span class="rounded border border-line bg-container-low px-2.5 py-1 text-label-mono font-medium text-foam">{{ .MeetingType.DurationLabel }}</span>
+        <span class="rounded border border-line bg-container-low px-2.5 py-1 text-label-mono font-medium text-foam">{{ .MeetingType.LocationLabel }}</span>
+        {{ with .MeetingType.LocationDetails }}<span class="rounded border border-line bg-container-low px-2.5 py-1 text-label-mono text-muted">{{ . }}</span>{{ end }}
+        <span class="rounded bg-moss px-2.5 py-1 text-label-mono font-medium uppercase text-pine">{{ t "common.complimentary" }}</span>
+        <span class="rounded border border-line bg-container-low px-2.5 py-1 text-label-mono font-medium text-muted">{{ t "book.horizon" .MeetingType.HorizonLabel }}</span>
       </div>
     </div>
   </section>
@@ -33,7 +33,7 @@
   <section class="rounded-xl border border-line bg-surface p-space-md">
     <form method="get" action="{{ .PublicPath }}" class="flex flex-wrap items-center justify-between gap-2">
       <div class="flex min-w-0 items-center gap-2">
-        <span class="flex h-6 w-6 items-center justify-center rounded-full bg-canvas text-pine">
+        <span class="flex h-6 w-6 items-center justify-center rounded-full border border-line bg-container-low text-slate">
           <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M12 3a9 9 0 100 18 9 9 0 000-18zm0 0v9l5 3" /></svg>
         </span>
         <div class="min-w-0">
