@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 	"strings"
 	"time"
@@ -70,10 +71,10 @@ func (h *SetupHandler) Save(w http.ResponseWriter, r *http.Request) {
 
 	var errs validate.FieldErrors
 	if name == "" {
-		errs.Add("name", "Your guests need a name to greet")
+		errs.Add("name", h.localeFor(r).t("setup.error_name"))
 	}
 	if len(rules) == 0 {
-		errs.Add("availability", "Open at least one window so guests can book")
+		errs.Add("availability", h.localeFor(r).t("setup.error_window"))
 	}
 	if errs.Any() {
 		connection, _ := h.deps.Store.GetCalendarConnection(owner.User.ID)
@@ -107,7 +108,7 @@ func (h *SetupHandler) Save(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	flash.Set(w, "notice", "Availability saved.", h.deps.Config.CookieSecure())
+	flash.Set(w, "notice", h.localeFor(r).t("setup.saved"), h.deps.Config.CookieSecure())
 	http.Redirect(w, r, "/setup", http.StatusSeeOther)
 }
 
@@ -124,7 +125,7 @@ func (h *SetupHandler) AddOverride(w http.ResponseWriter, r *http.Request) {
 
 	date := strings.TrimSpace(r.FormValue("date"))
 	if _, err := time.Parse(dateKeyLayout, date); err != nil {
-		flash.Set(w, "error", "Pick a valid date.", h.deps.Config.CookieSecure())
+		flash.Set(w, "error", h.localeFor(r).t("setup.error_date"), h.deps.Config.CookieSecure())
 		http.Redirect(w, r, "/setup", http.StatusSeeOther)
 		return
 	}
@@ -137,12 +138,12 @@ func (h *SetupHandler) AddOverride(w http.ResponseWriter, r *http.Request) {
 		override.CustomStartTime = strings.TrimSpace(r.FormValue("custom_start_time"))
 		override.CustomEndTime = strings.TrimSpace(r.FormValue("custom_end_time"))
 		if _, _, err := scheduling.ParseClock(override.CustomStartTime); err != nil {
-			flash.Set(w, "error", "Custom start needs HH:MM.", h.deps.Config.CookieSecure())
+			flash.Set(w, "error", h.localeFor(r).t("setup.error_start"), h.deps.Config.CookieSecure())
 			http.Redirect(w, r, "/setup", http.StatusSeeOther)
 			return
 		}
 		if _, _, err := scheduling.ParseClock(override.CustomEndTime); err != nil {
-			flash.Set(w, "error", "Custom end needs HH:MM.", h.deps.Config.CookieSecure())
+			flash.Set(w, "error", h.localeFor(r).t("setup.error_end"), h.deps.Config.CookieSecure())
 			http.Redirect(w, r, "/setup", http.StatusSeeOther)
 			return
 		}
@@ -151,7 +152,7 @@ func (h *SetupHandler) AddOverride(w http.ResponseWriter, r *http.Request) {
 		h.serverError(w, r, err)
 		return
 	}
-	flash.Set(w, "notice", "Date override saved.", h.deps.Config.CookieSecure())
+	flash.Set(w, "notice", h.localeFor(r).t("setup.override_saved"), h.deps.Config.CookieSecure())
 	http.Redirect(w, r, "/setup", http.StatusSeeOther)
 }
 
@@ -170,15 +171,15 @@ func (h *SetupHandler) DeleteOverride(w http.ResponseWriter, r *http.Request) {
 		h.serverError(w, r, err)
 		return
 	}
-	flash.Set(w, "notice", "Override removed.", h.deps.Config.CookieSecure())
+	flash.Set(w, "notice", h.localeFor(r).t("setup.override_removed"), h.deps.Config.CookieSecure())
 	http.Redirect(w, r, "/setup", http.StatusSeeOther)
 }
 
 func (h *SetupHandler) readWeeklyRules(r *http.Request) []models.AvailabilityRule {
 	rules := make([]models.AvailabilityRule, 0, 7)
 	for day := 0; day < 7; day++ {
-		start := strings.TrimSpace(r.FormValue("start_" + weekdayLabels[day]))
-		end := strings.TrimSpace(r.FormValue("end_" + weekdayLabels[day]))
+		start := strings.TrimSpace(r.FormValue(fmt.Sprintf("start_%d", day)))
+		end := strings.TrimSpace(r.FormValue(fmt.Sprintf("end_%d", day)))
 		if start == "" || end == "" {
 			continue
 		}
@@ -256,12 +257,4 @@ func defaultWeekdayRows() []weekdayRow {
 		rows = append(rows, row)
 	}
 	return rows
-}
-
-func mustLocation(name string) *time.Location {
-	location, err := time.LoadLocation(name)
-	if err != nil {
-		return time.UTC
-	}
-	return location
 }

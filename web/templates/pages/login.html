@@ -3,9 +3,9 @@
 <div class="w-full max-w-md mx-auto rounded-xl border border-line bg-surface p-6 md:p-7 shadow-layer">
   <h2 class="text-headline-md font-semibold text-pine">{{ t "auth.login_title" }}</h2>
   {{ if eq .Site.Env "development" }}
-  <p class="mt-1 text-body-sm text-muted">Owner access. Demo seed: demo@example.com / password.</p>
+  <p class="mt-1 text-body-sm text-muted">{{ t "auth.login_hint" }} Demo: demo@example.com / password.</p>
   {{ else }}
-  <p class="mt-1 text-body-sm text-muted">Owner access.</p>
+  <p class="mt-1 text-body-sm text-muted">{{ t "auth.login_hint" }}</p>
   {{ end }}
   <.form action="/login" method="post">
     <.input name="email" type="email" label="Email" value="{{ .Email }}" error="{{ fieldError .Errors "email" }}" />

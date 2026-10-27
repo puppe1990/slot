@@ -9,8 +9,6 @@ import (
 	"github.com/puppe1990/slot/internal/scheduling"
 )
 
-const dateKeyLayout = "2006-01-02"
-
 type timezoneOption struct {
 	Value    string
 	Label    string
@@ -52,7 +50,7 @@ type slotPageData struct {
 	TotalAvailable  int
 }
 
-func (b base) buildSlots(ctx context.Context, meetingType models.MeetingType, guestTimezone, requestedDate string, excludeBookingID int64) (slotPageData, error) {
+func (b base) buildSlots(ctx context.Context, meetingType models.MeetingType, guestTimezone, requestedDate string, excludeBookingID int64, l localeText) (slotPageData, error) {
 	owner, err := b.deps.Store.GetUser(meetingType.UserID)
 	if err != nil {
 		return slotPageData{}, fmt.Errorf("load owner: %w", err)
@@ -113,10 +111,10 @@ func (b base) buildSlots(ctx context.Context, meetingType models.MeetingType, gu
 		byDate[key] = append(byDate[key], slotView{
 			StartISO:   slot.Start.Format(time.RFC3339),
 			EndISO:     slot.End.Format(time.RFC3339),
-			GuestClock: formatClock(slot.Start, guestLocation),
-			GuestRange: formatRange(slot.Start, slot.End, guestLocation),
-			HostClock:  formatClock(slot.Start, ownerLocation),
-			HostRange:  formatRange(slot.Start, slot.End, ownerLocation),
+			GuestClock: l.clock(slot.Start, guestLocation),
+			GuestRange: l.clockRange(slot.Start, slot.End, guestLocation),
+			HostClock:  l.clock(slot.Start, ownerLocation),
+			HostRange:  l.clockRange(slot.Start, slot.End, ownerLocation),
 		})
 	}
 
@@ -125,8 +123,8 @@ func (b base) buildSlots(ctx context.Context, meetingType models.MeetingType, gu
 
 	selected := slotDay{Date: selectedDate, IsSelected: true, Slots: byDate[selectedDate], HasSlots: len(byDate[selectedDate]) > 0}
 	selectedTime, _ := time.ParseInLocation(dateKeyLayout, selectedDate, ownerLocation)
-	selected.Weekday = formatWeekday(selectedTime, ownerLocation)
-	selected.DayNumber = formatDayNumber(selectedTime, ownerLocation)
+	selected.Weekday = l.weekdayShort(selectedTime, ownerLocation)
+	selected.DayNumber = l.dayNumber(selectedTime, ownerLocation)
 
 	stripStart := selectedTime.AddDate(0, 0, -3)
 	if stripStart.Before(today) {
@@ -141,8 +139,8 @@ func (b base) buildSlots(ctx context.Context, meetingType models.MeetingType, gu
 		key := date.Format(dateKeyLayout)
 		days = append(days, slotDay{
 			Date:       key,
-			Weekday:    formatWeekday(date, ownerLocation),
-			DayNumber:  formatDayNumber(date, ownerLocation),
+			Weekday:    l.weekdayShort(date, ownerLocation),
+			DayNumber:  l.dayNumber(date, ownerLocation),
 			HasSlots:   len(byDate[key]) > 0,
 			IsSelected: key == selectedDate,
 			IsPast:     date.Before(today),
@@ -168,7 +166,7 @@ func (b base) buildSlots(ctx context.Context, meetingType models.MeetingType, gu
 		Days:            days,
 		Selected:        selected,
 		SelectedDate:    selectedDate,
-		DateLabel:       formatLongDate(selectedTime, ownerLocation),
+		DateLabel:       l.longDate(selectedTime, ownerLocation),
 		PrevDate:        prevDate.Format(dateKeyLayout),
 		NextDate:        nextDate.Format(dateKeyLayout),
 		TimezoneOptions: buildTimezoneOptions(guestTimezone),

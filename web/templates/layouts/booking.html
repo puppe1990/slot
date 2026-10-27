@@ -40,6 +40,7 @@
         {{ with .Owner }}
         <span class="truncate text-label-mono text-muted">{{ .DisplayName }}</span>
         {{ end }}
+        <.locale-toggle locales="en,pt" current="{{ .Locale }}" />
       </div>
     </header>
 
@@ -51,8 +52,8 @@
     </main>
 
     <footer class="border-t border-line py-8 text-center">
-      <p class="text-label-mono uppercase tracking-[0.14em] text-muted">Slot · quiet scheduling</p>
-      <p class="mt-1 text-body-sm text-muted/70">UTC arithmetic, signed guest links, zero double bookings.</p>
+      <p class="text-label-mono uppercase tracking-[0.14em] text-muted">{{ t "layout.footer" }}</p>
+      <p class="mt-1 text-body-sm text-muted/70">{{ t "layout.footer_note" }}</p>
     </footer>
 
     {{ if eq .Site.Env "development" }}

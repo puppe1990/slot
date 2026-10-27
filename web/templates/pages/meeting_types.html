@@ -2,11 +2,11 @@
 <div class="flex flex-col gap-space-lg">
   <section class="flex flex-wrap items-end justify-between gap-3">
     <div class="flex flex-col gap-1">
-      <span class="text-label-mono uppercase tracking-[0.14em] text-muted">Formats</span>
-      <h1 class="text-headline-lg font-semibold tracking-tight text-pine">What guests can book</h1>
-      <p class="text-body-sm text-muted">Each format owns its own duration, buffers and public link.</p>
+      <span class="text-label-mono uppercase tracking-[0.14em] text-muted">{{ t "formats.eyebrow" }}</span>
+      <h1 class="text-headline-lg font-semibold tracking-tight text-pine">{{ t "formats.title" }}</h1>
+      <p class="text-body-sm text-muted">{{ t "formats.intro" }}</p>
     </div>
-    <a href="/dashboard" class="text-label-ui uppercase tracking-[0.08em] text-muted hover:text-foam">← Dashboard</a>
+    <a href="/dashboard" class="text-label-ui uppercase tracking-[0.08em] text-muted hover:text-foam">{{ t "common.back" }}</a>
   </section>
 
   <section class="grid gap-space-md lg:grid-cols-[1.35fr_1fr]">
@@ -19,7 +19,7 @@
               <div class="flex flex-wrap items-center gap-2">
                 <span class="text-headline-sm font-medium text-foam">{{ .Title }}</span>
                 <span class="rounded bg-canvas px-2 py-0.5 text-label-mono uppercase tracking-[0.08em] {{ if .IsActive }}text-pine{{ else }}text-clay{{ end }}">
-                  {{ if .IsActive }}Live{{ else }}Paused{{ end }}
+                  {{ if .IsActive }}{{ t "common.live" }}{{ else }}{{ t "common.paused" }}{{ end }}
                 </span>
               </div>
               <span class="text-label-mono text-pine">{{ .PublicPath }}</span>
@@ -32,42 +32,42 @@
           </div>
 
           <dl class="mt-space-md grid grid-cols-2 gap-2 border-t border-line pt-space-sm sm:grid-cols-4">
-            <div><dt class="text-label-mono uppercase tracking-[0.08em] text-muted">Buffers</dt><dd class="text-label-mono text-foam">{{ .BufferLabel }}</dd></div>
-            <div><dt class="text-label-mono uppercase tracking-[0.08em] text-muted">Notice</dt><dd class="text-label-mono text-foam">{{ .NoticeLabel }}</dd></div>
-            <div><dt class="text-label-mono uppercase tracking-[0.08em] text-muted">Horizon</dt><dd class="text-label-mono text-foam">{{ .HorizonLabel }}</dd></div>
-            <div><dt class="text-label-mono uppercase tracking-[0.08em] text-muted">Duration</dt><dd class="text-label-mono text-foam">{{ .DurationLabel }}</dd></div>
+            <div><dt class="text-label-mono uppercase tracking-[0.08em] text-muted">{{ t "formats.buffers" }}</dt><dd class="text-label-mono text-foam">{{ .BufferLabel }}</dd></div>
+            <div><dt class="text-label-mono uppercase tracking-[0.08em] text-muted">{{ t "formats.notice" }}</dt><dd class="text-label-mono text-foam">{{ .NoticeLabel }}</dd></div>
+            <div><dt class="text-label-mono uppercase tracking-[0.08em] text-muted">{{ t "formats.horizon" }}</dt><dd class="text-label-mono text-foam">{{ .HorizonLabel }}</dd></div>
+            <div><dt class="text-label-mono uppercase tracking-[0.08em] text-muted">{{ t "formats.duration" }}</dt><dd class="text-label-mono text-foam">{{ .DurationLabel }}</dd></div>
           </dl>
 
           <div class="mt-space-md flex flex-wrap items-center gap-2">
-            <a href="/meeting-types/{{ .ID }}/edit" class="inline-flex h-9 items-center rounded-full bg-pine px-4 text-label-ui uppercase tracking-[0.08em] text-white transition-transform active:scale-[0.98]">Edit format</a>
+            <a href="/meeting-types/{{ .ID }}/edit" class="inline-flex h-9 items-center rounded-full bg-pine px-4 text-label-ui uppercase tracking-[0.08em] text-white transition-transform active:scale-[0.98]">{{ t "formats.edit" }}</a>
             {{ if .IsActive }}
-            <a href="{{ .PublicPath }}" class="inline-flex h-9 items-center rounded-full border border-line px-4 text-label-ui uppercase tracking-[0.08em] text-foam transition-colors hover:border-line-strong">Preview</a>
+            <a href="{{ .PublicPath }}" class="inline-flex h-9 items-center rounded-full border border-line px-4 text-label-ui uppercase tracking-[0.08em] text-foam transition-colors hover:border-line-strong">{{ t "formats.preview" }}</a>
             {{ else }}
-            <span class="inline-flex h-9 items-center rounded-full border border-line px-4 text-label-ui uppercase tracking-[0.08em] text-muted" title="Publish this format to get a public link">Paused</span>
+            <span class="inline-flex h-9 items-center rounded-full border border-line px-4 text-label-ui uppercase tracking-[0.08em] text-muted" title="Publish this format to get a public link">{{ t "common.paused" }}</span>
             {{ end }}
             <.form action="/meeting-types/{{ .ID }}/toggle" method="post">
               <button type="submit" class="inline-flex h-9 items-center rounded-full border px-4 text-label-ui uppercase tracking-[0.08em] transition-colors {{ if .IsActive }}border-clay/40 text-clay hover:border-clay{{ else }}border-line text-foam hover:border-line-strong{{ end }}">
-                {{ if .IsActive }}Pause{{ else }}Publish{{ end }}
+                {{ if .IsActive }}{{ t "formats.pause" }}{{ else }}{{ t "formats.publish" }}{{ end }}
               </button>
             </.form>
           </div>
         </article>
         {{ end }}
       {{ else }}
-      <.empty title="No formats yet">
-        <p class="text-body-sm text-muted">Create the 30-minute advisory first — it is the default shape for a focused session.</p>
+      <.empty title="{{ t "formats.empty_title" }}">
+        <p class="text-body-sm text-muted">{{ t "formats.empty_body" }}</p>
       </.empty>
       {{ end }}
     </div>
 
     <aside class="h-fit rounded-xl border border-line bg-surface p-space-md">
-      <h2 class="text-headline-sm font-medium text-foam">New format</h2>
-      <p class="mt-1 text-body-sm text-muted">Defaults: 10-minute buffers, 24h notice, 30-day horizon.</p>
+      <h2 class="text-headline-sm font-medium text-foam">{{ t "formats.new" }}</h2>
+      <p class="mt-1 text-body-sm text-muted">{{ t "formats.new_help" }}</p>
       <.form action="/meeting-types" method="post" class="mt-space-md flex flex-col gap-space-sm">
-        <.input name="title" label="Session title" value="" placeholder="30-Minute Strategy Advisory" error="{{ fieldError .Errors "title" }}" />
-        <.input name="description" label="Description" value="" placeholder="Focused tactical review of architecture and roadmap." error="{{ fieldError .Errors "description" }}" />
+        <.input name="title" label="{{ t "formats.title_label" }}" value="" placeholder="{{ t "formats.title_placeholder" }}" error="{{ fieldError .Errors "title" }}" />
+        <.input name="description" label="{{ t "formats.description_label" }}" value="" placeholder="{{ t "formats.description_placeholder" }}" error="{{ fieldError .Errors "description" }}" />
         <fieldset class="flex flex-col gap-1">
-          <legend class="text-label-ui uppercase tracking-[0.08em] text-muted">Session length</legend>
+          <legend class="text-label-ui uppercase tracking-[0.08em] text-muted">{{ t "formats.length" }}</legend>
           <div class="grid grid-cols-3 gap-1 rounded-lg bg-canvas p-1">
             <label class="cursor-pointer rounded-md px-2 py-2 text-center text-label-mono text-muted has-[:checked]:bg-pine has-[:checked]:text-white">
               <input class="sr-only" type="radio" name="duration_minutes" value="15" />15 min
@@ -81,7 +81,7 @@
           </div>
           {{ with fieldError .Errors "duration_minutes" }}<span class="text-body-sm text-clay">{{ . }}</span>{{ end }}
         </fieldset>
-        <.button type="submit">Create format</.button>
+        <.button type="submit">{{ t "formats.create" }}</.button>
       </.form>
     </aside>
   </section>

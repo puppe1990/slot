@@ -86,6 +86,14 @@ go test ./internal/scheduling/ -run TestAvailableSlotsNeverCollideWithFakedBusyI
 
 The scheduling suite runs 40 faker-seeded scenarios and asserts that no returned slot overlaps a busy interval after buffers — including DST transition days. Store tests use SQLite `:memory:` and never mock the database.
 
+## Languages
+
+The UI ships in **English** and **Portuguese (pt-BR)**. The header toggle posts to `/locale`, which stores the choice in the `cais_locale` cookie and reloads.
+
+- Static copy lives in `internal/i18n/en.go` / `pt.go`; templates call `{{ t "key" }}`.
+- Copy built in Go (statuses, locations, durations, dates) goes through `localeFor(r)` in `internal/handlers/locale_format.go`.
+- Clocks follow the locale: 12h in English, 24h in pt-BR. Weekdays and months are localized too, so the date strip reads `seg, ter, qua`.
+
 ## Environment
 
 | Variable                                    | Default         | Description                                           |

@@ -4,7 +4,7 @@
   <section class="rounded-xl border border-line bg-surface p-space-lg">
     <div class="flex items-center justify-between gap-2">
       {{ if .Booking.Cancelled }}
-      <span class="inline-flex items-center gap-1.5 rounded-full bg-clay/10 px-3 py-1 text-label-ui uppercase tracking-[0.08em] text-clay">Cancelled</span>
+      <span class="inline-flex items-center gap-1.5 rounded-full bg-clay/10 px-3 py-1 text-label-ui uppercase tracking-[0.08em] text-clay">{{ t "status.cancelled" }}</span>
       {{ else }}
       <span class="inline-flex items-center gap-1.5 rounded-full bg-pine px-3 py-1 text-label-ui uppercase tracking-[0.08em] text-white">
         <span class="h-1.5 w-1.5 rounded-full bg-moss"></span>
@@ -15,18 +15,18 @@
     </div>
 
     <h1 class="mt-space-md text-headline-md font-medium tracking-tight text-foam">{{ .MeetingType.Title }}</h1>
-    <p class="mt-1 text-body-sm text-muted">with {{ .Booking.GuestName }} · {{ .Booking.GuestEmail }}</p>
+    <p class="mt-1 text-body-sm text-muted">{{ t "manage.with" .Booking.GuestName .Booking.GuestEmail }}</p>
 
     <div class="mt-space-md rounded-lg border border-line bg-canvas p-space-md">
       <span class="block text-headline-sm font-medium text-foam">{{ .DateLabel }}</span>
       <span class="block text-label-mono-lg font-semibold text-pine">{{ .GuestRange }}</span>
       <span class="block text-body-sm text-muted">{{ .GuestLabel }}</span>
-      <span class="mt-2 inline-flex items-center gap-1.5 rounded bg-surface px-2 py-1 text-label-mono text-muted">Host: {{ .HostRange }} · {{ .HostLabel }}</span>
+      <span class="mt-2 inline-flex items-center gap-1.5 rounded bg-surface px-2 py-1 text-label-mono text-muted">{{ t "common.host" }}: {{ .HostRange }} · {{ .HostLabel }}</span>
     </div>
 
     {{ if .Booking.GuestNotes }}
     <div class="mt-space-sm rounded-lg bg-canvas p-3">
-      <span class="text-label-mono uppercase tracking-[0.08em] text-muted">Your brief</span>
+      <span class="text-label-mono uppercase tracking-[0.08em] text-muted">{{ t "manage.brief" }}</span>
       <p class="mt-1 text-body-sm text-foam">{{ .Booking.GuestNotes }}</p>
     </div>
     {{ end }}
@@ -35,7 +35,7 @@
       <span class="text-body-sm text-muted">{{ .Booking.LocationLabel }}{{ with .MeetingType.LocationDetails }} · {{ . }}{{ end }}</span>
       {{ if not .Booking.Cancelled }}
       <a href="{{ .ICSURL }}" class="inline-flex h-9 items-center gap-1.5 rounded-full bg-pine px-4 text-label-ui uppercase tracking-[0.08em] text-white" data-amarra-skip>
-        Add to calendar
+        {{ t "manage.add_to_calendar" }}
       </a>
       {{ end }}
     </div>
@@ -70,19 +70,19 @@
     <details class="group">
       <summary class="flex cursor-pointer list-none items-center justify-between gap-2 p-space-md">
         <span class="flex flex-col gap-1">
-          <span class="text-headline-sm font-medium text-foam">Reschedule</span>
-          <span class="text-body-sm text-muted">Move the session without email ping-pong. Buffers and notice still apply.</span>
+          <span class="text-headline-sm font-medium text-foam">{{ t "manage.reschedule" }}</span>
+          <span class="text-body-sm text-muted">{{ t "manage.reschedule_help" }}</span>
         </span>
-        <span class="text-label-ui uppercase tracking-[0.08em] text-pine group-open:hidden">Open</span>
-        <span class="hidden text-label-ui uppercase tracking-[0.08em] text-muted group-open:inline">Close</span>
+        <span class="text-label-ui uppercase tracking-[0.08em] text-pine group-open:hidden">{{ t "common.open" }}</span>
+        <span class="hidden text-label-ui uppercase tracking-[0.08em] text-muted group-open:inline">{{ t "common.close" }}</span>
       </summary>
 
       <div class="border-t border-line p-space-md">
         <div class="flex items-center justify-between">
           <span class="text-label-ui uppercase tracking-[0.08em] text-muted">{{ .Slots.DateLabel }}</span>
           <div class="flex items-center gap-1">
-            <a href="{{ .ManagePath }}?tz={{ .GuestTZ }}&date={{ .Slots.PrevDate }}" class="flex h-8 w-8 items-center justify-center rounded text-muted hover:bg-canvas hover:text-foam" aria-label="Previous week">‹</a>
-            <a href="{{ .ManagePath }}?tz={{ .GuestTZ }}&date={{ .Slots.NextDate }}" class="flex h-8 w-8 items-center justify-center rounded text-muted hover:bg-canvas hover:text-foam" aria-label="Next week">›</a>
+            <a href="{{ .ManagePath }}?tz={{ .GuestTZ }}&date={{ .Slots.PrevDate }}" class="flex h-8 w-8 items-center justify-center rounded text-muted hover:bg-canvas hover:text-foam" aria-label="{{ t "common.previous_week" }}">‹</a>
+            <a href="{{ .ManagePath }}?tz={{ .GuestTZ }}&date={{ .Slots.NextDate }}" class="flex h-8 w-8 items-center justify-center rounded text-muted hover:bg-canvas hover:text-foam" aria-label="{{ t "common.next_week" }}">›</a>
           </div>
         </div>
 
@@ -114,13 +114,13 @@
                 <span class="text-label-mono-lg font-semibold text-foam">{{ .GuestClock }}</span>
                 <span class="text-label-mono text-muted">{{ .HostClock }} host</span>
               </span>
-              <span class="text-label-ui uppercase tracking-[0.08em] text-pine">Move</span>
+              <span class="text-label-ui uppercase tracking-[0.08em] text-pine">{{ t "manage.move" }}</span>
             </button>
           </form>
           {{ end }}
         </div>
         {{ else }}
-        <p class="mt-3 text-body-sm text-muted">No open slots on {{ .Slots.DateLabel }}. Try another day in the strip.</p>
+        <p class="mt-3 text-body-sm text-muted">{{ t "manage.no_slots" .Slots.DateLabel }}</p>
         {{ end }}
       </div>
     </details>
@@ -131,29 +131,29 @@
     <details class="group">
       <summary class="flex cursor-pointer list-none items-center justify-between gap-2 p-space-md">
         <span class="flex flex-col gap-1">
-          <span class="text-headline-sm font-medium text-clay">Cancel</span>
-          <span class="text-body-sm text-muted">The slot returns to the pool immediately and the calendar event is removed.</span>
+          <span class="text-headline-sm font-medium text-clay">{{ t "manage.cancel" }}</span>
+          <span class="text-body-sm text-muted">{{ t "manage.cancel_help" }}</span>
         </span>
-        <span class="text-label-ui uppercase tracking-[0.08em] text-clay group-open:hidden">Open</span>
-        <span class="hidden text-label-ui uppercase tracking-[0.08em] text-muted group-open:inline">Close</span>
+        <span class="text-label-ui uppercase tracking-[0.08em] text-clay group-open:hidden">{{ t "common.open" }}</span>
+        <span class="hidden text-label-ui uppercase tracking-[0.08em] text-muted group-open:inline">{{ t "common.close" }}</span>
       </summary>
       <form method="post" action="{{ .ManagePath }}/cancel" class="flex flex-col gap-space-sm border-t border-line p-space-md">
         <input type="hidden" name="csrf_token" value="{{ .CSRFToken }}" />
         <label class="flex flex-col gap-1">
-          <span class="text-label-ui uppercase tracking-[0.08em] text-muted">Reason (optional)</span>
-          <input name="reason" type="text" class="h-11 rounded-lg border border-line bg-canvas px-3 text-body-md text-foam outline-none focus:border-clay" placeholder="What changed?" />
+          <span class="text-label-ui uppercase tracking-[0.08em] text-muted">{{ t "manage.reason" }}</span>
+          <input name="reason" type="text" class="h-11 rounded-lg border border-line bg-canvas px-3 text-body-md text-foam outline-none focus:border-clay" placeholder="{{ t "manage.reason_placeholder" }}" />
         </label>
-        <button type="submit" class="h-11 rounded-lg border border-clay/50 text-label-ui uppercase tracking-[0.08em] text-clay transition-colors hover:bg-clay/5">Cancel this session</button>
+        <button type="submit" class="h-11 rounded-lg border border-clay/50 text-label-ui uppercase tracking-[0.08em] text-clay transition-colors hover:bg-clay/5">{{ t "manage.cancel_cta" }}</button>
       </form>
     </details>
   </section>
   {{ else }}
   <section class="rounded-xl border border-line bg-surface p-space-md">
-    <p class="text-body-md font-medium text-foam">This session was cancelled.</p>
-    <p class="mt-1 text-body-sm text-muted">The host has been notified and the slot is free again.</p>
+    <p class="text-body-md font-medium text-foam">{{ t "manage.cancelled_title" }}</p>
+    <p class="mt-1 text-body-sm text-muted">{{ t "manage.cancelled_body" }}</p>
   </section>
   {{ end }}
 
-  <p class="text-center text-label-mono text-muted">Signed link · keep this URL to reschedule or cancel.</p>
+  <p class="text-center text-label-mono text-muted">{{ t "manage.signed_note" }}</p>
 </div>
 {{ end }}

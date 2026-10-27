@@ -2,49 +2,49 @@
 <div class="mx-auto flex w-full max-w-[880px] flex-col gap-space-lg">
   <section class="flex flex-wrap items-end justify-between gap-3">
     <div class="flex flex-col gap-1">
-      <span class="text-label-mono uppercase tracking-[0.14em] text-muted">Availability</span>
-      <h1 class="text-headline-lg font-semibold tracking-tight text-pine">Hours, buffers and calendar</h1>
-      <p class="text-body-sm text-muted">Everything below is stored in {{ .Owner.Timezone }}. Guests always see their own clock.</p>
+      <span class="text-label-mono uppercase tracking-[0.14em] text-muted">{{ t "setup.eyebrow" }}</span>
+      <h1 class="text-headline-lg font-semibold tracking-tight text-pine">{{ t "setup.title" }}</h1>
+      <p class="text-body-sm text-muted">{{ t "setup.intro" .Owner.Timezone }}</p>
     </div>
-    <a href="/dashboard" class="text-label-ui uppercase tracking-[0.08em] text-muted hover:text-foam">← Dashboard</a>
+    <a href="/dashboard" class="text-label-ui uppercase tracking-[0.08em] text-muted hover:text-foam">{{ t "common.back" }}</a>
   </section>
 
   <form action="/setup" method="post" class="flex flex-col gap-space-md">
     <input type="hidden" name="csrf_token" value="{{ .CSRFToken }}" />
 
     <section class="rounded-xl border border-line bg-surface p-space-md">
-      <h2 class="text-headline-sm font-medium text-foam">Profile &amp; timezone</h2>
+      <h2 class="text-headline-sm font-medium text-foam">{{ t "setup.profile" }}</h2>
       <div class="mt-space-md grid gap-space-sm sm:grid-cols-2">
-        <.input name="name" label="Display name" value="{{ .Owner.Name }}" error="{{ fieldError .Errors "name" }}" />
+        <.input name="name" label="{{ t "setup.display_name" }}" value="{{ .Owner.Name }}" error="{{ fieldError .Errors "name" }}" />
         <label class="flex flex-col gap-1">
-          <span class="text-label-ui uppercase tracking-[0.08em] text-muted">Home timezone</span>
+          <span class="text-label-ui uppercase tracking-[0.08em] text-muted">{{ t "setup.timezone" }}</span>
           <select name="timezone" class="h-11 rounded-lg border border-line bg-canvas px-3 text-body-md text-foam outline-none focus:border-pine">
             {{ range .TimezoneOptions }}
             <option value="{{ .Value }}" {{ if .Selected }}selected{{ end }}>{{ .Label }}</option>
             {{ end }}
           </select>
-          <span class="text-label-mono text-muted">Now {{ .TimezoneAbbrevNow }}</span>
+          <span class="text-label-mono text-muted">{{ t "setup.now" .TimezoneAbbrevNow }}</span>
         </label>
       </div>
     </section>
 
     <section class="rounded-xl border border-line bg-surface p-space-md">
       <div class="flex flex-wrap items-center justify-between gap-2">
-        <h2 class="text-headline-sm font-medium text-foam">Weekly hours</h2>
-        <span class="text-label-mono uppercase tracking-[0.08em] text-muted">Leave empty to close the day</span>
+        <h2 class="text-headline-sm font-medium text-foam">{{ t "setup.weekly" }}</h2>
+        <span class="text-label-mono uppercase tracking-[0.08em] text-muted">{{ t "setup.weekly_hint" }}</span>
       </div>
       {{ with fieldError .Errors "availability" }}<p class="mt-2 text-body-sm text-clay">{{ . }}</p>{{ end }}
       <div class="mt-space-md flex flex-col gap-2">
         {{ range .Weekdays }}
         <div class="grid grid-cols-[1fr_auto_auto] items-center gap-2 rounded-lg bg-canvas px-3 py-2">
-          <span class="text-body-md {{ if .Open }}font-medium text-foam{{ else }}text-muted{{ end }}">{{ .Label }}</span>
+          <span class="text-body-md {{ if .Open }}font-medium text-foam{{ else }}text-muted{{ end }}">{{ t (printf "weekday.%d" .Index) }}</span>
           <label class="flex items-center gap-1">
-            <span class="sr-only">{{ .Label }} start</span>
-            <input name="start_{{ .Label }}" type="time" value="{{ .Start }}" class="h-9 rounded-md border border-line bg-surface px-2 text-label-mono-lg text-foam outline-none focus:border-pine" />
+            <span class="sr-only">{{ t (printf "weekday.%d" .Index) }}</span>
+            <input name="start_{{ .Index }}" type="time" value="{{ .Start }}" class="h-9 rounded-md border border-line bg-surface px-2 text-label-mono-lg text-foam outline-none focus:border-pine" />
           </label>
           <label class="flex items-center gap-1">
-            <span class="sr-only">{{ .Label }} end</span>
-            <input name="end_{{ .Label }}" type="time" value="{{ .End }}" class="h-9 rounded-md border border-line bg-surface px-2 text-label-mono-lg text-foam outline-none focus:border-pine" />
+            <span class="sr-only">{{ t (printf "weekday.%d" .Index) }}</span>
+            <input name="end_{{ .Index }}" type="time" value="{{ .End }}" class="h-9 rounded-md border border-line bg-surface px-2 text-label-mono-lg text-foam outline-none focus:border-pine" />
           </label>
         </div>
         {{ end }}
@@ -52,23 +52,22 @@
     </section>
 
     <section class="rounded-xl border border-line bg-surface p-space-md">
-      <h2 class="text-headline-sm font-medium text-foam">Calendar sync</h2>
-      <p class="mt-1 text-body-sm text-muted">External busy time is subtracted before a slot is offered. The local calendar is deterministic and needs no credentials.</p>
+      <h2 class="text-headline-sm font-medium text-foam">{{ t "setup.calendar" }}</h2>
+      <p class="mt-1 text-body-sm text-muted">{{ t "setup.calendar_help" }}</p>
       <div class="mt-space-md grid gap-space-sm sm:grid-cols-2">
         <label class="flex cursor-pointer items-start gap-3 rounded-lg border border-line bg-canvas p-3 has-[:checked]:border-pine">
           <input type="radio" name="calendar_provider" value="fake" class="mt-1 h-4 w-4 accent-[#1B382B]" {{ if not .GoogleAvailable }}checked{{ end }} />
           <span class="flex flex-col">
-            <span class="text-body-md font-medium text-foam">Local calendar</span>
-            <span class="text-body-sm text-muted">In-process busy blocks, zero setup.</span>
+            <span class="text-body-md font-medium text-foam">{{ t "setup.local" }}</span>
+            <span class="text-body-sm text-muted">{{ t "setup.local_help" }}</span>
           </span>
         </label>
         <label class="flex cursor-pointer items-start gap-3 rounded-lg border border-line bg-canvas p-3 has-[:checked]:border-pine">
           <input type="radio" name="calendar_provider" value="google" class="mt-1 h-4 w-4 accent-[#1B382B]" {{ if .GoogleAvailable }}enabled{{ else }}disabled{{ end }} />
           <span class="flex flex-col">
-            <span class="text-body-md font-medium {{ if .GoogleAvailable }}text-foam{{ else }}text-muted{{ end }}">Google Calendar</span>
+            <span class="text-body-md font-medium {{ if .GoogleAvailable }}text-foam{{ else }}text-muted{{ end }}">{{ t "setup.google" }}</span>
             <span class="text-body-sm text-muted">
-              {{ if .GoogleAvailable }}Connected through the Google adapter.
-              {{ else }}Not configured on this server: set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET, then restart. Until then the local calendar is used.{{ end }}
+              {{ if .GoogleAvailable }}{{ t "setup.google_ready" }}{{ else }}{{ t "setup.google_missing" }}{{ end }}
             </span>
           </span>
         </label>
@@ -82,14 +81,14 @@
     </section>
 
     <div class="flex justify-end">
-      <button type="submit" class="inline-flex h-11 items-center rounded-lg bg-pine px-6 text-label-ui uppercase tracking-[0.08em] text-white transition-transform active:scale-[0.985]">Save availability</button>
+      <button type="submit" class="inline-flex h-11 items-center rounded-lg bg-pine px-6 text-label-ui uppercase tracking-[0.08em] text-white transition-transform active:scale-[0.985]">{{ t "setup.save" }}</button>
     </div>
   </form>
 
   <section class="rounded-xl border border-line bg-surface p-space-md">
     <div class="flex flex-wrap items-center justify-between gap-2">
-      <h2 class="text-headline-sm font-medium text-foam">Date overrides</h2>
-      <span class="text-label-mono uppercase tracking-[0.08em] text-muted">Next 120 days</span>
+      <h2 class="text-headline-sm font-medium text-foam">{{ t "setup.overrides" }}</h2>
+      <span class="text-label-mono uppercase tracking-[0.08em] text-muted">{{ t "setup.overrides_range" }}</span>
     </div>
 
     {{ if .Overrides }}
@@ -99,42 +98,42 @@
         <div class="flex items-center gap-2">
           <span class="text-label-mono-lg text-foam">{{ .Date }}</span>
           {{ if .IsUnavailable }}
-          <span class="rounded bg-clay/10 px-2 py-0.5 text-label-mono uppercase tracking-[0.08em] text-clay">Closed</span>
+          <span class="rounded bg-clay/10 px-2 py-0.5 text-label-mono uppercase tracking-[0.08em] text-clay">{{ t "setup.closed" }}</span>
           {{ else }}
           <span class="rounded bg-pine/10 px-2 py-0.5 text-label-mono uppercase tracking-[0.08em] text-pine">{{ .CustomStartTime }} – {{ .CustomEndTime }}</span>
           {{ end }}
         </div>
         <form action="/setup/overrides/{{ .ID }}/delete" method="post">
           <input type="hidden" name="csrf_token" value="{{ $.CSRFToken }}" />
-          <button type="submit" class="text-label-mono uppercase tracking-[0.08em] text-muted transition-colors hover:text-clay">Remove</button>
+          <button type="submit" class="text-label-mono uppercase tracking-[0.08em] text-muted transition-colors hover:text-clay">{{ t "common.remove" }}</button>
         </form>
       </li>
       {{ end }}
     </ul>
     {{ else }}
-    <p class="mt-space-md text-body-sm text-muted">No exceptions yet. Add a closed day or a one-off window below.</p>
+    <p class="mt-space-md text-body-sm text-muted">{{ t "setup.overrides_empty" }}</p>
     {{ end }}
 
     <form action="/setup/overrides" method="post" class="mt-space-md grid gap-space-sm sm:grid-cols-[1fr_auto_auto_auto]">
       <input type="hidden" name="csrf_token" value="{{ .CSRFToken }}" />
       <label class="flex flex-col gap-1">
-        <span class="text-label-ui uppercase tracking-[0.08em] text-muted">Date</span>
+        <span class="text-label-ui uppercase tracking-[0.08em] text-muted">{{ t "setup.date" }}</span>
         <input name="date" type="date" required class="h-11 rounded-lg border border-line bg-canvas px-3 text-label-mono-lg text-foam outline-none focus:border-pine" />
       </label>
       <label class="flex flex-col gap-1">
-        <span class="text-label-ui uppercase tracking-[0.08em] text-muted">From</span>
+        <span class="text-label-ui uppercase tracking-[0.08em] text-muted">{{ t "setup.from" }}</span>
         <input name="custom_start_time" type="time" class="h-11 rounded-lg border border-line bg-canvas px-3 text-label-mono-lg text-foam outline-none focus:border-pine" />
       </label>
       <label class="flex flex-col gap-1">
-        <span class="text-label-ui uppercase tracking-[0.08em] text-muted">To</span>
+        <span class="text-label-ui uppercase tracking-[0.08em] text-muted">{{ t "setup.to" }}</span>
         <input name="custom_end_time" type="time" class="h-11 rounded-lg border border-line bg-canvas px-3 text-label-mono-lg text-foam outline-none focus:border-pine" />
       </label>
       <div class="flex items-end gap-2">
         <label class="flex h-11 items-center gap-2 rounded-lg border border-line bg-canvas px-3">
           <input type="checkbox" name="is_unavailable" value="1" class="h-4 w-4 accent-[#1B382B]" />
-          <span class="text-label-mono uppercase tracking-[0.08em] text-muted">Closed</span>
+          <span class="text-label-mono uppercase tracking-[0.08em] text-muted">{{ t "setup.closed" }}</span>
         </label>
-        <button type="submit" class="h-11 rounded-lg border border-line px-4 text-label-ui uppercase tracking-[0.08em] text-foam transition-colors hover:border-line-strong">Add</button>
+        <button type="submit" class="h-11 rounded-lg border border-line px-4 text-label-ui uppercase tracking-[0.08em] text-foam transition-colors hover:border-line-strong">{{ t "common.add" }}</button>
       </div>
     </form>
   </section>

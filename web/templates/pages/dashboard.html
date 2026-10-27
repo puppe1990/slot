@@ -3,17 +3,16 @@
   <section class="flex flex-col gap-space-sm">
     <div class="flex flex-wrap items-start justify-between gap-3">
       <div class="flex flex-col gap-1">
-        <span class="text-label-mono uppercase tracking-[0.14em] text-muted">Consultant dashboard</span>
-        <h1 class="text-headline-lg font-semibold tracking-tight text-pine">Executive schedule</h1>
+        <span class="text-label-mono uppercase tracking-[0.14em] text-muted">{{ t "dashboard.eyebrow" }}</span>
+        <h1 class="text-headline-lg font-semibold tracking-tight text-pine">{{ t "dashboard.title" }}</h1>
       </div>
       <span class="inline-flex items-center gap-1.5 rounded-full bg-pine px-3 py-1.5 text-label-mono uppercase tracking-[0.08em] text-white">
         <span class="h-2 w-2 rounded-full bg-moss animate-pulse"></span>
-        Desk active
+        {{ t "dashboard.desk_active" }}
       </span>
     </div>
     <p class="max-w-2xl text-body-sm text-muted">
-      Calibrated availability in {{ .Owner.Timezone }}, buffers enforced around every session, and a signed
-      link for each guest to reschedule without email ping-pong.
+      {{ t "dashboard.intro" .Owner.Timezone }}
     </p>
   </section>
 
@@ -22,7 +21,7 @@
       {{ with .NextBooking }}
       <div class="flex items-start justify-between gap-4">
         <div class="flex flex-col gap-1">
-          <span class="text-label-mono uppercase tracking-[0.14em] text-muted">Immediate session</span>
+          <span class="text-label-mono uppercase tracking-[0.14em] text-muted">{{ t "dashboard.next" }}</span>
           <span class="text-headline-sm font-semibold text-pine">{{ .DateLabel }} · {{ .HostRange }}</span>
           <span class="text-body-sm text-muted">{{ .GuestName }} — {{ .Title }}</span>
         </div>
@@ -38,28 +37,28 @@
       </div>
       {{ else }}
       <div class="flex flex-col gap-2">
-        <span class="text-label-mono uppercase tracking-[0.14em] text-muted">Immediate session</span>
-        <span class="text-headline-sm font-medium text-foam">Nothing on the desk yet.</span>
-        <p class="text-body-sm text-muted">Share a format link and the first confirmed booking lands here.</p>
+        <span class="text-label-mono uppercase tracking-[0.14em] text-muted">{{ t "dashboard.next" }}</span>
+        <span class="text-headline-sm font-medium text-foam">{{ t "dashboard.empty_title" }}</span>
+        <p class="text-body-sm text-muted">{{ t "dashboard.empty_body" }}</p>
       </div>
       {{ end }}
     </div>
 
     <div class="rounded-xl border border-line bg-surface p-space-md">
-      <span class="text-label-mono uppercase tracking-[0.14em] text-muted">Volume</span>
+      <span class="text-label-mono uppercase tracking-[0.14em] text-muted">{{ t "dashboard.volume" }}</span>
       <div class="mt-2 flex items-baseline gap-2">
         <span class="text-headline-lg font-semibold text-pine">{{ .UpcomingCount }}</span>
-        <span class="text-body-sm text-muted">upcoming</span>
+        <span class="text-body-sm text-muted">{{ t "dashboard.upcoming" }}</span>
       </div>
-      <p class="mt-1 text-label-mono uppercase tracking-[0.08em] text-muted">Next 90 days</p>
+      <p class="mt-1 text-label-mono uppercase tracking-[0.08em] text-muted">{{ t "dashboard.window" }}</p>
     </div>
 
     <div class="rounded-xl border border-line bg-surface p-space-md">
-      <span class="text-label-mono uppercase tracking-[0.14em] text-muted">Time committed</span>
+      <span class="text-label-mono uppercase tracking-[0.14em] text-muted">{{ t "dashboard.committed" }}</span>
       <div class="mt-2 flex items-baseline gap-2">
         <span class="text-headline-lg font-semibold text-pine">{{ .UpcomingHours }}</span>
       </div>
-      <p class="mt-1 text-label-mono uppercase tracking-[0.08em] text-muted">Across confirmed sessions</p>
+      <p class="mt-1 text-label-mono uppercase tracking-[0.08em] text-muted">{{ t "dashboard.committed_hint" }}</p>
     </div>
   </section>
 
@@ -71,7 +70,7 @@
       </span>
       <div class="min-w-0">
         <span class="block text-label-mono uppercase tracking-[0.1em] text-pine">{{ .PublicPath }}</span>
-        <span class="block truncate text-body-sm text-muted">Public booking portal</span>
+        <span class="block truncate text-body-sm text-muted">{{ t "dashboard.portal" }}</span>
       </div>
     </div>
     <button
@@ -79,17 +78,17 @@
       class="inline-flex h-9 items-center gap-2 rounded-full border border-line px-3 text-label-ui uppercase tracking-[0.08em] text-foam transition-colors hover:border-line-strong"
       amarra-hook="clipboard"
       data-amarra-copy="{{ absURL .Site.AppURL .PublicPath }}"
-      data-amarra-copy-done="Copied"
+      data-amarra-copy-done="{{ t "common.copied" }}"
     >
-      Copy link
+      {{ t "dashboard.copy_link" }}
     </button>
   </section>
   {{ end }}
 
   <section class="flex flex-col gap-space-sm">
     <div class="flex items-end justify-between gap-3">
-      <h2 class="text-headline-sm font-medium text-foam">Upcoming bookings</h2>
-      <span class="text-label-mono uppercase tracking-[0.1em] text-muted">{{ .UpcomingCount }} confirmed</span>
+      <h2 class="text-headline-sm font-medium text-foam">{{ t "dashboard.bookings" }}</h2>
+      <span class="text-label-mono uppercase tracking-[0.1em] text-muted">{{ t "dashboard.confirmed_count" .UpcomingCount }}</span>
     </div>
 
     {{ if .Bookings }}
@@ -112,8 +111,8 @@
             <button
               type="submit"
               class="text-label-mono uppercase tracking-[0.08em] text-muted transition-colors hover:text-clay"
-              data-amarra-confirm="Cancel this booking? The slot is freed and the guest is notified."
-            >Cancel</button>
+              data-amarra-confirm="{{ t "dashboard.cancel_confirm" }}"
+            >{{ t "common.cancel" }}</button>
           </form>
           {{ end }}
         </div>
@@ -121,14 +120,14 @@
       {{ end }}
     </div>
     {{ else }}
-    <.empty title="No bookings yet">
-      <p class="text-body-sm text-muted">Publish a format and share its link. Holds expire after 10 minutes, so abandoned visits free the slot automatically.</p>
+    <.empty title="{{ t "dashboard.no_bookings" }}">
+      <p class="text-body-sm text-muted">{{ t "dashboard.no_bookings_body" }}</p>
     </.empty>
     {{ end }}
   </section>
 
   <section class="flex flex-col gap-space-sm">
-    <h2 class="text-headline-sm font-medium text-foam">Formats</h2>
+    <h2 class="text-headline-sm font-medium text-foam">{{ t "dashboard.formats" }}</h2>
     <div class="grid gap-space-sm sm:grid-cols-2">
       {{ range .MeetingTypes }}
       {{ if .IsActive }}<a href="{{ .PublicPath }}" class="group rounded-xl border border-line bg-surface p-space-md transition-colors hover:border-line-strong">{{ else }}<div class="rounded-xl border border-line bg-surface p-space-md opacity-70">{{ end }}
@@ -140,7 +139,7 @@
         <div class="mt-3 flex items-center justify-between">
           <span class="text-label-mono text-muted text-pine">{{ .PublicPath }}</span>
           <span class="text-label-ui uppercase tracking-[0.08em] {{ if .IsActive }}text-pine{{ else }}text-clay{{ end }}">
-            {{ if .IsActive }}Live{{ else }}Paused{{ end }}
+            {{ if .IsActive }}{{ t "common.live" }}{{ else }}{{ t "common.paused" }}{{ end }}
           </span>
         </div>
       {{ if .IsActive }}</a>{{ else }}</div>{{ end }}

@@ -50,6 +50,15 @@ Handler constructors take `Deps` (store, views, site, config, calendar, notifier
 | 7        | Headless tests only — SQLite `:memory:`, `httptest`, fake calendar, fake clock |
 | 8        | `gofmt` + Prettier without debate                                              |
 
+## Languages
+
+Every user-facing string goes through a catalog: templates use `{{ t "key" }}`, Go code uses `h.localeFor(r).t("key")` (or the `localeText` methods for dates, clocks, durations, statuses and locations). Never hardcode copy in a page — a missing key prints itself, which is the only "translation" you will notice in review.
+
+- Catalogs: `internal/i18n/en.go` and `pt.go`. Add the key to **both** in the same commit.
+- Formatting: `internal/handlers/locale_format.go`. English is 12h, pt-BR is 24h; long dates and weekday labels are localized.
+- The header toggle (`web/templates/components/locale-toggle.html`) posts to `/locale` and does a full navigation (`data-amarra-skip`).
+- Tests that assert copy run under the English default; pt render tests wrap the handler in `i18n.LocaleMiddleware` (see `internal/handlers/i18n_pages_test.go`).
+
 ## Design system — Calm Conviction
 
 Warm alabaster canvas, deep pine for action, muted clay for destructive states, Hanken Grotesk for prose, JetBrains Mono for every temporal string.

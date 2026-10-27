@@ -53,10 +53,10 @@ func (h *MeetingTypeHandler) Create(w http.ResponseWriter, r *http.Request) {
 	duration := formInt(r, "duration_minutes", 30)
 	var errs validate.FieldErrors
 	if title == "" {
-		errs.Add("title", "Give the session a title")
+		errs.Add("title", h.localeFor(r).t("formats.error_title"))
 	}
 	if duration < 5 || duration > 480 {
-		errs.Add("duration_minutes", "Duration must be between 5 and 480 minutes")
+		errs.Add("duration_minutes", h.localeFor(r).t("formats.error_duration"))
 	}
 	if errs.Any() {
 		types, _ := h.deps.Store.ListMeetingTypes(owner.User.ID)
@@ -81,7 +81,7 @@ func (h *MeetingTypeHandler) Create(w http.ResponseWriter, r *http.Request) {
 		if errors.Is(err, store.ErrSlugTaken) {
 			meetingType.Slug = h.freeSlug(duration)
 			if _, retryErr := h.deps.Store.CreateMeetingType(meetingType); retryErr == nil {
-				flash.Set(w, "notice", "Session format created.", h.deps.Config.CookieSecure())
+				flash.Set(w, "notice", h.localeFor(r).t("formats.created"), h.deps.Config.CookieSecure())
 				http.Redirect(w, r, "/meeting-types", http.StatusSeeOther)
 				return
 			}
@@ -89,7 +89,7 @@ func (h *MeetingTypeHandler) Create(w http.ResponseWriter, r *http.Request) {
 		h.serverError(w, r, err)
 		return
 	}
-	flash.Set(w, "notice", "Session format created.", h.deps.Config.CookieSecure())
+	flash.Set(w, "notice", h.localeFor(r).t("formats.created"), h.deps.Config.CookieSecure())
 	http.Redirect(w, r, "/meeting-types", http.StatusSeeOther)
 }
 
@@ -173,10 +173,10 @@ func (h *MeetingTypeHandler) Update(w http.ResponseWriter, r *http.Request) {
 
 	var errs validate.FieldErrors
 	if meetingType.Title == "" {
-		errs.Add("title", "Give the session a title")
+		errs.Add("title", h.localeFor(r).t("formats.error_title"))
 	}
 	if meetingType.DurationMinutes < 5 || meetingType.DurationMinutes > 480 {
-		errs.Add("duration_minutes", "Duration must be between 5 and 480 minutes")
+		errs.Add("duration_minutes", h.localeFor(r).t("formats.error_duration"))
 	}
 	if errs.Any() {
 		h.renderEdit(w, r, owner.User, meetingType, errs, http.StatusUnprocessableEntity)
@@ -185,13 +185,13 @@ func (h *MeetingTypeHandler) Update(w http.ResponseWriter, r *http.Request) {
 	if err := h.deps.Store.UpdateMeetingType(meetingType); err != nil {
 		if errors.Is(err, store.ErrSlugTaken) {
 			h.renderEdit(w, r, owner.User, meetingType,
-				validate.FieldErrors{"slug": "That public link is already taken"}, http.StatusUnprocessableEntity)
+				validate.FieldErrors{"slug": h.localeFor(r).t("formats.error_slug")}, http.StatusUnprocessableEntity)
 			return
 		}
 		h.serverError(w, r, err)
 		return
 	}
-	flash.Set(w, "notice", "Changes saved.", h.deps.Config.CookieSecure())
+	flash.Set(w, "notice", h.localeFor(r).t("formats.saved"), h.deps.Config.CookieSecure())
 	http.Redirect(w, r, "/meeting-types", http.StatusSeeOther)
 }
 
@@ -201,7 +201,7 @@ func (h *MeetingTypeHandler) renderList(w http.ResponseWriter, r *http.Request, 
 		"PublicPath":   publicPath(firstActiveMeetingType(types)),
 		"ActiveNav":    "meeting-types",
 		"Owner":        owner,
-		"MeetingTypes": presentMeetingTypes(types),
+		"MeetingTypes": presentMeetingTypes(types, h.localeFor(r)),
 		"Errors":       errs,
 	}, status)
 }
@@ -212,7 +212,7 @@ func (h *MeetingTypeHandler) renderEdit(w http.ResponseWriter, r *http.Request, 
 		"PublicPath":      publicPath(meetingType),
 		"ActiveNav":       "meeting-types",
 		"Owner":           owner,
-		"MeetingType":     presentMeetingType(meetingType),
+		"MeetingType":     presentMeetingType(meetingType, h.localeFor(r)),
 		"Errors":          errs,
 		"LocationOptions": locationOptions,
 	}, status)

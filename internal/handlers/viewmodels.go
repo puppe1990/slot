@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"fmt"
 	"time"
 
 	"github.com/puppe1990/slot/internal/models"
@@ -27,19 +26,9 @@ type bookingView struct {
 	Cancelled     bool
 }
 
-func presentBooking(booking models.Booking, ownerLocation, guestLocation *time.Location, now time.Time) bookingView {
+func presentBooking(booking models.Booking, ownerLocation, guestLocation *time.Location, now time.Time, l localeText) bookingView {
 	if guestLocation == nil {
 		guestLocation = ownerLocation
-	}
-	status := string(booking.Status)
-	label := "Confirmed"
-	switch booking.Status {
-	case models.BookingStatusCancelled:
-		label = "Cancelled"
-	case models.BookingStatusRescheduled:
-		label = "Rescheduled"
-	case models.BookingStatusHold:
-		label = "Held"
 	}
 	return bookingView{
 		ID:            booking.ID,
@@ -47,31 +36,18 @@ func presentBooking(booking models.Booking, ownerLocation, guestLocation *time.L
 		GuestEmail:    booking.GuestEmail,
 		GuestNotes:    booking.GuestNotes,
 		Title:         booking.MeetingTypeTitle,
-		Status:        status,
-		StatusLabel:   label,
-		DateLabel:     formatLongDate(booking.StartUTC, ownerLocation),
-		GuestRange:    formatRange(booking.StartUTC, booking.EndUTC, guestLocation),
-		HostRange:     formatRange(booking.StartUTC, booking.EndUTC, ownerLocation),
+		Status:        string(booking.Status),
+		StatusLabel:   l.statusLabel(booking.Status),
+		DateLabel:     l.longDate(booking.StartUTC, ownerLocation),
+		GuestRange:    l.clockRange(booking.StartUTC, booking.EndUTC, guestLocation),
+		HostRange:     l.clockRange(booking.StartUTC, booking.EndUTC, ownerLocation),
 		GuestTZLabel:  formatTimezone(booking.StartUTC, guestLocation),
 		HostTZLabel:   formatTimezone(booking.StartUTC, ownerLocation),
-		LocationLabel: locationLabel(booking.MeetingTypeLocation),
-		DurationLabel: formatDurationShort(booking.MeetingTypeDuration),
+		LocationLabel: l.locationLabel(booking.MeetingTypeLocation),
+		DurationLabel: l.durationUpper(booking.MeetingTypeDuration),
 		Start:         booking.StartUTC,
 		IsUpcoming:    booking.StartUTC.After(now) && booking.Active(),
 		Cancelled:     booking.Status == models.BookingStatusCancelled,
-	}
-}
-
-func locationLabel(locationType string) string {
-	switch locationType {
-	case models.LocationGoogleMeet:
-		return "Google Meet"
-	case models.LocationPhone:
-		return "Phone call"
-	case models.LocationCustom:
-		return "Custom location"
-	default:
-		return "To be confirmed"
 	}
 }
 
@@ -86,33 +62,23 @@ type meetingTypeView struct {
 	LocationDetails string
 }
 
-func presentMeetingType(meetingType models.MeetingType) meetingTypeView {
+func presentMeetingType(meetingType models.MeetingType, l localeText) meetingTypeView {
 	return meetingTypeView{
 		MeetingType:     meetingType,
 		PublicPath:      "/book/" + meetingType.Slug,
-		DurationLabel:   formatDurationShort(meetingType.DurationMinutes),
-		BufferLabel:     formatDuration(meetingType.BufferBeforeMinutes) + " / " + formatDuration(meetingType.BufferAfterMinutes),
-		NoticeLabel:     formatDuration(meetingType.MinNoticeHours*60) + " notice",
-		HorizonLabel:    formatHorizon(meetingType.BookingHorizonDays),
-		LocationLabel:   locationLabel(meetingType.LocationType),
+		DurationLabel:   l.durationUpper(meetingType.DurationMinutes),
+		BufferLabel:     l.duration(meetingType.BufferBeforeMinutes) + " / " + l.duration(meetingType.BufferAfterMinutes),
+		NoticeLabel:     l.notice(meetingType.MinNoticeHours),
+		HorizonLabel:    l.horizon(meetingType.BookingHorizonDays),
+		LocationLabel:   l.locationLabel(meetingType.LocationType),
 		LocationDetails: meetingType.LocationDetails,
 	}
 }
 
-var locationOptions = []selectOption{
-	{Value: models.LocationGoogleMeet, Label: "Google Meet"},
-	{Value: models.LocationPhone, Label: "Phone call"},
-	{Value: models.LocationCustom, Label: "Custom location"},
-}
-
-type selectOption struct {
-	Value string
-	Label string
-}
-
-func formatHorizon(days int) string {
-	if days == 1 {
-		return "1 day"
-	}
-	return fmt.Sprintf("%d days", days)
+// locationOptions is the modality picker. Only the values are stable; the
+// labels are translated in the template through the location.* catalog keys.
+var locationOptions = []string{
+	models.LocationGoogleMeet,
+	models.LocationPhone,
+	models.LocationCustom,
 }

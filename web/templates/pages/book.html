@@ -9,10 +9,10 @@
       <div class="flex min-w-0 flex-col">
         <div class="flex flex-wrap items-center gap-2">
           <span class="text-headline-sm font-semibold text-foam">{{ .Owner.DisplayName }}</span>
-          <span class="rounded bg-canvas px-1.5 py-0.5 text-label-mono uppercase tracking-[0.08em] text-muted">Verified</span>
+          <span class="rounded bg-canvas px-1.5 py-0.5 text-label-mono uppercase tracking-[0.08em] text-muted">{{ t "common.verified" }}</span>
         </div>
-        <p class="text-body-sm text-muted">Independent consultant · {{ .Owner.Timezone }}</p>
-        <p class="mt-1 text-label-mono text-pine">Buffer-protected calendar · timezone aware</p>
+        <p class="text-body-sm text-muted">{{ t "book.consultant" .Owner.Timezone }}</p>
+        <p class="mt-1 text-label-mono text-pine">{{ t "book.calendar_line" }}</p>
       </div>
     </div>
 
@@ -23,8 +23,8 @@
         <span class="rounded bg-surface px-2.5 py-1 text-label-mono font-medium text-foam">{{ .MeetingType.DurationLabel }}</span>
         <span class="rounded bg-surface px-2.5 py-1 text-label-mono font-medium text-pine">{{ .MeetingType.LocationLabel }}</span>
         {{ with .MeetingType.LocationDetails }}<span class="rounded bg-surface px-2.5 py-1 text-label-mono text-muted">{{ . }}</span>{{ end }}
-        <span class="rounded bg-moss/60 px-2.5 py-1 text-label-mono font-medium uppercase text-pine">Complimentary</span>
-        <span class="rounded bg-surface px-2.5 py-1 text-label-mono font-medium text-muted">{{ .MeetingType.HorizonLabel }} horizon</span>
+        <span class="rounded bg-moss/60 px-2.5 py-1 text-label-mono font-medium uppercase text-pine">{{ t "common.complimentary" }}</span>
+        <span class="rounded bg-surface px-2.5 py-1 text-label-mono font-medium text-muted">{{ t "book.horizon" .MeetingType.HorizonLabel }}</span>
       </div>
     </div>
   </section>
@@ -37,7 +37,7 @@
           <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M12 3a9 9 0 100 18 9 9 0 000-18zm0 0v9l5 3" /></svg>
         </span>
         <div class="min-w-0">
-          <span class="block text-body-sm text-muted">Times shown in your timezone</span>
+          <span class="block text-body-sm text-muted">{{ t "book.your_timezone" }}</span>
           <span class="block text-label-mono text-foam">{{ .Slots.GuestTZLabel }}</span>
         </div>
       </div>
@@ -48,12 +48,12 @@
           <option value="{{ .Value }}" {{ if .Selected }}selected{{ end }}>{{ .Label }}</option>
           {{ end }}
         </select>
-        <button type="submit" class="h-9 rounded-lg bg-pine px-3 text-label-ui uppercase tracking-[0.08em] text-white">Set</button>
+        <button type="submit" class="h-9 rounded-lg bg-pine px-3 text-label-ui uppercase tracking-[0.08em] text-white">{{ t "common.set" }}</button>
       </div>
     </form>
     <p class="mt-2 flex items-center gap-1.5 text-label-mono text-muted">
       <span class="h-1.5 w-1.5 rounded-full bg-pine"></span>
-      Host clock: {{ .Slots.HostTZLabel }}
+      {{ t "book.host_clock" .Slots.HostTZLabel }}
     </p>
   </section>
 
@@ -66,8 +66,8 @@
     <div class="flex items-center justify-between">
       <span class="text-label-ui uppercase tracking-[0.08em] text-muted">{{ .Slots.DateLabel }}</span>
       <div class="flex items-center gap-1">
-        <a href="{{ .PublicPath }}?tz={{ .Timezone }}&date={{ .Slots.PrevDate }}" class="flex h-8 w-8 items-center justify-center rounded text-muted transition-colors hover:bg-surface hover:text-foam" aria-label="Previous week">‹</a>
-        <a href="{{ .PublicPath }}?tz={{ .Timezone }}&date={{ .Slots.NextDate }}" class="flex h-8 w-8 items-center justify-center rounded text-muted transition-colors hover:bg-surface hover:text-foam" aria-label="Next week">›</a>
+        <a href="{{ .PublicPath }}?tz={{ .Timezone }}&date={{ .Slots.PrevDate }}" class="flex h-8 w-8 items-center justify-center rounded text-muted transition-colors hover:bg-surface hover:text-foam" aria-label="{{ t "common.previous_week" }}">‹</a>
+        <a href="{{ .PublicPath }}?tz={{ .Timezone }}&date={{ .Slots.NextDate }}" class="flex h-8 w-8 items-center justify-center rounded text-muted transition-colors hover:bg-surface hover:text-foam" aria-label="{{ t "common.next_week" }}">›</a>
       </div>
     </div>
 
@@ -95,7 +95,7 @@
   <section class="flex flex-col gap-space-sm">
     <div class="flex items-center justify-between">
       <span class="text-headline-sm font-medium text-foam">{{ .Slots.DateLabel }}</span>
-      <span class="text-label-mono text-muted">{{ len .Slots.Selected.Slots }} available</span>
+      <span class="text-label-mono text-muted">{{ t "book.available" (len .Slots.Selected.Slots) }}</span>
     </div>
 
     {{ if .Slots.Selected.Slots }}
@@ -108,22 +108,22 @@
         <button type="submit" class="flex w-full items-center justify-between rounded-xl bg-surface p-3.5 text-left shadow-sm transition-transform hover:bg-line/50 active:scale-[0.98]">
           <span class="flex flex-col">
             <span class="text-label-mono-lg font-semibold text-foam">{{ .GuestClock }}</span>
-            <span class="text-label-mono text-muted">{{ .HostClock }} host</span>
+            <span class="text-label-mono text-muted">{{ t "book.host_suffix" .HostClock }}</span>
           </span>
-          <span class="text-label-ui uppercase tracking-[0.08em] text-pine">Hold</span>
+          <span class="text-label-ui uppercase tracking-[0.08em] text-pine">{{ t "book.hold" }}</span>
         </button>
       </form>
       {{ end }}
     </div>
     {{ else }}
     <div class="rounded-xl border border-line bg-surface p-space-md">
-      <p class="text-body-md font-medium text-foam">No open slots on {{ .Slots.DateLabel }}.</p>
-      <p class="mt-1 text-body-sm text-muted">Pick another day in the strip above. Availability respects notice windows, buffers and external blocks.</p>
+      <p class="text-body-md font-medium text-foam">{{ t "book.no_slots_title" .Slots.DateLabel }}</p>
+      <p class="mt-1 text-body-sm text-muted">{{ t "book.no_slots_body" }}</p>
     </div>
     {{ end }}
   </section>
 
-  <p class="text-center text-label-mono text-muted">No login required. Holding a slot reserves it for 10 minutes — nothing is charged.</p>
+  <p class="text-center text-label-mono text-muted">{{ t "book.footnote" }}</p>
 </div>
 
 <script nonce="{{ .CSPNonce }}">

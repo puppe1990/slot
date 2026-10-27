@@ -49,7 +49,7 @@ func (h *BookingHandler) Hold(w http.ResponseWriter, r *http.Request) {
 
 	start, err := time.Parse(time.RFC3339, strings.TrimSpace(r.FormValue("slot")))
 	if err != nil {
-		h.renderBooking(w, r, meetingType, validate.FieldErrors{"slot": "Pick a time from the list"}, http.StatusUnprocessableEntity)
+		h.renderBooking(w, r, meetingType, validate.FieldErrors{"slot": h.localeFor(r).t("book.error_slot")}, http.StatusUnprocessableEntity)
 		return
 	}
 	owner, err := h.deps.Store.GetUser(meetingType.UserID)
@@ -71,7 +71,7 @@ func (h *BookingHandler) Hold(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		if errors.Is(err, store.ErrSlotUnavailable) {
 			h.renderBooking(w, r, meetingType, validate.FieldErrors{
-				"slot": "That time was just taken. Pick another slot.",
+				"slot": h.localeFor(r).t("book.error_taken"),
 			}, http.StatusConflict)
 			return
 		}
@@ -146,13 +146,14 @@ func (h *BookingHandler) Confirm(w http.ResponseWriter, r *http.Request) {
 	email := strings.TrimSpace(r.FormValue("email"))
 	notes := strings.TrimSpace(r.FormValue("notes"))
 	guestTimezone := normalizeTimezone(r.FormValue("tz"), hold.GuestTimezone)
+	l := h.localeFor(r)
 
 	var errs validate.FieldErrors
 	if err := validate.Required(map[string]string{"name": name}, "name"); err != nil {
-		errs.Add("name", "Tell the host who is coming")
+		errs.Add("name", l.t("confirm.error_name"))
 	}
 	if err := validate.Email(email); err != nil {
-		errs.Add("email", "Use a valid email so the invite can reach you")
+		errs.Add("email", l.t("confirm.error_email"))
 	}
 	if errs.Any() {
 		h.renderConfirm(w, r, meetingType, hold, errs, http.StatusUnprocessableEntity)
@@ -170,7 +171,7 @@ func (h *BookingHandler) Confirm(w http.ResponseWriter, r *http.Request) {
 		if errors.Is(err, store.ErrHoldExpired) || errors.Is(err, store.ErrSlotUnavailable) {
 			h.clearHoldCookie(w)
 			h.renderBooking(w, r, meetingType, validate.FieldErrors{
-				"slot": "Your hold expired. Choose a time again — nothing was charged.",
+				"slot": h.localeFor(r).t("book.error_expired"),
 			}, http.StatusConflict)
 			return
 		}
@@ -207,7 +208,8 @@ func (h *BookingHandler) renderBooking(w http.ResponseWriter, r *http.Request, m
 	if guestTimezone == "" {
 		guestTimezone = r.FormValue("tz")
 	}
-	data, err := h.buildSlots(r.Context(), meetingType, guestTimezone, r.URL.Query().Get("date"), 0)
+	l := h.localeFor(r)
+	data, err := h.buildSlots(r.Context(), meetingType, guestTimezone, r.URL.Query().Get("date"), 0, l)
 	if err != nil {
 		h.serverError(w, r, err)
 		return
@@ -215,7 +217,7 @@ func (h *BookingHandler) renderBooking(w http.ResponseWriter, r *http.Request, m
 	ownerConnection, _ := h.deps.Store.GetCalendarConnection(meetingType.UserID)
 	h.page(w, r, "booking", "book", map[string]any{
 		"Title":        meetingType.Title,
-		"MeetingType":  presentMeetingType(meetingType),
+		"MeetingType":  presentMeetingType(meetingType, l),
 		"Owner":        data.Owner,
 		"Slots":        data,
 		"Errors":       errs,
@@ -227,6 +229,7 @@ func (h *BookingHandler) renderBooking(w http.ResponseWriter, r *http.Request, m
 }
 
 func (h *BookingHandler) renderConfirm(w http.ResponseWriter, r *http.Request, meetingType models.MeetingType, hold models.Booking, errs validate.FieldErrors, status int) {
+	l := h.localeFor(r)
 	ownerLocation := mustLocation(hold.OwnerTimezone)
 	guestTimezone := normalizeTimezone(r.URL.Query().Get("tz"), hold.GuestTimezone)
 	guestLocation := mustLocation(guestTimezone)
@@ -237,16 +240,16 @@ func (h *BookingHandler) renderConfirm(w http.ResponseWriter, r *http.Request, m
 
 	h.page(w, r, "booking", "book_confirm", map[string]any{
 		"Title":       "Confirm · " + meetingType.Title,
-		"MeetingType": presentMeetingType(meetingType),
+		"MeetingType": presentMeetingType(meetingType, l),
 		"Owner":       models.User{Name: hold.OwnerName, Email: hold.OwnerEmail, Timezone: hold.OwnerTimezone},
-		"Hold":        presentBooking(hold, ownerLocation, guestLocation, h.now()),
+		"Hold":        presentBooking(hold, ownerLocation, guestLocation, h.now(), l),
 		"Errors":      errs,
 		"GuestTZ":     guestTimezone,
-		"GuestRange":  formatRange(hold.StartUTC, hold.EndUTC, guestLocation),
-		"HostRange":   formatRange(hold.StartUTC, hold.EndUTC, ownerLocation),
+		"GuestRange":  l.clockRange(hold.StartUTC, hold.EndUTC, guestLocation),
+		"HostRange":   l.clockRange(hold.StartUTC, hold.EndUTC, ownerLocation),
 		"GuestLabel":  formatTimezone(hold.StartUTC, guestLocation),
 		"HostLabel":   formatTimezone(hold.StartUTC, ownerLocation),
-		"DateLabel":   formatLongDate(hold.StartUTC, guestLocation),
+		"DateLabel":   l.longDate(hold.StartUTC, guestLocation),
 		"Remaining":   remaining,
 		"PublicPath":  "/book/" + meetingType.Slug,
 	}, status)
@@ -272,7 +275,7 @@ func (h *BookingHandler) liveHold(w http.ResponseWriter, r *http.Request, meetin
 	if err != nil || hold.MeetingTypeSlug != meetingType.Slug {
 		h.clearHoldCookie(w)
 		h.renderBooking(w, r, meetingType, validate.FieldErrors{
-			"slot": "Your hold expired. Choose a time again.",
+			"slot": h.localeFor(r).t("book.error_expired"),
 		}, http.StatusConflict)
 		return models.Booking{}, false
 	}

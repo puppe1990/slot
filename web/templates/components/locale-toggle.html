@@ -1,0 +1,13 @@
+<div class="flex items-center gap-1 rounded-full border border-line p-0.5" role="group" aria-label="{{ t "nav.language" }}">
+  {{ range localeTags .Locales }}
+  <form action="{{ if .Action }}{{ .Action }}{{ else }}/locale{{ end }}" method="post" data-amarra-skip>
+    {{ csrfField $.CSRFToken }}
+    <input type="hidden" name="locale" value="{{ . }}" />
+    <button
+      type="submit"
+      class="rounded-full px-2.5 py-1 text-label-mono uppercase tracking-[0.08em] transition-colors {{ if eq (localeBase $.Locale) . }}bg-pine text-white{{ else }}text-muted hover:text-foam{{ end }}"
+      aria-pressed="{{ if eq (localeBase $.Locale) . }}true{{ else }}false{{ end }}"
+    >{{ if eq . "pt" }}PT-BR{{ else }}{{ localeLabel . }}{{ end }}</button>
+  </form>
+  {{ end }}
+</div>

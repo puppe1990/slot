@@ -6,30 +6,12 @@ import (
 	"time"
 )
 
-// Temporal strings stay in one place so the mono columns line up: clock times
-// are always padded, ranges always use an en dash.
-func formatClock(ts time.Time, loc *time.Location) string {
-	return ts.In(loc).Format("3:04 PM")
-}
+const dateKeyLayout = "2006-01-02"
 
-func formatRange(start, end time.Time, loc *time.Location) string {
-	return formatClock(start, loc) + " – " + formatClock(end, loc)
-}
-
-func formatLongDate(ts time.Time, loc *time.Location) string {
-	return ts.In(loc).Format("Monday, January 2, 2006")
-}
-
-func formatWeekday(ts time.Time, loc *time.Location) string {
-	return ts.In(loc).Format("Mon")
-}
-
-func formatDayNumber(ts time.Time, loc *time.Location) string {
-	return ts.In(loc).Format("2")
-}
-
-func formatDateKey(ts time.Time, loc *time.Location) string {
-	return ts.In(loc).Format("2006-01-02")
+// Temporal strings that do not depend on the request locale: timezone labels
+// and offset stamps read the same in every language.
+func formatTimezone(ts time.Time, loc *time.Location) string {
+	return loc.String() + " (" + zoneAbbrev(ts, loc) + ")"
 }
 
 // zoneAbbrev renders "EDT"; zoneOffset renders "UTC-04:00". The pair keeps the
@@ -49,22 +31,16 @@ func zoneOffset(ts time.Time, loc *time.Location) string {
 	return fmt.Sprintf("UTC%s%02d:%02d", sign, seconds/3600, (seconds%3600)/60)
 }
 
-func formatTimezone(ts time.Time, loc *time.Location) string {
-	return loc.String() + " (" + zoneAbbrev(ts, loc) + ")"
+func formatDateKey(ts time.Time, loc *time.Location) string {
+	return ts.In(loc).Format(dateKeyLayout)
 }
 
-func formatDuration(minutes int) string {
-	if minutes%60 == 0 {
-		return fmt.Sprintf("%dh", minutes/60)
+func mustLocation(name string) *time.Location {
+	location, err := time.LoadLocation(name)
+	if err != nil {
+		return time.UTC
 	}
-	if minutes > 60 {
-		return fmt.Sprintf("%dh %02dm", minutes/60, minutes%60)
-	}
-	return fmt.Sprintf("%d min", minutes)
-}
-
-func formatDurationShort(minutes int) string {
-	return fmt.Sprintf("%d MIN", minutes)
+	return location
 }
 
 // timezoneOptions is the curated picker on the public page. Free text would

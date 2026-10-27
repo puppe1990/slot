@@ -45,21 +45,21 @@ func (h *ManageHandler) Reschedule(w http.ResponseWriter, r *http.Request) {
 	}
 	if !booking.Active() {
 		h.renderManage(w, r, booking, validate.FieldErrors{
-			"slot": "This booking is cancelled and can no longer move.",
+			"slot": h.localeFor(r).t("manage.error_cancelled"),
 		}, http.StatusConflict)
 		return
 	}
 
 	start, err := time.Parse(time.RFC3339, strings.TrimSpace(r.FormValue("slot")))
 	if err != nil {
-		h.renderManage(w, r, booking, validate.FieldErrors{"slot": "Pick a new time"}, http.StatusUnprocessableEntity)
+		h.renderManage(w, r, booking, validate.FieldErrors{"slot": h.localeFor(r).t("manage.error_pick")}, http.StatusUnprocessableEntity)
 		return
 	}
 	end := start.Add(time.Duration(booking.MeetingTypeDuration) * time.Minute)
 	if err := h.deps.Store.RescheduleBooking(booking.ID, start.UTC(), end.UTC(), models.ActorGuest, "Guest rescheduled", h.now()); err != nil {
 		if errors.Is(err, store.ErrSlotUnavailable) {
 			h.renderManage(w, r, booking, validate.FieldErrors{
-				"slot": "That time is no longer free. Pick another slot.",
+				"slot": h.localeFor(r).t("manage.error_taken"),
 			}, http.StatusConflict)
 			return
 		}
@@ -132,13 +132,14 @@ func (h *ManageHandler) renderManage(w http.ResponseWriter, r *http.Request, boo
 		h.serverError(w, r, err)
 		return
 	}
+	l := h.localeFor(r)
 	ownerLocation := mustLocation(booking.OwnerTimezone)
 	guestTimezone := normalizeTimezone(r.URL.Query().Get("tz"), booking.GuestTimezone)
 	guestLocation := mustLocation(guestTimezone)
 
 	var slots slotPageData
 	if booking.Active() {
-		slots, err = h.buildSlots(r.Context(), meetingType, guestTimezone, r.URL.Query().Get("date"), booking.ID)
+		slots, err = h.buildSlots(r.Context(), meetingType, guestTimezone, r.URL.Query().Get("date"), booking.ID, l)
 		if err != nil {
 			h.serverError(w, r, err)
 			return
@@ -148,19 +149,19 @@ func (h *ManageHandler) renderManage(w http.ResponseWriter, r *http.Request, boo
 	h.page(w, r, "booking", "manage", map[string]any{
 		"Title":        "Your booking",
 		"Owner":        models.User{Name: booking.OwnerName, Email: booking.OwnerEmail, Timezone: booking.OwnerTimezone},
-		"Booking":      presentBooking(booking, ownerLocation, guestLocation, h.now()),
-		"MeetingType":  presentMeetingType(meetingType),
+		"Booking":      presentBooking(booking, ownerLocation, guestLocation, h.now(), l),
+		"MeetingType":  presentMeetingType(meetingType, l),
 		"Slots":        slots,
 		"Errors":       errs,
 		"ManagePath":   r.URL.Path,
 		"ICSURL":       r.URL.Path + "/invite.ics",
 		"GuestTZ":      guestTimezone,
 		"GuestOptions": buildTimezoneOptions(guestTimezone),
-		"GuestRange":   formatRange(booking.StartUTC, booking.EndUTC, guestLocation),
-		"HostRange":    formatRange(booking.StartUTC, booking.EndUTC, ownerLocation),
+		"GuestRange":   l.clockRange(booking.StartUTC, booking.EndUTC, guestLocation),
+		"HostRange":    l.clockRange(booking.StartUTC, booking.EndUTC, ownerLocation),
 		"GuestLabel":   formatTimezone(booking.StartUTC, guestLocation),
 		"HostLabel":    formatTimezone(booking.StartUTC, ownerLocation),
-		"DateLabel":    formatLongDate(booking.StartUTC, guestLocation),
+		"DateLabel":    l.longDate(booking.StartUTC, guestLocation),
 	}, status)
 }
 

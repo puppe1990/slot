@@ -46,6 +46,7 @@ func (h *DashboardHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	l := h.localeFor(r)
 	views := make([]bookingView, 0, len(upcoming))
 	var minutes int
 	var next *bookingView
@@ -53,7 +54,7 @@ func (h *DashboardHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		if booking.Status == models.BookingStatusCancelled {
 			continue
 		}
-		view := presentBooking(booking, owner.Location, owner.Location, now)
+		view := presentBooking(booking, owner.Location, owner.Location, now, l)
 		views = append(views, view)
 		if view.IsUpcoming {
 			minutes += booking.MeetingTypeDuration
@@ -70,9 +71,9 @@ func (h *DashboardHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		"ActiveNav":      "dashboard",
 		"Owner":          owner.User,
 		"Bookings":       views,
-		"MeetingTypes":   presentMeetingTypes(types),
+		"MeetingTypes":   presentMeetingTypes(types, l),
 		"UpcomingCount":  countUpcoming(views),
-		"UpcomingHours":  formatDuration(minutes),
+		"UpcomingHours":  l.duration(minutes),
 		"NextBooking":    next,
 		"PublicPath":     publicPath(published),
 		"HasMeetingType": published.ID != 0,
@@ -125,7 +126,7 @@ func (h *DashboardHandler) Cancel(w http.ResponseWriter, r *http.Request) {
 			Body:    "The host cancelled " + booking.MeetingTypeTitle + " that was set for " + booking.StartUTC.Format(time.RFC1123) + ".",
 		})
 	}
-	flash.Set(w, "notice", "Booking cancelled and the guest was notified.", h.deps.Config.CookieSecure())
+	flash.Set(w, "notice", h.localeFor(r).t("dashboard.cancelled_flash"), h.deps.Config.CookieSecure())
 	http.Redirect(w, r, "/dashboard", http.StatusSeeOther)
 }
 
@@ -138,10 +139,10 @@ func firstActiveMeetingType(types []models.MeetingType) models.MeetingType {
 	return models.MeetingType{}
 }
 
-func presentMeetingTypes(types []models.MeetingType) []meetingTypeView {
+func presentMeetingTypes(types []models.MeetingType, l localeText) []meetingTypeView {
 	out := make([]meetingTypeView, 0, len(types))
 	for _, meetingType := range types {
-		out = append(out, presentMeetingType(meetingType))
+		out = append(out, presentMeetingType(meetingType, l))
 	}
 	return out
 }
