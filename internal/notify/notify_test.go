@@ -70,3 +70,22 @@ func TestOutboxMessagesAreCopies(t *testing.T) {
 		t.Fatal("Messages() exposed the internal slice")
 	}
 }
+
+func TestNewDefaultsToOutbox(t *testing.T) {
+	notifier, err := notify.New(notify.Config{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, ok := notifier.(*notify.Outbox); !ok {
+		t.Fatalf("notifier = %T, want *notify.Outbox", notifier)
+	}
+}
+
+func TestNewRejectsResendWithoutKeyOrFrom(t *testing.T) {
+	if _, err := notify.New(notify.Config{Provider: "resend"}); err == nil {
+		t.Fatal("resend without key should fail")
+	}
+	if _, err := notify.New(notify.Config{Provider: "resend", ResendAPIKey: "re_test"}); err == nil {
+		t.Fatal("resend without from should fail")
+	}
+}

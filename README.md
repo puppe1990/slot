@@ -94,6 +94,17 @@ The UI ships in **English** and **Portuguese (pt-BR)**. The header toggle posts 
 - Copy built in Go (statuses, locations, durations, dates) goes through `localeFor(r)` in `internal/handlers/locale_format.go`.
 - Clocks follow the locale: 12h in English, 24h in pt-BR. Weekdays and months are localized too, so the date strip reads `seg, ter, qua`.
 
+## Email
+
+Transactional mail goes through a `Notifier` picked by env:
+
+| `EMAIL_PROVIDER`   | Needs                           | Use                                  |
+| ------------------ | ------------------------------- | ------------------------------------ |
+| `outbox` (default) | —                               | memory only; development and tests   |
+| `resend`           | `RESEND_API_KEY` + `EMAIL_FROM` | real delivery through the Resend API |
+
+`EMAIL_FROM` must sit on a domain verified in Resend (e.g. `Slot <slot@gestaobem.com>`). Confirmation, reschedule and cancellation notices are composed in `internal/handlers/notices.go` and follow the locale of the request that triggered them — a guest who booked in pt-BR gets a Portuguese email. A delivery failure logs and never fails the booking.
+
 ## Video rooms
 
 Each confirmed booking can get a real room instead of a dead "Google Meet" label. The provider is chosen by env and falls back to `none` (label only) when unconfigured.
