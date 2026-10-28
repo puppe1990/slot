@@ -55,7 +55,7 @@ func (b base) calendarEvent(booking models.Booking, l localeText) calendar.Event
 	if root := strings.TrimRight(b.deps.Site.AppURL, "/"); root != "" && b.deps.Signer != nil {
 		manageURL := root + "/manage/" + b.deps.Signer.Sign(booking.ID)
 		if join := joinURL(manageURL, booking.MeetingURL); join != "" {
-			details += "\n\n" + l.t("email.cta.join") + ": " + join
+			details += "\n\n" + l.t("call.join") + ": " + join
 			location = join
 		}
 		details += "\n" + l.t("email.cta.manage") + ": " + manageURL

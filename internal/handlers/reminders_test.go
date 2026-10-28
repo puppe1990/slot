@@ -294,4 +294,8 @@ func TestCalendarEventCarriesTheJoinLink(t *testing.T) {
 	if !strings.Contains(event.Location, "/join") {
 		t.Fatalf("event location = %q, want the join link", event.Location)
 	}
+	// A missing catalog key renders as "email.cta.join:" in the owner's agenda.
+	if strings.Contains(event.Details, "email.") || strings.Contains(event.Location, "email.") {
+		t.Fatalf("event leaked a raw translation key:\n%s", event.Details)
+	}
 }
