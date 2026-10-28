@@ -74,6 +74,7 @@ func registerRoutes(r *cais.Router, deps Deps, cfg cais.Config) *handlers.Remind
 		g.Post("/api/admin/blocks/{id}/delete", adminAPI.DeleteBlock)
 		g.Get("/api/admin/bookings", adminAPI.Bookings)
 		g.Get("/api/admin/formats", adminAPI.Formats)
+		g.Post("/api/admin/formats", adminAPI.CreateFormat)
 		g.Get("/api/admin/slots", adminAPI.Slots)
 		g.Post("/api/admin/bookings", adminAPI.CreateBooking)
 		g.Post("/api/admin/bookings/{id}/cancel", adminAPI.CancelBooking)

@@ -465,3 +465,113 @@ func presentRecurringBlock(block models.RecurringBlock) map[string]any {
 		"anchor_date":    block.AnchorDate,
 	}
 }
+
+type createFormatRequest struct {
+	Slug                string `json:"slug"`
+	Title               string `json:"title"`
+	Description         string `json:"description"`
+	DurationMinutes     int    `json:"duration_minutes"`
+	BufferBeforeMinutes int    `json:"buffer_before_minutes"`
+	BufferAfterMinutes  int    `json:"buffer_after_minutes"`
+	MinNoticeHours      int    `json:"min_notice_hours"`
+	BookingHorizonDays  int    `json:"booking_horizon_days"`
+	LocationType        string `json:"location_type"`
+}
+
+func (h *AdminAPI) CreateFormat(w http.ResponseWriter, r *http.Request) {
+	owner, ok := h.owner(w)
+	if !ok {
+		return
+	}
+	var input createFormatRequest
+	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
+		writeJSONError(w, http.StatusBadRequest, "invalid json: "+err.Error())
+		return
+	}
+
+	l := h.localeFor(r)
+	var errs validate.FieldErrors
+	title := strings.TrimSpace(input.Title)
+	if title == "" {
+		errs.Add("title", l.t("formats.error_title"))
+	}
+	duration := input.DurationMinutes
+	if duration == 0 {
+		duration = 30
+	}
+	if duration < 5 || duration > 480 {
+		errs.Add("duration_minutes", l.t("formats.error_duration"))
+	}
+	slug := strings.ToLower(strings.TrimSpace(input.Slug))
+	if slug != "" && !validSlug(slug) {
+		errs.Add("slug", "slug must be lowercase letters, digits and dashes")
+	}
+	if errs.Any() {
+		writeJSON(w, http.StatusUnprocessableEntity, map[string]any{"errors": errs})
+		return
+	}
+
+	meetingType := models.MeetingType{
+		UserID:              owner.ID,
+		Slug:                slug,
+		Title:               title,
+		Description:         strings.TrimSpace(input.Description),
+		DurationMinutes:     duration,
+		BufferBeforeMinutes: orInt(input.BufferBeforeMinutes, 10),
+		BufferAfterMinutes:  orInt(input.BufferAfterMinutes, 10),
+		MinNoticeHours:      orInt(input.MinNoticeHours, 24),
+		BookingHorizonDays:  orInt(input.BookingHorizonDays, 30),
+		LocationType:        models.LocationGoogleMeet,
+		IsActive:            true,
+	}
+	if strings.TrimSpace(input.LocationType) != "" {
+		meetingType.LocationType = strings.ToUpper(strings.TrimSpace(input.LocationType))
+	}
+	if meetingType.Slug == "" {
+		meetingType.Slug = NewMeetingTypeHandler(h.deps).freeSlug(duration)
+	}
+
+	id, err := h.deps.Store.CreateMeetingType(meetingType)
+	if err != nil {
+		if errors.Is(err, store.ErrSlugTaken) {
+			writeJSONError(w, http.StatusConflict, "slug already used: "+meetingType.Slug)
+			return
+		}
+		h.serverError(w, r, err)
+		return
+	}
+	created, err := h.deps.Store.GetMeetingType(owner.ID, id)
+	if err != nil {
+		h.serverError(w, r, err)
+		return
+	}
+	writeJSON(w, http.StatusCreated, map[string]any{"format": map[string]any{
+		"id":               created.ID,
+		"slug":             created.Slug,
+		"title":            created.Title,
+		"duration_minutes": created.DurationMinutes,
+		"is_active":        created.IsActive,
+		"public_url":       h.absoluteURL(r, "/book/"+created.Slug),
+	}})
+}
+
+// validSlug keeps the public path predictable: /book/<slug>.
+func validSlug(slug string) bool {
+	if len(slug) < 2 || len(slug) > 48 {
+		return false
+	}
+	for _, char := range slug {
+		if (char >= 'a' && char <= 'z') || (char >= '0' && char <= '9') || char == '-' {
+			continue
+		}
+		return false
+	}
+	return !strings.HasPrefix(slug, "-") && !strings.HasSuffix(slug, "-")
+}
+
+func orInt(value, fallback int) int {
+	if value > 0 {
+		return value
+	}
+	return fallback
+}
