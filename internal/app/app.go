@@ -83,9 +83,10 @@ func New(cfg cais.Config, deps Deps) (*App, error) {
 	deps.Signer = signer
 	if deps.Calendar == nil {
 		provider, err := calendar.New(calendar.Config{
-			GoogleClientID:     os.Getenv("GOOGLE_CLIENT_ID"),
-			GoogleClientSecret: os.Getenv("GOOGLE_CLIENT_SECRET"),
-			CalendarID:         os.Getenv("GOOGLE_CALENDAR_ID"),
+			GoogleClientID:       os.Getenv("GOOGLE_CLIENT_ID"),
+			GoogleClientSecret:   os.Getenv("GOOGLE_CLIENT_SECRET"),
+			CalendarID:           os.Getenv("GOOGLE_CALENDAR_ID"),
+			GoogleServiceAccount: os.Getenv("GOOGLE_SA_JSON"),
 		})
 		if err != nil {
 			return nil, fmt.Errorf("calendar: %w", err)

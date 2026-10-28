@@ -47,6 +47,9 @@ func (g *Google) ListBusyIntervals(ctx context.Context, from, to time.Time) ([]s
 	}
 	var response struct {
 		Calendars map[string]struct {
+			Errors []struct {
+				Reason string `json:"reason"`
+			} `json:"errors"`
 			Busy []struct {
 				Start time.Time `json:"start"`
 				End   time.Time `json:"end"`
@@ -55,6 +58,13 @@ func (g *Google) ListBusyIntervals(ctx context.Context, from, to time.Time) ([]s
 	}
 	if err := g.do(ctx, http.MethodPost, "/freeBusy", body, &response); err != nil {
 		return nil, fmt.Errorf("google freeBusy: %w", err)
+	}
+
+	// A calendar the credential cannot read comes back as notFound with an
+	// empty busy list. Returning it as "free" would double-book the owner
+	// silently, so it is an error the owner can see.
+	if problems := response.Calendars[g.CalendarID].Errors; len(problems) > 0 {
+		return nil, fmt.Errorf("google freeBusy for %q: %s", g.CalendarID, problems[0].Reason)
 	}
 
 	busy := response.Calendars[g.CalendarID].Busy
