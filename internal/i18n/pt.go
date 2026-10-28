@@ -239,11 +239,15 @@ var ptMessages = map[string]string{
 	"formats.description_label":       "Descrição",
 	"formats.description_placeholder": "Revisão tática de arquitetura e roadmap.",
 	"formats.length":                  "Duração",
+	"formats.notice_label":            "Mínimo de horas antes da reunião",
+	"formats.notice_help":             "0 libera os horários que ainda restam hoje. 24h esconde o resto do dia.",
+	"formats.notice_none":             "No mesmo dia (0h)",
 	"formats.create":                  "Criar formato",
 	"formats.created":                 "Formato de sessão criado.",
 	"formats.saved":                   "Alterações salvas.",
 	"formats.error_title":             "Dê um título à sessão",
 	"formats.error_duration":          "A duração precisa ficar entre 5 e 480 minutos",
+	"formats.error_notice":            "A antecedência precisa ficar entre 0 e 720 horas",
 
 	// Editor de formato
 	"format.edit_eyebrow":            "Configurando sessão",

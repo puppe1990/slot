@@ -281,3 +281,48 @@ func TestAdminAPICreateFormat(t *testing.T) {
 		t.Fatalf("invalid slug = %d, want 422", invalid.Code)
 	}
 }
+
+func TestAdminAPICreateFormatZeroNotice(t *testing.T) {
+	env := setupTestEnv(t)
+	api := NewAdminAPI(env.deps)
+
+	rec := httptest.NewRecorder()
+	api.CreateFormat(rec, adminRequest(http.MethodPost, "/api/admin/formats",
+		`{"slug":"same-day","title":"Same day","duration_minutes":30,"min_notice_hours":0}`, "secret"))
+	if rec.Code != http.StatusCreated {
+		t.Fatalf("create = %d: %s", rec.Code, rec.Body.String())
+	}
+	created, err := env.store.GetMeetingTypeBySlug("same-day")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if created.MinNoticeHours != 0 {
+		t.Fatalf("min_notice_hours = %d, want 0 (orInt must not treat zero as omitted)", created.MinNoticeHours)
+	}
+}
+
+func TestAdminAPIUpdateFormatNotice(t *testing.T) {
+	env := setupTestEnv(t)
+	meetingType := env.seedMeetingType(t, "30min", 30)
+	meetingType.MinNoticeHours = 24
+	if err := env.store.UpdateMeetingType(meetingType); err != nil {
+		t.Fatal(err)
+	}
+	api := NewAdminAPI(env.deps)
+
+	req := adminRequest(http.MethodPost, "/api/admin/formats/30min", `{"min_notice_hours":0}`, "secret")
+	req.SetPathValue("slug", "30min")
+	rec := httptest.NewRecorder()
+	api.UpdateFormat(rec, req)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("update = %d: %s", rec.Code, rec.Body.String())
+	}
+
+	updated, err := env.store.GetMeetingTypeBySlug("30min")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if updated.MinNoticeHours != 0 {
+		t.Fatalf("min_notice_hours = %d, want 0", updated.MinNoticeHours)
+	}
+}

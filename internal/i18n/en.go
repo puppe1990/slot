@@ -240,11 +240,15 @@ var enMessages = map[string]string{
 	"formats.description_label":       "Description",
 	"formats.description_placeholder": "Focused tactical review of architecture and roadmap.",
 	"formats.length":                  "Session length",
+	"formats.notice_label":            "Minimum hours before the meeting",
+	"formats.notice_help":             "0 keeps remaining times today. 24 hours hides the rest of today.",
+	"formats.notice_none":             "Same day (0h)",
 	"formats.create":                  "Create format",
 	"formats.created":                 "Session format created.",
 	"formats.saved":                   "Changes saved.",
 	"formats.error_title":             "Give the session a title",
 	"formats.error_duration":          "Duration must be between 5 and 480 minutes",
+	"formats.error_notice":            "Minimum notice must be between 0 and 720 hours",
 
 	// Format editor
 	"format.edit_eyebrow":            "Configuring session",

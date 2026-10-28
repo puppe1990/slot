@@ -35,7 +35,7 @@ func (h *MeetingTypeHandler) Index(w http.ResponseWriter, r *http.Request) {
 		h.serverError(w, r, err)
 		return
 	}
-	h.renderList(w, r, owner.User, types, nil, 0)
+	h.renderList(w, r, owner.User, types, nil, 24, 0)
 }
 
 func (h *MeetingTypeHandler) Create(w http.ResponseWriter, r *http.Request) {
@@ -51,6 +51,7 @@ func (h *MeetingTypeHandler) Create(w http.ResponseWriter, r *http.Request) {
 
 	title := strings.TrimSpace(r.FormValue("title"))
 	duration := formInt(r, "duration_minutes", 30)
+	notice := formInt(r, "min_notice_hours", 24)
 	var errs validate.FieldErrors
 	if title == "" {
 		errs.Add("title", h.localeFor(r).t("formats.error_title"))
@@ -58,9 +59,12 @@ func (h *MeetingTypeHandler) Create(w http.ResponseWriter, r *http.Request) {
 	if duration < 5 || duration > 480 {
 		errs.Add("duration_minutes", h.localeFor(r).t("formats.error_duration"))
 	}
+	if notice < 0 || notice > 720 {
+		errs.Add("min_notice_hours", h.localeFor(r).t("formats.error_notice"))
+	}
 	if errs.Any() {
 		types, _ := h.deps.Store.ListMeetingTypes(owner.User.ID)
-		h.renderList(w, r, owner.User, types, errs, http.StatusUnprocessableEntity)
+		h.renderList(w, r, owner.User, types, errs, notice, http.StatusUnprocessableEntity)
 		return
 	}
 
@@ -72,7 +76,7 @@ func (h *MeetingTypeHandler) Create(w http.ResponseWriter, r *http.Request) {
 		DurationMinutes:     duration,
 		BufferBeforeMinutes: 10,
 		BufferAfterMinutes:  10,
-		MinNoticeHours:      24,
+		MinNoticeHours:      notice,
 		BookingHorizonDays:  30,
 		LocationType:        models.LocationGoogleMeet,
 		IsActive:            true,
@@ -178,6 +182,9 @@ func (h *MeetingTypeHandler) Update(w http.ResponseWriter, r *http.Request) {
 	if meetingType.DurationMinutes < 5 || meetingType.DurationMinutes > 480 {
 		errs.Add("duration_minutes", h.localeFor(r).t("formats.error_duration"))
 	}
+	if meetingType.MinNoticeHours < 0 || meetingType.MinNoticeHours > 720 {
+		errs.Add("min_notice_hours", h.localeFor(r).t("formats.error_notice"))
+	}
 	if errs.Any() {
 		h.renderEdit(w, r, owner.User, meetingType, errs, http.StatusUnprocessableEntity)
 		return
@@ -195,13 +202,15 @@ func (h *MeetingTypeHandler) Update(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/meeting-types", http.StatusSeeOther)
 }
 
-func (h *MeetingTypeHandler) renderList(w http.ResponseWriter, r *http.Request, owner models.User, types []models.MeetingType, errs validate.FieldErrors, status int) {
+func (h *MeetingTypeHandler) renderList(w http.ResponseWriter, r *http.Request, owner models.User, types []models.MeetingType, errs validate.FieldErrors, selectedNotice, status int) {
+	l := h.localeFor(r)
 	h.page(w, r, "app", "meeting_types", map[string]any{
 		"Title":        "Session formats",
 		"PublicPath":   publicPath(firstActiveMeetingType(types)),
 		"ActiveNav":    "meeting-types",
 		"Owner":        owner,
-		"MeetingTypes": presentMeetingTypes(types, h.localeFor(r)),
+		"MeetingTypes": presentMeetingTypes(types, l),
+		"NoticeHours":  noticeHourOptions(selectedNotice, l),
 		"Errors":       errs,
 	}, status)
 }

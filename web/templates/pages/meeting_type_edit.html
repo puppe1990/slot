@@ -74,8 +74,10 @@
           <input name="buffer_after_minutes" type="number" min="0" max="240" step="5" value="{{ .MeetingType.BufferAfterMinutes }}" class="h-11 rounded-lg border border-line bg-canvas px-3 text-label-mono-lg text-foam outline-none focus:border-pine" />
         </label>
         <label class="flex flex-col gap-1">
-          <span class="text-label-ui uppercase tracking-[0.08em] text-muted">{{ t "format.notice" }}</span>
+          <span class="text-label-ui uppercase tracking-[0.08em] text-muted">{{ t "formats.notice_label" }}</span>
           <input name="min_notice_hours" type="number" min="0" max="720" step="1" value="{{ .MeetingType.MinNoticeHours }}" class="h-11 rounded-lg border border-line bg-canvas px-3 text-label-mono-lg text-foam outline-none focus:border-pine" />
+          {{ with fieldError $.Errors "min_notice_hours" }}<span class="text-body-sm text-clay">{{ . }}</span>{{ end }}
+          <span class="text-body-sm text-muted">{{ t "formats.notice_help" }}</span>
         </label>
         <label class="flex flex-col gap-1">
           <span class="text-label-ui uppercase tracking-[0.08em] text-muted">{{ t "format.horizon" }}</span>

@@ -70,6 +70,44 @@ type meetingTypeView struct {
 	LocationDetails string
 }
 
+var noticeHourChoices = []int{0, 1, 2, 4, 12, 24, 48}
+
+type noticeHourOption struct {
+	Hours    int
+	Label    string
+	Selected bool
+}
+
+func noticeHourLabel(hours int, l localeText) string {
+	if hours == 0 {
+		return l.t("formats.notice_none")
+	}
+	return l.t("unit.hours", hours)
+}
+
+func noticeHourOptions(selected int, l localeText) []noticeHourOption {
+	out := make([]noticeHourOption, 0, len(noticeHourChoices)+1)
+	seen := false
+	for _, hours := range noticeHourChoices {
+		out = append(out, noticeHourOption{
+			Hours:    hours,
+			Label:    noticeHourLabel(hours, l),
+			Selected: hours == selected,
+		})
+		if hours == selected {
+			seen = true
+		}
+	}
+	if !seen {
+		out = append(out, noticeHourOption{
+			Hours:    selected,
+			Label:    noticeHourLabel(selected, l),
+			Selected: true,
+		})
+	}
+	return out
+}
+
 func presentMeetingType(meetingType models.MeetingType, l localeText) meetingTypeView {
 	return meetingTypeView{
 		MeetingType:     meetingType,

@@ -81,6 +81,16 @@
           </div>
           {{ with fieldError .Errors "duration_minutes" }}<span class="text-body-sm text-clay">{{ . }}</span>{{ end }}
         </fieldset>
+        <label class="flex flex-col gap-1">
+          <span class="text-label-ui uppercase tracking-[0.08em] text-muted">{{ t "formats.notice_label" }}</span>
+          <select name="min_notice_hours" class="h-11 rounded-lg border border-line bg-canvas px-3 text-body-md text-foam outline-none focus:border-pine">
+            {{ range .NoticeHours }}
+            <option value="{{ .Hours }}" {{ if .Selected }}selected{{ end }}>{{ .Label }}</option>
+            {{ end }}
+          </select>
+          {{ with fieldError $.Errors "min_notice_hours" }}<span class="text-body-sm text-clay">{{ . }}</span>{{ end }}
+          <span class="text-body-sm text-muted">{{ t "formats.notice_help" }}</span>
+        </label>
         <.button type="submit">{{ t "formats.create" }}</.button>
       </.form>
     </aside>

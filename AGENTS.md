@@ -122,7 +122,7 @@ amarra-cais upgrade        # bump the framework + print the migration checklist
 
 ## Machine surface
 
-- `internal/handlers/admin_api.go` — JSON under `/api/admin/*`, behind `middleware.AdminAuth` (Bearer `ADMIN_TOKEN`). It acts as `FirstOwner()`: single-owner app, no per-token scopes.
+- `internal/handlers/admin_api.go` — JSON under `/api/admin/*`, behind `middleware.AdminAuth` (Bearer `ADMIN_TOKEN`). It acts as `FirstOwner()`: single-owner app, no per-token scopes. `POST /api/admin/formats` creates; `POST /api/admin/formats/{slug}` updates. `min_notice_hours: 0` is valid (same-day); do not treat 0 as omitted.
 - `internal/slotcli` — HTTP client used by both `cmd/slot` and `cmd/slot-mcp`. Never duplicate request code in the binaries.
 - Booking side effects (calendar, room, notices) live in `base.finalizeBooking` / `cancelBooking` / `rescheduleBooking` so the web flow, the CLI and the MCP cannot drift.
 - MCP stdio = newline-delimited JSON-RPC. Notifications (no `id`) never get a reply; tool failures come back as `result.isError`, not as RPC errors.

@@ -24,6 +24,7 @@
         <span class="rounded border border-line bg-container-low px-2.5 py-1 text-label-mono font-medium text-foam">{{ .MeetingType.LocationLabel }}</span>
         {{ with .MeetingType.LocationDetails }}<span class="rounded border border-line bg-container-low px-2.5 py-1 text-label-mono text-muted">{{ . }}</span>{{ end }}
         <span class="rounded bg-moss px-2.5 py-1 text-label-mono font-medium uppercase text-pine">{{ t "common.complimentary" }}</span>
+        <span class="rounded border border-line bg-container-low px-2.5 py-1 text-label-mono font-medium text-muted">{{ .MeetingType.NoticeLabel }}</span>
         <span class="rounded border border-line bg-container-low px-2.5 py-1 text-label-mono font-medium text-muted">{{ t "book.horizon" .MeetingType.HorizonLabel }}</span>
       </div>
     </div>
@@ -73,20 +74,12 @@
 
     <div class="no-scrollbar -mx-margin flex gap-2.5 overflow-x-auto px-margin pb-2 pt-1">
       {{ range .Slots.Days }}
-        {{ if .HasSlots }}
         <a href="{{ $.PublicPath }}?tz={{ $.Timezone }}&date={{ .Date }}"
-           class="flex h-20 w-14 shrink-0 flex-col items-center justify-between rounded-lg p-2 transition-transform active:scale-95 {{ if .IsSelected }}bg-pine text-white shadow-sm ring-2 ring-pine/30{{ else }}bg-surface text-foam hover:bg-line/60{{ end }}">
+           class="flex h-20 w-14 shrink-0 flex-col items-center justify-between rounded-lg p-2 transition-transform active:scale-95 {{ if .IsSelected }}bg-pine text-white shadow-sm ring-2 ring-pine/30{{ else if .HasSlots }}bg-surface text-foam hover:bg-line/60{{ else }}bg-surface/50 text-muted opacity-45 hover:opacity-70{{ end }}">
           <span class="text-body-sm {{ if .IsSelected }}text-moss{{ else }}text-muted{{ end }}">{{ .Weekday }}</span>
-          <span class="text-headline-sm font-semibold">{{ .DayNumber }}</span>
-          <span class="h-1.5 w-1.5 rounded-full {{ if .IsSelected }}bg-moss{{ else }}bg-pine{{ end }}"></span>
+          <span class="text-headline-sm {{ if or .IsSelected .HasSlots }}font-semibold{{ end }}">{{ .DayNumber }}</span>
+          <span class="h-1.5 w-1.5 rounded-full {{ if not .HasSlots }}bg-transparent{{ else if .IsSelected }}bg-moss{{ else }}bg-pine{{ end }}"></span>
         </a>
-        {{ else }}
-        <span class="flex h-20 w-14 shrink-0 cursor-not-allowed flex-col items-center justify-between rounded-lg bg-surface/50 p-2 text-muted opacity-45">
-          <span class="text-body-sm">{{ .Weekday }}</span>
-          <span class="text-headline-sm">{{ .DayNumber }}</span>
-          <span class="h-1 w-1 rounded-full bg-transparent"></span>
-        </span>
-        {{ end }}
       {{ end }}
     </div>
   </section>

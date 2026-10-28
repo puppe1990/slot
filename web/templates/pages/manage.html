@@ -113,18 +113,11 @@
 
         <div class="no-scrollbar mt-2 flex gap-2 overflow-x-auto pb-1">
           {{ range .Slots.Days }}
-            {{ if .HasSlots }}
             <a href="{{ $.ManagePath }}?tz={{ $.GuestTZ }}&date={{ .Date }}"
-               class="flex h-[72px] w-14 shrink-0 flex-col items-center justify-center gap-0.5 rounded-lg {{ if .IsSelected }}bg-pine text-white{{ else }}bg-canvas text-foam{{ end }}">
+               class="flex h-[72px] w-14 shrink-0 flex-col items-center justify-center gap-0.5 rounded-lg {{ if .IsSelected }}bg-pine text-white{{ else if .HasSlots }}bg-canvas text-foam{{ else }}bg-canvas/40 text-muted opacity-45 hover:opacity-70{{ end }}">
               <span class="text-body-sm {{ if .IsSelected }}text-moss{{ else }}text-muted{{ end }}">{{ .Weekday }}</span>
-              <span class="text-headline-sm font-semibold">{{ .DayNumber }}</span>
+              <span class="text-headline-sm {{ if or .IsSelected .HasSlots }}font-semibold{{ end }}">{{ .DayNumber }}</span>
             </a>
-            {{ else }}
-            <span class="flex h-[72px] w-14 shrink-0 flex-col items-center justify-center rounded-lg bg-canvas/40 text-muted opacity-35">
-              <span class="text-body-sm">{{ .Weekday }}</span>
-              <span class="text-headline-sm">{{ .DayNumber }}</span>
-            </span>
-            {{ end }}
           {{ end }}
         </div>
 
