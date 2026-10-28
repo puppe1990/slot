@@ -155,3 +155,9 @@ amarra-cais upgrade        # bump the framework + print the migration checklist
 - The manage URL is rebuilt with `deps.Signer.Sign(booking.ID)` — the signer is deterministic and the DB still stores only the hash.
 - `bookings.guest_locale` remembers the language of the booking; the reminder picks that catalog instead of the app default, so a Brazilian guest does not get an English reminder because `LOCALE=en`.
 - Consent: the confirm form requires the checkbox (`confirm.error_consent`), and `ConfirmHold` writes `consent_at`. Existing rows keep an empty value; the column is the audit trail, not a gate.
+
+## Google calendar credentials
+
+- Service account wins over OAuth: `GOOGLE_SA_JSON` + `GOOGLE_CALENDAR_ID` (the owner's calendar id, never `primary` — a service account has no primary calendar). No consent screen, no refresh token, no 7-day expiry.
+- `internal/calendar/serviceaccount.go` signs the RS256 assertion with stdlib crypto and caches the access token; the Google adapter only receives an `AccessToken` function, so both credential styles share the REST code.
+- The calendar must be shared with the service account e-mail ("Make changes to events"). An unreadable calendar comes back as `notFound` with an empty busy list — the adapter turns that into an **error**, never "free": failing closed is what prevents a silent double-booking. The booking page then errors instead of offering colliding slots, so enable the credential only after the share is confirmed.

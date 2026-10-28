@@ -150,7 +150,7 @@ var ptMessages = map[string]string{
 	"setup.local_help":          "Blocos ocupados em memória, sem configuração.",
 	"setup.google":              "Google Agenda",
 	"setup.google_ready":        "Conectado pelo adaptador do Google.",
-	"setup.google_missing":      "Não configurado neste servidor: defina GOOGLE_CLIENT_ID e GOOGLE_CLIENT_SECRET e reinicie. Até lá o calendário local é usado.",
+	"setup.google_missing":      "Não configurado neste servidor: defina GOOGLE_SA_JSON (service account com acesso ao calendário) ou GOOGLE_CLIENT_ID/GOOGLE_CLIENT_SECRET e reinicie. Até lá o calendário local é usado.",
 	"setup.save":                "Salvar disponibilidade",
 	"setup.holidays":            "Feriados",
 	"setup.holidays_intro":      "Feriado ligado fecha o dia inteiro, todo ano. Uma exceção de data manual continua valendo.",

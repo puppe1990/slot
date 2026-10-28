@@ -5,7 +5,9 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
+	"time"
 
 	"github.com/puppe1990/slot/internal/calendar"
 )
@@ -108,5 +110,23 @@ func TestGoogleRequiresTokenSource(t *testing.T) {
 	}
 	if _, err := provider.ListBusyIntervals(context.Background(), at("2026-10-27T00:00:00Z"), at("2026-10-28T00:00:00Z")); err == nil {
 		t.Fatal("ListBusyIntervals worked without a token source")
+	}
+}
+
+func TestGoogleFreeBusySurfacesUnreadableCalendar(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		_, _ = w.Write([]byte(`{"calendars":{"owner@example.com":{"errors":[{"domain":"global","reason":"notFound"}],"busy":[]}}}`))
+	}))
+	defer server.Close()
+
+	provider := &calendar.Google{
+		CalendarID:  "owner@example.com",
+		BaseURL:     server.URL,
+		HTTPClient:  server.Client(),
+		AccessToken: func(context.Context) (string, error) { return "token", nil },
+	}
+	_, err := provider.ListBusyIntervals(context.Background(), time.Now(), time.Now().Add(time.Hour))
+	if err == nil || !strings.Contains(err.Error(), "notFound") {
+		t.Fatalf("err = %v, want notFound surfaced", err)
 	}
 }

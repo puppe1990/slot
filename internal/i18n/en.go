@@ -150,7 +150,7 @@ var enMessages = map[string]string{
 	"setup.local_help":          "In-process busy blocks, zero setup.",
 	"setup.google":              "Google Calendar",
 	"setup.google_ready":        "Connected through the Google adapter.",
-	"setup.google_missing":      "Not configured on this server: set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET, then restart. Until then the local calendar is used.",
+	"setup.google_missing":      "Not configured on this server: set GOOGLE_SA_JSON (service account with access to the calendar) or GOOGLE_CLIENT_ID/GOOGLE_CLIENT_SECRET, then restart. Until then the local calendar is used.",
 	"setup.save":                "Save availability",
 	"setup.holidays":            "Holidays",
 	"setup.holidays_intro":      "A holiday switch closes the whole day, every year. A manual date override still wins.",

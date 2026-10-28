@@ -176,17 +176,18 @@ Adding a provider is one file in `internal/call/` plus a case in `call.New`; the
 
 ## Environment
 
-| Variable                                    | Default         | Description                                           |
-| ------------------------------------------- | --------------- | ----------------------------------------------------- |
-| `PORT`                                      | `:8080`         | Listen address                                        |
-| `DB_PATH`                                   | `./data/app.db` | SQLite file                                           |
-| `ENV`                                       | `development`   | `production` gates cookies, seeds and the boot checks |
-| `APP_URL`                                   | —               | Absolute URLs in emails and OG tags                   |
-| `GUEST_TOKEN_SECRET`                        | dev fallback    | HMAC secret; **required** when `ENV=production`       |
-| `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | —               | Selects the Google adapter instead of the fake        |
-| `GOOGLE_CALENDAR_ID`                        | `primary`       | Calendar target                                       |
-| `REMINDERS`                                 | `on`            | `off` disables the reminder loop                      |
-| `REMINDER_LEAD_HOURS`                       | `24`            | How far ahead the reminder goes out (1–168)           |
+| Variable                                    | Default         | Description                                                                    |
+| ------------------------------------------- | --------------- | ------------------------------------------------------------------------------ |
+| `PORT`                                      | `:8080`         | Listen address                                                                 |
+| `DB_PATH`                                   | `./data/app.db` | SQLite file                                                                    |
+| `ENV`                                       | `development`   | `production` gates cookies, seeds and the boot checks                          |
+| `APP_URL`                                   | —               | Absolute URLs in emails and OG tags                                            |
+| `GUEST_TOKEN_SECRET`                        | dev fallback    | HMAC secret; **required** when `ENV=production`                                |
+| `GOOGLE_SA_JSON`                            | —               | Service-account JSON with access to the calendar; selects Google without OAuth |
+| `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | —               | OAuth alternative to the service account                                       |
+| `GOOGLE_CALENDAR_ID`                        | `primary`       | Calendar target                                                                |
+| `REMINDERS`                                 | `on`            | `off` disables the reminder loop                                               |
+| `REMINDER_LEAD_HOURS`                       | `24`            | How far ahead the reminder goes out (1–168)                                    |
 
 Fonts load from Google Fonts; keep `CSP_STYLE_SRC` and `CSP_FONT_SRC` in `.env` or drop the `<link>` tags for a strict-CSP deployment.
 

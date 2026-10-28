@@ -6,6 +6,7 @@ package calendar
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/puppe1990/slot/internal/scheduling"
@@ -38,6 +39,9 @@ type Config struct {
 	GoogleClientID     string
 	GoogleClientSecret string
 	CalendarID         string
+	// GoogleServiceAccount is the credential JSON of a service account with
+	// access to CalendarID. It replaces the OAuth flow entirely.
+	GoogleServiceAccount string
 	// TokenSource is supplied by the OAuth connection. Without it the app
 	// stays on the fake, so a half-configured deployment never 500s a booking.
 	TokenSource func(ctx context.Context) (string, error)
@@ -46,6 +50,20 @@ type Config struct {
 // New picks the concrete adapter. Unset Google credentials are the normal
 // local case: the deterministic fake keeps slot math and tests working.
 func New(cfg Config) (Provider, error) {
+	// A service account needs no OAuth consent and no refresh token, so it wins
+	// when both are configured.
+	if strings.TrimSpace(cfg.GoogleServiceAccount) != "" {
+		token, err := ServiceAccountToken(cfg.GoogleServiceAccount)
+		if err != nil {
+			return nil, fmt.Errorf("google service account: %w", err)
+		}
+		provider, err := NewGoogle(cfg.CalendarID, nil)
+		if err != nil {
+			return nil, fmt.Errorf("google calendar: %w", err)
+		}
+		provider.AccessToken = token
+		return provider, nil
+	}
 	if cfg.GoogleClientID == "" || cfg.GoogleClientSecret == "" || cfg.TokenSource == nil {
 		return NewFake(), nil
 	}
