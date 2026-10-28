@@ -236,3 +236,48 @@ func TestAdminAPIBlockValidation(t *testing.T) {
 		t.Fatalf("backwards clock = %d, want 422", backwards.Code)
 	}
 }
+
+func TestAdminAPICreateFormat(t *testing.T) {
+	env := setupTestEnv(t)
+	api := NewAdminAPI(env.deps)
+
+	rec := httptest.NewRecorder()
+	api.CreateFormat(rec, adminRequest(http.MethodPost, "/api/admin/formats", `{
+		"slug":"hora-solar","title":"Hora Solar","duration_minutes":45,
+		"description":"Diagnóstico do homologador","min_notice_hours":12
+	}`, "secret"))
+	if rec.Code != http.StatusCreated {
+		t.Fatalf("create = %d: %s", rec.Code, rec.Body.String())
+	}
+
+	var payload struct {
+		Format struct {
+			Slug      string `json:"slug"`
+			Duration  int    `json:"duration_minutes"`
+			PublicURL string `json:"public_url"`
+		} `json:"format"`
+	}
+	if err := json.Unmarshal(rec.Body.Bytes(), &payload); err != nil {
+		t.Fatal(err)
+	}
+	if payload.Format.Slug != "hora-solar" || payload.Format.Duration != 45 {
+		t.Fatalf("format = %+v", payload.Format)
+	}
+	if !strings.HasSuffix(payload.Format.PublicURL, "/book/hora-solar") {
+		t.Fatalf("public url = %q", payload.Format.PublicURL)
+	}
+
+	duplicate := httptest.NewRecorder()
+	api.CreateFormat(duplicate, adminRequest(http.MethodPost, "/api/admin/formats",
+		`{"slug":"hora-solar","title":"Outro","duration_minutes":30}`, "secret"))
+	if duplicate.Code != http.StatusConflict {
+		t.Fatalf("duplicate = %d, want 409", duplicate.Code)
+	}
+
+	invalid := httptest.NewRecorder()
+	api.CreateFormat(invalid, adminRequest(http.MethodPost, "/api/admin/formats",
+		`{"slug":"Hora Solar!","title":"X","duration_minutes":30}`, "secret"))
+	if invalid.Code != http.StatusUnprocessableEntity {
+		t.Fatalf("invalid slug = %d, want 422", invalid.Code)
+	}
+}
