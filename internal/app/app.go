@@ -23,6 +23,7 @@ import (
 	"github.com/puppe1990/slot/internal/calendar"
 	"github.com/puppe1990/slot/internal/call"
 	"github.com/puppe1990/slot/internal/guesttoken"
+	"github.com/puppe1990/slot/internal/handlers"
 	appi18n "github.com/puppe1990/slot/internal/i18n"
 	"github.com/puppe1990/slot/internal/notify"
 	"github.com/puppe1990/slot/internal/store"
@@ -53,10 +54,11 @@ type Deps struct {
 }
 
 type App struct {
-	config cais.Config
-	store  store.Store
-	router *cais.Router
-	server *http.Server
+	config    cais.Config
+	store     store.Store
+	router    *cais.Router
+	server    *http.Server
+	reminders *handlers.ReminderService
 }
 
 func New(cfg cais.Config, deps Deps) (*App, error) {
@@ -135,7 +137,7 @@ func New(cfg cais.Config, deps Deps) (*App, error) {
 	r.Use(middleware.SecurityHeaders(cfg))
 	r.StaticForEnv("/static", deps.StaticDir, cfg)
 
-	registerRoutes(r, deps, cfg)
+	reminders := registerRoutes(r, deps, cfg)
 	hub := live.NewHub(live.Config{Env: cfg.Env})
 	registerLiveViews(hub, deps)
 	r.Handle("GET /amarra/live", hub.Handler())
@@ -148,9 +150,10 @@ func New(cfg cais.Config, deps Deps) (*App, error) {
 	r.Get("/api/health", healthHandler(deps.Store, cfg))
 
 	return &App{
-		config: cfg,
-		store:  deps.Store,
-		router: r,
+		config:    cfg,
+		store:     deps.Store,
+		router:    r,
+		reminders: reminders,
 		server: &http.Server{
 			Addr:              cfg.Port,
 			Handler:           r,
@@ -205,6 +208,9 @@ func (a *App) Run() error {
 }
 
 func (a *App) RunContext(ctx context.Context) error {
+	if a.reminders != nil && handlers.RemindersEnabled() {
+		go a.reminders.Start(ctx)
+	}
 	errCh := make(chan error, 1)
 	go func() {
 		errCh <- a.server.ListenAndServe()

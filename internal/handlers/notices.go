@@ -35,7 +35,7 @@ type bookingEmail struct {
 
 func (b base) sendConfirmed(r *http.Request, booking models.Booking, manageURL string) {
 	l := b.localeFor(r)
-	b.send(r, b.bookingEmailMessage(r, l, booking, bookingEmail{
+	b.send(r, b.bookingEmailMessage(l, booking, bookingEmail{
 		Kind:      "booking.confirmed",
 		To:        booking.GuestEmail,
 		Subject:   l.t("email.confirmed.subject", booking.MeetingTypeTitle),
@@ -51,7 +51,7 @@ func (b base) sendConfirmed(r *http.Request, booking models.Booking, manageURL s
 
 func (b base) sendOwnerNew(r *http.Request, booking models.Booking) {
 	l := b.localeFor(r)
-	b.send(r, b.bookingEmailMessage(r, l, booking, bookingEmail{
+	b.send(r, b.bookingEmailMessage(l, booking, bookingEmail{
 		Kind:          "booking.owner_new",
 		To:            booking.OwnerEmail,
 		Subject:       l.t("email.owner_new.subject", booking.GuestName),
@@ -70,7 +70,7 @@ func (b base) sendOwnerNew(r *http.Request, booking models.Booking) {
 
 func (b base) sendMoved(r *http.Request, booking models.Booking, manageURL string) {
 	l := b.localeFor(r)
-	b.send(r, b.bookingEmailMessage(r, l, booking, bookingEmail{
+	b.send(r, b.bookingEmailMessage(l, booking, bookingEmail{
 		Kind:      "booking.moved",
 		To:        booking.GuestEmail,
 		Subject:   l.t("email.moved.subject", booking.MeetingTypeTitle),
@@ -86,7 +86,7 @@ func (b base) sendMoved(r *http.Request, booking models.Booking, manageURL strin
 
 func (b base) sendOwnerMoved(r *http.Request, booking models.Booking) {
 	l := b.localeFor(r)
-	b.send(r, b.bookingEmailMessage(r, l, booking, bookingEmail{
+	b.send(r, b.bookingEmailMessage(l, booking, bookingEmail{
 		Kind:     "booking.owner_moved",
 		To:       booking.OwnerEmail,
 		Subject:  l.t("email.owner_moved.subject", booking.GuestName),
@@ -101,7 +101,7 @@ func (b base) sendOwnerMoved(r *http.Request, booking models.Booking) {
 
 func (b base) sendCancelled(r *http.Request, booking models.Booking, manageURL, reason string) {
 	l := b.localeFor(r)
-	b.send(r, b.bookingEmailMessage(r, l, booking, bookingEmail{
+	b.send(r, b.bookingEmailMessage(l, booking, bookingEmail{
 		Kind:      "booking.cancelled",
 		To:        booking.GuestEmail,
 		Subject:   l.t("email.cancelled.subject", booking.MeetingTypeTitle),
@@ -116,7 +116,7 @@ func (b base) sendCancelled(r *http.Request, booking models.Booking, manageURL, 
 
 func (b base) sendOwnerCancelled(r *http.Request, booking models.Booking, reason string) {
 	l := b.localeFor(r)
-	b.send(r, b.bookingEmailMessage(r, l, booking, bookingEmail{
+	b.send(r, b.bookingEmailMessage(l, booking, bookingEmail{
 		Kind:     "booking.owner_cancelled",
 		To:       booking.OwnerEmail,
 		Subject:  l.t("email.owner_cancelled.subject", booking.GuestName),
@@ -130,7 +130,7 @@ func (b base) sendOwnerCancelled(r *http.Request, booking models.Booking, reason
 	}))
 }
 
-func (b base) bookingEmailMessage(r *http.Request, l localeText, booking models.Booking, email bookingEmail) notify.Message {
+func (b base) bookingEmailMessage(l localeText, booking models.Booking, email bookingEmail) notify.Message {
 	loc := email.Location
 	if loc == nil {
 		loc = mustLocation(booking.OwnerTimezone)

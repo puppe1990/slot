@@ -11,6 +11,7 @@ Built with [Amarra-cais](https://github.com/puppe1990/amarra-cais) — Go 1.26, 
 - **National holidays** — the eight fixed Brazilian holidays, each with a switch; an enabled holiday closes the whole day, every year, and a manual date override still wins.
 - **No double bookings** — a guest picks a slot and gets a 10-minute `HOLD`; the overlap check and the insert share one SQLite transaction, and a partial unique index on `(meeting_type_id, start_time_utc)` for active rows backs it up. Confirming converts the hold to `CONFIRMED` atomically.
 - **Timezone-aware UI** — the guest page detects the browser zone (`?tz=`), shows guest and host clocks side by side, and renders every slot in both.
+- **Consent and reminders** — the guest form requires a privacy notice before confirming (the timestamp lands in `bookings.consent_at`), and an in-process job e-mails a reminder before the session, in the language the guest booked in.
 - **Signed guest management** — `/manage/{token}` is HMAC-signed and only the SHA-256 hash is stored, so a DB backup cannot be replayed as a booking link.
 - **Calendar + email adapters** — a deterministic in-memory calendar (default) and a testable Google Calendar REST adapter; an in-memory outbox records every notification for assertions.
 - **ICS download** — RFC 5545 output with CRLF folding and escaping.
@@ -184,6 +185,8 @@ Adding a provider is one file in `internal/call/` plus a case in `call.New`; the
 | `GUEST_TOKEN_SECRET`                        | dev fallback    | HMAC secret; **required** when `ENV=production`       |
 | `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | —               | Selects the Google adapter instead of the fake        |
 | `GOOGLE_CALENDAR_ID`                        | `primary`       | Calendar target                                       |
+| `REMINDERS`                                 | `on`            | `off` disables the reminder loop                      |
+| `REMINDER_LEAD_HOURS`                       | `24`            | How far ahead the reminder goes out (1–168)           |
 
 Fonts load from Google Fonts; keep `CSP_STYLE_SRC` and `CSP_FONT_SRC` in `.env` or drop the `<link>` tags for a strict-CSP deployment.
 

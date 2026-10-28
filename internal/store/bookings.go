@@ -18,7 +18,8 @@ const defaultHoldTTL = 10 * time.Minute
 
 const bookingSelect = `SELECT b.id, b.meeting_type_id, b.guest_name, b.guest_email, b.guest_whatsapp, b.guest_notes,
 		b.guest_timezone, b.start_time_utc, b.end_time_utc, b.status, b.hold_expires_at,
-		b.cancellation_reason, b.calendar_event_id, b.meeting_url, b.attendance, b.created_at, b.updated_at,
+		b.cancellation_reason, b.calendar_event_id, b.meeting_url, b.attendance,
+		b.consent_at, b.reminder_sent_at, b.guest_locale, b.created_at, b.updated_at,
 		mt.slug, mt.title, mt.duration_minutes, mt.location_type,
 		u.name, u.email, u.timezone
 	FROM bookings b
@@ -36,11 +37,13 @@ type HoldInput struct {
 }
 
 type GuestInput struct {
-	Name     string
-	Email    string
-	WhatsApp string
-	Notes    string
-	Timezone string
+	Name      string
+	Email     string
+	WhatsApp  string
+	Notes     string
+	Timezone  string
+	ConsentAt time.Time
+	Locale    string
 }
 
 type BookingFilter struct {
@@ -180,12 +183,16 @@ func (s *SQLiteStore) ConfirmHold(holdToken string, guest GuestInput, guestToken
 		return models.Booking{}, fmt.Errorf("%w: %s", ErrSlotUnavailable, fromUnix(startUnix))
 	}
 
+	consentAt := ""
+	if !guest.ConsentAt.IsZero() {
+		consentAt = guest.ConsentAt.UTC().Format(time.RFC3339)
+	}
 	_, err = tx.Exec(`UPDATE bookings SET status = 'CONFIRMED', guest_name = ?, guest_email = ?,
-		guest_whatsapp = ?, guest_notes = ?, guest_timezone = ?, guest_token_hash = ?,
+		guest_whatsapp = ?, guest_notes = ?, guest_timezone = ?, guest_token_hash = ?, consent_at = ?, guest_locale = ?,
 		hold_token_hash = NULL, hold_expires_at = NULL, updated_at = strftime('%s', 'now')
 		WHERE id = ?`,
 		strings.TrimSpace(guest.Name), strings.TrimSpace(guest.Email), strings.TrimSpace(guest.WhatsApp),
-		strings.TrimSpace(guest.Notes), guest.Timezone, guestTokenHash, bookingID,
+		strings.TrimSpace(guest.Notes), guest.Timezone, guestTokenHash, consentAt, guest.Locale, bookingID,
 	)
 	if err != nil {
 		return models.Booking{}, fmt.Errorf("confirm hold %d: %w", bookingID, err)
@@ -507,15 +514,30 @@ func bookingByID(queryer rowQuerier, bookingID int64) (models.Booking, error) {
 	return scanBooking(row, bookingID)
 }
 
+// parseOptionalTime reads an RFC3339 column that may be empty.
+func parseOptionalTime(value string) time.Time {
+	value = strings.TrimSpace(value)
+	if value == "" {
+		return time.Time{}
+	}
+	parsed, err := time.Parse(time.RFC3339, value)
+	if err != nil {
+		return time.Time{}
+	}
+	return parsed
+}
+
 func scanBooking(scanner interface{ Scan(...any) error }, requestedID int64) (models.Booking, error) {
 	var booking models.Booking
 	var status string
 	var holdExpires sql.NullInt64
+	var consentAt, reminderSentAt string
 	var startUnix, endUnix, createdAt, updatedAt int64
 	err := scanner.Scan(
 		&booking.ID, &booking.MeetingTypeID, &booking.GuestName, &booking.GuestEmail,
 		&booking.GuestWhatsApp, &booking.GuestNotes, &booking.GuestTimezone, &startUnix, &endUnix, &status, &holdExpires,
-		&booking.CancellationReason, &booking.CalendarEventID, &booking.MeetingURL, &booking.Attendance, &createdAt, &updatedAt,
+		&booking.CancellationReason, &booking.CalendarEventID, &booking.MeetingURL, &booking.Attendance,
+		&consentAt, &reminderSentAt, &booking.GuestLocale, &createdAt, &updatedAt,
 		&booking.MeetingTypeSlug, &booking.MeetingTypeTitle, &booking.MeetingTypeDuration,
 		&booking.MeetingTypeLocation, &booking.OwnerName, &booking.OwnerEmail, &booking.OwnerTimezone,
 	)
@@ -531,7 +553,58 @@ func scanBooking(scanner interface{ Scan(...any) error }, requestedID int64) (mo
 	if holdExpires.Valid {
 		booking.HoldExpiresAt = fromUnix(holdExpires.Int64)
 	}
+	booking.ConsentAt = parseOptionalTime(consentAt)
+	booking.ReminderSentAt = parseOptionalTime(reminderSentAt)
 	booking.CreatedAt = fromUnix(createdAt)
 	booking.UpdatedAt = fromUnix(updatedAt)
 	return booking, nil
+}
+
+// ListBookingsNeedingReminder returns confirmed sessions starting between from
+// and to that never received a reminder. Cancelled and held rows never match.
+func (s *SQLiteStore) ListBookingsNeedingReminder(from, to time.Time) ([]models.Booking, error) {
+	rows, err := s.db.Query(bookingSelect+` WHERE b.status = 'CONFIRMED'
+		AND b.reminder_sent_at = ''
+		AND b.start_time_utc >= ? AND b.start_time_utc <= ?
+		ORDER BY b.start_time_utc`,
+		unixSeconds(from), unixSeconds(to))
+	if err != nil {
+		return nil, fmt.Errorf("list bookings needing reminder: %w", err)
+	}
+	defer func() { _ = rows.Close() }()
+
+	var out []models.Booking
+	for rows.Next() {
+		booking, err := scanBooking(rows, 0)
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, booking)
+	}
+	return out, rows.Err()
+}
+
+// ClaimReminder stamps the booking before the send, so two workers (or a
+// restart mid-send) cannot deliver the same reminder twice.
+func (s *SQLiteStore) ClaimReminder(bookingID int64, now time.Time) (bool, error) {
+	result, err := s.db.Exec(`UPDATE bookings SET reminder_sent_at = ?
+		WHERE id = ? AND reminder_sent_at = '' AND status = 'CONFIRMED'`,
+		now.UTC().Format(time.RFC3339), bookingID)
+	if err != nil {
+		return false, fmt.Errorf("claim reminder for booking %d: %w", bookingID, err)
+	}
+	affected, err := result.RowsAffected()
+	if err != nil {
+		return false, fmt.Errorf("claim reminder for booking %d: %w", bookingID, err)
+	}
+	return affected == 1, nil
+}
+
+// ReleaseReminder clears the stamp when the delivery failed, so the next tick
+// retries instead of losing the reminder.
+func (s *SQLiteStore) ReleaseReminder(bookingID int64) error {
+	if _, err := s.db.Exec("UPDATE bookings SET reminder_sent_at = '' WHERE id = ?", bookingID); err != nil {
+		return fmt.Errorf("release reminder for booking %d: %w", bookingID, err)
+	}
+	return nil
 }

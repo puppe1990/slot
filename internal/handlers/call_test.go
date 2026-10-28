@@ -61,9 +61,10 @@ func TestConfirmIssuesRoomAndCancelEndsIt(t *testing.T) {
 	bookingHandler.Hold(holdRec, holdReq)
 
 	confirmReq := postForm("/book/30min/confirm", url.Values{
-		"name":  {"Marina Costa"},
-		"email": {"marina@example.com"},
-		"tz":    {"America/New_York"},
+		"consent": {"1"},
+		"name":    {"Marina Costa"},
+		"email":   {"marina@example.com"},
+		"tz":      {"America/New_York"},
 	}, holdCookie(holdRec))
 	confirmReq.SetPathValue("slug", "30min")
 	confirmRec := httptest.NewRecorder()
@@ -124,8 +125,9 @@ func TestServerWithoutCallProviderStoresNoRoom(t *testing.T) {
 	bookingHandler.Hold(holdRec, holdReq)
 
 	confirmReq := postForm("/book/30min/confirm", url.Values{
-		"name":  {"Marina Costa"},
-		"email": {"marina@example.com"},
+		"consent": {"1"},
+		"name":    {"Marina Costa"},
+		"email":   {"marina@example.com"},
 	}, holdCookie(holdRec))
 	confirmReq.SetPathValue("slug", "30min")
 	confirmRec := httptest.NewRecorder()
@@ -159,6 +161,7 @@ func TestConfirmationEmailsCarryRoomAndManageLink(t *testing.T) {
 	bookingHandler.Hold(holdRec, holdReq)
 
 	confirmReq := postForm("/book/30min/confirm", url.Values{
+		"consent":  {"1"},
 		"name":     {"Marina Costa"},
 		"email":    {"marina@example.com"},
 		"whatsapp": {"+55 11 99999-8888"},
@@ -226,8 +229,9 @@ func bookingForJoin(t *testing.T, env *testEnv) (models.Booking, string) {
 	bookingHandler.Hold(holdRec, holdReq)
 
 	confirmReq := postForm("/book/30min/confirm", url.Values{
-		"name":  {"Marina Costa"},
-		"email": {"marina@example.com"},
+		"consent": {"1"},
+		"name":    {"Marina Costa"},
+		"email":   {"marina@example.com"},
 	}, holdCookie(holdRec))
 	confirmReq.SetPathValue("slug", "30min")
 	confirmRec := httptest.NewRecorder()

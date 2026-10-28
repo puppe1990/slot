@@ -28,6 +28,7 @@ type Deps struct {
 	Store    store.Store
 	Site     meta.Site
 	Catalog  *i18n.Catalog
+	Catalogs map[string]*i18n.Catalog
 	Config   cais.Config
 	Calendar calendar.Provider
 	Call     call.Provider

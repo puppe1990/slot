@@ -143,6 +143,7 @@ func (h *BookingHandler) Confirm(w http.ResponseWriter, r *http.Request) {
 	email := strings.TrimSpace(r.FormValue("email"))
 	notes := strings.TrimSpace(r.FormValue("notes"))
 	whatsapp := normalizeWhatsApp(r.FormValue("whatsapp"))
+	consent := r.FormValue("consent") != ""
 	guestTimezone := normalizeTimezone(r.FormValue("tz"), hold.GuestTimezone)
 	l := h.localeFor(r)
 
@@ -156,6 +157,9 @@ func (h *BookingHandler) Confirm(w http.ResponseWriter, r *http.Request) {
 	if whatsapp != "" && !validWhatsApp(whatsapp) {
 		errs.Add("whatsapp", l.t("confirm.error_whatsapp"))
 	}
+	if !consent {
+		errs.Add("consent", l.t("confirm.error_consent"))
+	}
 	if errs.Any() {
 		h.renderConfirm(w, r, meetingType, hold, errs, http.StatusUnprocessableEntity)
 		return
@@ -163,11 +167,13 @@ func (h *BookingHandler) Confirm(w http.ResponseWriter, r *http.Request) {
 
 	guestToken := h.deps.Signer.Sign(hold.ID)
 	booking, err := h.deps.Store.ConfirmHold(holdTokenFromCookie(r), store.GuestInput{
-		Name:     name,
-		Email:    email,
-		WhatsApp: whatsapp,
-		Notes:    notes,
-		Timezone: guestTimezone,
+		Name:      name,
+		Email:     email,
+		WhatsApp:  whatsapp,
+		Notes:     notes,
+		Timezone:  guestTimezone,
+		ConsentAt: h.now(),
+		Locale:    l.tag,
 	}, guesttoken.Hash(guestToken), h.now())
 	if err != nil {
 		if errors.Is(err, store.ErrHoldExpired) || errors.Is(err, store.ErrSlotUnavailable) {

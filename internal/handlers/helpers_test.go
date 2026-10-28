@@ -8,6 +8,7 @@ import (
 
 	"github.com/puppe1990/amarra-cais/pkg/amarra/view"
 	"github.com/puppe1990/amarra-cais/pkg/cais"
+	"github.com/puppe1990/amarra-cais/pkg/cais/i18n"
 	"github.com/puppe1990/amarra-cais/pkg/cais/meta"
 
 	"github.com/puppe1990/slot/internal/calendar"
@@ -93,6 +94,7 @@ func setupTestEnv(t *testing.T) *testEnv {
 			Store:    s,
 			Site:     testSite(),
 			Catalog:  appi18n.DefaultCatalog(),
+			Catalogs: map[string]*i18n.Catalog{"en": appi18n.DefaultCatalog(), "pt": appi18n.NewCatalog("pt")},
 			Config:   cais.Config{Env: "test"},
 			Calendar: fakeCalendar,
 			Notifier: outbox,

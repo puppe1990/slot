@@ -60,6 +60,17 @@
         <textarea name="notes" rows="3" class="w-full resize-none rounded-lg border border-line bg-canvas px-3 py-2.5 text-body-md leading-relaxed text-foam outline-none focus:border-pine" placeholder="{{ t "confirm.notes_placeholder" }}"></textarea>
       </label>
 
+      <div class="flex items-start gap-2.5 rounded-lg border border-line bg-surface p-3">
+        <input id="consent" type="checkbox" name="consent" value="1" required class="mt-0.5 h-4 w-4 shrink-0 accent-[#1B382B]" />
+        <div class="flex flex-col gap-1">
+          <label for="consent" class="text-body-sm text-foam">{{ t "confirm.consent_label" }}</label>
+          <p class="text-label-mono leading-relaxed text-muted">{{ t "confirm.privacy" .Owner.Email }}</p>
+          {{ with fieldError .Errors "consent" }}
+          <p class="text-body-sm text-clay">{{ . }}</p>
+          {{ end }}
+        </div>
+      </div>
+
       <div class="flex items-start gap-2.5 rounded-lg border border-line bg-elevated p-3">
         <svg class="mt-0.5 h-4 w-4 shrink-0 text-slate" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M4 6h16v12H4z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M4 7l8 6 8-6"/></svg>
         <p class="text-body-sm text-muted">{{ t "confirm.assurance" }}</p>

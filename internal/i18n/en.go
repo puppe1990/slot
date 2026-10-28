@@ -288,6 +288,9 @@ var enMessages = map[string]string{
 	"confirm.seconds":           "sec",
 	"confirm.held":              "Slot held for you",
 	"confirm.held_body":         "Nobody else can book %s while you finish this brief. The hold releases itself if you leave.",
+	"confirm.consent_label":     "I agree that these details are used to confirm and run this meeting.",
+	"confirm.privacy":           "We ask for name, e-mail, WhatsApp and a note only to confirm and hold this session. To correct or delete them, write to %s.",
+	"confirm.error_consent":     "Accept the privacy notice to confirm.",
 	"confirm.whatsapp":          "WhatsApp",
 	"confirm.whatsapp_hint":     "Optional — country code plus number, e.g. +55 11 99999-9999.",
 	"confirm.error_whatsapp":    "Use 8 to 15 digits, including the country code.",
@@ -352,6 +355,9 @@ var enMessages = map[string]string{
 	"dashboard.cancelled_flash": "Booking cancelled and the guest was notified.",
 
 	// Email
+	"email.reminder.subject":        "Reminder: %s",
+	"email.heading.reminder":        "See you soon",
+	"email.reminder.intro":          "Your %s with %s is coming up. Need to move it? Use the link below.",
 	"email.confirmed.subject":       "Confirmed: %s",
 	"email.confirmed.intro":         "You are booked for %s with %s.",
 	"email.owner_new.subject":       "New booking: %s",

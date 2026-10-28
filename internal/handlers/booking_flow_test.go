@@ -92,8 +92,9 @@ func TestBookingFlowHoldConfirmManageCancel(t *testing.T) {
 
 	// 5. Validate the guest form before booking.
 	invalidReq := postForm("/book/30min/confirm", url.Values{
-		"name":  {"Sarah Jenkins"},
-		"email": {"not-an-email"},
+		"consent": {"1"},
+		"name":    {"Sarah Jenkins"},
+		"email":   {"not-an-email"},
 	}, cookie)
 	invalidReq.SetPathValue("slug", "30min")
 	invalidRec := httptest.NewRecorder()
@@ -104,10 +105,11 @@ func TestBookingFlowHoldConfirmManageCancel(t *testing.T) {
 
 	// 6. Confirm the reservation.
 	confirmReq := postForm("/book/30min/confirm", url.Values{
-		"name":  {"Sarah Jenkins"},
-		"email": {"sarah@example.com"},
-		"notes": {"Reviewing the migration plan."},
-		"tz":    {"Europe/London"},
+		"consent": {"1"},
+		"name":    {"Sarah Jenkins"},
+		"email":   {"sarah@example.com"},
+		"notes":   {"Reviewing the migration plan."},
+		"tz":      {"Europe/London"},
 	}, cookie)
 	confirmReq.SetPathValue("slug", "30min")
 	confirmRec := httptest.NewRecorder()
@@ -205,9 +207,10 @@ func TestManageReschedulesToNewSlot(t *testing.T) {
 	cookie := holdCookie(holdRec)
 
 	confirmReq := postForm("/book/30min/confirm", url.Values{
-		"name":  {"Sarah Jenkins"},
-		"email": {"sarah@example.com"},
-		"tz":    {"America/New_York"},
+		"consent": {"1"},
+		"name":    {"Sarah Jenkins"},
+		"email":   {"sarah@example.com"},
+		"tz":      {"America/New_York"},
 	}, cookie)
 	confirmReq.SetPathValue("slug", "30min")
 	confirmRec := httptest.NewRecorder()
