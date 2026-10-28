@@ -14,6 +14,7 @@ Built with [Amarra-cais](https://github.com/puppe1990/amarra-cais) — Go 1.26, 
 - **Consent and reminders** — the guest form requires a privacy notice before confirming (the timestamp lands in `bookings.consent_at`), and an in-process job e-mails a reminder before the session, in the language the guest booked in.
 - **Signed guest management** — `/manage/{token}` is HMAC-signed and only the SHA-256 hash is stored, so a DB backup cannot be replayed as a booking link.
 - **Guest-facing contact** — every guest notice carries the owner's name and e-mail, so the client knows who they are meeting; the owner's copy carries the guest's e-mail, WhatsApp and note.
+- **Calendar writes** — a confirmed booking creates the event on the owner's calendar, a reschedule patches it and a cancellation deletes it. With a service account the event carries no attendees (Google forbids inviting them without domain-wide delegation); the guest still gets the Slot e-mail and the `.ics`.
 - **Calendar + email adapters** — a deterministic in-memory calendar (default) and a testable Google Calendar REST adapter; an in-memory outbox records every notification for assertions.
 - **ICS download** — RFC 5545 output with CRLF folding and escaping.
 

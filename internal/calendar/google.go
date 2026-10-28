@@ -25,6 +25,11 @@ type Google struct {
 	BaseURL     string
 	HTTPClient  *http.Client
 	AccessToken func(ctx context.Context) (string, error)
+	// InviteAttendees is false for a service account on a consumer calendar:
+	// Google answers 403 forbiddenForServiceAccounts ("cannot invite attendees
+	// without Domain-Wide Delegation"). The guest still gets the Slot e-mail
+	// and the .ics.
+	InviteAttendees bool
 }
 
 func NewGoogle(calendarID string, client *http.Client) (*Google, error) {
@@ -34,7 +39,7 @@ func NewGoogle(calendarID string, client *http.Client) (*Google, error) {
 	if client == nil {
 		client = http.DefaultClient
 	}
-	return &Google{CalendarID: calendarID, BaseURL: googleBaseURL, HTTPClient: client}, nil
+	return &Google{CalendarID: calendarID, BaseURL: googleBaseURL, HTTPClient: client, InviteAttendees: true}, nil
 }
 
 func (g *Google) Provider() string { return ProviderGoogle }
@@ -86,7 +91,9 @@ func (g *Google) CreateEvent(ctx context.Context, event Event) (Event, error) {
 		"location":    event.Location,
 		"start":       map[string]string{"dateTime": event.Start.UTC().Format(time.RFC3339)},
 		"end":         map[string]string{"dateTime": event.End.UTC().Format(time.RFC3339)},
-		"attendees":   attendees,
+	}
+	if g.InviteAttendees && len(attendees) > 0 {
+		body["attendees"] = attendees
 	}
 	var created struct {
 		ID string `json:"id"`

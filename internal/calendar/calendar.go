@@ -62,6 +62,8 @@ func New(cfg Config) (Provider, error) {
 			return nil, fmt.Errorf("google calendar: %w", err)
 		}
 		provider.AccessToken = token
+		// A service account on a personal calendar cannot add attendees.
+		provider.InviteAttendees = false
 		return provider, nil
 	}
 	if cfg.GoogleClientID == "" || cfg.GoogleClientSecret == "" || cfg.TokenSource == nil {
