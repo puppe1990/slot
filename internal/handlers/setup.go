@@ -12,6 +12,7 @@ import (
 	"github.com/puppe1990/amarra-cais/pkg/cais/validate"
 
 	"github.com/puppe1990/slot/internal/calendar"
+	"github.com/puppe1990/slot/internal/holidays"
 	"github.com/puppe1990/slot/internal/models"
 	"github.com/puppe1990/slot/internal/scheduling"
 	"github.com/puppe1990/slot/internal/store"
@@ -56,7 +57,12 @@ func (h *SetupHandler) Show(w http.ResponseWriter, r *http.Request) {
 		h.serverError(w, r, err)
 		return
 	}
-	h.render(w, r, owner.User, rules, blocks, connection, nil, 0)
+	prefs, err := h.deps.Store.ListHolidayPrefs(owner.User.ID)
+	if err != nil {
+		h.serverError(w, r, err)
+		return
+	}
+	h.render(w, r, owner.User, rules, blocks, prefs, connection, nil, 0)
 }
 
 func (h *SetupHandler) Save(w http.ResponseWriter, r *http.Request) {
@@ -79,7 +85,8 @@ func (h *SetupHandler) Save(w http.ResponseWriter, r *http.Request) {
 	if errs.Any() {
 		connection, _ := h.deps.Store.GetCalendarConnection(owner.User.ID)
 		blocks, _ := h.deps.Store.ListRecurringBlocks(owner.User.ID)
-		h.render(w, r, owner.User, rules, blocks, connection, errs, http.StatusUnprocessableEntity)
+		prefs, _ := h.deps.Store.ListHolidayPrefs(owner.User.ID)
+		h.render(w, r, owner.User, rules, blocks, prefs, connection, errs, http.StatusUnprocessableEntity)
 		return
 	}
 
@@ -172,6 +179,34 @@ func (h *SetupHandler) DeleteOverride(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/setup", http.StatusSeeOther)
 }
 
+func (h *SetupHandler) SaveHolidays(w http.ResponseWriter, r *http.Request) {
+	owner, ok := h.owner(r)
+	if !ok {
+		http.Redirect(w, r, "/login", http.StatusSeeOther)
+		return
+	}
+	if err := httpx.ParseFormOrJSON(r); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	selected := map[string]bool{}
+	for _, key := range r.Form["holiday"] {
+		if holidays.Exists(key) {
+			selected[key] = true
+		}
+	}
+	prefs := make(map[string]bool, len(holidays.List()))
+	for _, day := range holidays.List() {
+		prefs[day.Key] = selected[day.Key]
+	}
+	if err := h.deps.Store.SaveHolidayPrefs(owner.User.ID, prefs); err != nil {
+		h.serverError(w, r, err)
+		return
+	}
+	flash.Set(w, "notice", h.localeFor(r).t("setup.holidays_saved"), h.deps.Config.CookieSecure())
+	http.Redirect(w, r, "/setup", http.StatusSeeOther)
+}
+
 func (h *SetupHandler) AddBlock(w http.ResponseWriter, r *http.Request) {
 	owner, ok := h.owner(r)
 	if !ok {
@@ -254,7 +289,7 @@ func (h *SetupHandler) readWeeklyRules(r *http.Request) []models.AvailabilityRul
 	return rules
 }
 
-func (h *SetupHandler) render(w http.ResponseWriter, r *http.Request, owner models.User, rules []models.AvailabilityRule, blocks []models.RecurringBlock, connection models.CalendarConnection, errs validate.FieldErrors, status int) {
+func (h *SetupHandler) render(w http.ResponseWriter, r *http.Request, owner models.User, rules []models.AvailabilityRule, blocks []models.RecurringBlock, holidayPrefs map[string]bool, connection models.CalendarConnection, errs validate.FieldErrors, status int) {
 	now := h.now()
 	from := now.Format(dateKeyLayout)
 	to := now.AddDate(0, 0, 120).Format(dateKeyLayout)
@@ -275,6 +310,7 @@ func (h *SetupHandler) render(w http.ResponseWriter, r *http.Request, owner mode
 		"Connection":      connection,
 		"Overrides":       overrides,
 		"RecurringBlocks": blocks,
+		"Holidays":        presentHolidays(holidayPrefs, now, mustLocation(owner.Timezone), h.localeFor(r)),
 		"WeekdayIndexes":  []int{0, 1, 2, 3, 4, 5, 6},
 		"Today":           now.In(mustLocation(owner.Timezone)).Format(dateKeyLayout),
 		"Errors":          errs,
