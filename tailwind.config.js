@@ -1,10 +1,24 @@
+const { execSync } = require("node:child_process");
+
+// The kit HTML lives inside the Go module, not in web/templates, so Tailwind
+// never sees its utility classes and components render unstyled (#372). Resolve
+// the module the same way Go does; a local replace (amarra-cais link) works.
+function shippedKitContent() {
+  try {
+    const out = execSync("go list -m -f {{.Dir}} github.com/puppe1990/amarra-cais", {
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "ignore"],
+    });
+    const dir = out.trim().replace(/\\/g, "/");
+    return dir ? [dir + "/pkg/amarra/view/components/**/*.html"] : [];
+  } catch {
+    return [];
+  }
+}
+
 /** @type {import("tailwindcss").Config} */
 module.exports = {
-  // The kit's HTML lives in the Go module, so Tailwind never sees it. Every kit
-  // component this app renders is mirrored in web/templates/components/ to get
-  // its classes compiled (amarra-cais#372). Add an override before adopting a
-  // new <.tag> component.
-  content: ["./web/templates/**/*.html"],
+  content: ["./web/templates/**/*.html", ...shippedKitContent()],
   safelist: [
     "cais-password-wrap",
     "cais-password-toggle",

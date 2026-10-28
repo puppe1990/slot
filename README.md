@@ -187,6 +187,8 @@ Adding a provider is one file in `internal/call/` plus a case in `call.New`; the
 
 Fonts load from Google Fonts; keep `CSP_STYLE_SRC` and `CSP_FONT_SRC` in `.env` or drop the `<link>` tags for a strict-CSP deployment.
 
+Since amarra-cais v0.25.0 the CSP also emits `frame-src 'self'`. Set `CSP_FRAME_SRC` (space-separated origins) to embed a third-party iframe — a Daily room, a map, a player. This app does not need it yet: the join page links out instead of framing.
+
 ## Google Calendar
 
 `internal/calendar/google.go` speaks the Calendar REST API (`freeBusy`, event create/patch/delete) with an injectable access token and base URL, and is covered by `httptest` tests. The OAuth authorization-code exchange is intentionally not wired yet: without credentials the app boots on the deterministic fake, and `/setup` records which provider you intend to use.

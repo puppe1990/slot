@@ -108,6 +108,7 @@ make ci                    # test + lint + prettier check
 amarra-cais doctor         # verify amarra.js, layouts, PWA
 amarra-cais db seed        # demo owner, formats and bookings
 amarra-cais pwa --bump     # after HTML changes when testing on a phone
+amarra-cais upgrade        # bump the framework + print the migration checklist
 ```
 
 ## Do not
@@ -139,3 +140,10 @@ amarra-cais pwa --bump     # after HTML changes when testing on a phone
 - `holidayClosures` (handlers) turns enabled holidays inside the horizon into `IsUnavailable` date overrides. A holiday with no stored row is **on**: the calendar starts closed.
 - A manual date override for the same day wins — the owner explicitly opened it.
 - Holidays are computed per request, never stored as overrides: changing a switch changes every future occurrence at once.
+
+## Framework upgrades
+
+- `amarra-cais upgrade` bumps `go.mod`, runs `go mod tidy` and `doctor`, and prints a per-version checklist. Follow it before merging — the checklist is where breaking changes live.
+- v0.24.0: `tailwind.config.js` must scan the shipped kit (`shippedKitContent()` via `go list -m`). Without it Tailwind prunes kit-only utilities (#372). The overrides in `web/templates/components/` are now **design choices**, not a CSS workaround.
+- v0.25.0: CSP emits `frame-src 'self'`. `CSP_FRAME_SRC` allows third-party iframes (amarra-cais#379); `frame-ancestors` stays `none`.
+- Always run `amarra-cais pwa --bump` after an upgrade so `web/static/js/amarra.js` matches `go.mod`, then `amarra-cais css`.
