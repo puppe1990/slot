@@ -64,6 +64,9 @@ type Store interface {
 	UpsertDateOverride(userID int64, override models.DateOverride) (int64, error)
 	DeleteDateOverride(userID, id int64) error
 
+	ListHolidayPrefs(userID int64) (map[string]bool, error)
+	SaveHolidayPrefs(userID int64, prefs map[string]bool) error
+
 	ListRecurringBlocks(userID int64) ([]models.RecurringBlock, error)
 	CreateRecurringBlock(block models.RecurringBlock) (int64, error)
 	DeleteRecurringBlock(userID, id int64) error
@@ -240,6 +243,54 @@ func (s *SQLiteStore) CountUsers() (int, error) {
 		return 0, fmt.Errorf("count users: %w", err)
 	}
 	return count, nil
+}
+
+// ListHolidayPrefs returns only the holidays the owner touched. A missing key
+// means "on": the national calendar starts closed.
+func (s *SQLiteStore) ListHolidayPrefs(userID int64) (map[string]bool, error) {
+	rows, err := s.db.Query("SELECT holiday_key, enabled FROM holiday_prefs WHERE user_id = ?", userID)
+	if err != nil {
+		return nil, fmt.Errorf("list holiday prefs for user %d: %w", userID, err)
+	}
+	defer func() { _ = rows.Close() }()
+
+	prefs := map[string]bool{}
+	for rows.Next() {
+		var key string
+		var enabled int
+		if err := rows.Scan(&key, &enabled); err != nil {
+			return nil, fmt.Errorf("scan holiday pref: %w", err)
+		}
+		prefs[key] = enabled == 1
+	}
+	return prefs, rows.Err()
+}
+
+// SaveHolidayPrefs replaces the owner's toggles in one transaction.
+func (s *SQLiteStore) SaveHolidayPrefs(userID int64, prefs map[string]bool) error {
+	tx, err := s.db.Begin()
+	if err != nil {
+		return fmt.Errorf("save holiday prefs: %w", err)
+	}
+	defer func() { _ = tx.Rollback() }()
+
+	if _, err := tx.Exec("DELETE FROM holiday_prefs WHERE user_id = ?", userID); err != nil {
+		return fmt.Errorf("clear holiday prefs for user %d: %w", userID, err)
+	}
+	for key, enabled := range prefs {
+		value := 0
+		if enabled {
+			value = 1
+		}
+		if _, err := tx.Exec("INSERT INTO holiday_prefs (user_id, holiday_key, enabled) VALUES (?, ?, ?)",
+			userID, key, value); err != nil {
+			return fmt.Errorf("insert holiday pref %q for user %d: %w", key, userID, err)
+		}
+	}
+	if err := tx.Commit(); err != nil {
+		return fmt.Errorf("commit holiday prefs: %w", err)
+	}
+	return nil
 }
 
 // ListRecurringBlocks returns the owner's repeating closed windows, oldest

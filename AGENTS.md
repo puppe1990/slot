@@ -132,3 +132,10 @@ amarra-cais pwa --bump     # after HTML changes when testing on a phone
 - Weeks are counted from **Monday of the anchor week** and the day difference uses noon UTC, so a DST transition cannot flip the parity.
 - Blocks are busy windows, not extra availability: they subtract from the weekly hours. If "open hours on the off week" is ever needed, that is a new feature, not a flag.
 - `buildSlots` is the only place that expands them; the public page, the dashboard and the admin API all inherit the behaviour.
+
+## Holidays
+
+- `internal/holidays` — the fixed national calendar (8 dates), `NextOnOrAfter` for the "Next:" label. Movable observances (Carnival, Good Friday, Corpus Christi) are out of scope.
+- `holidayClosures` (handlers) turns enabled holidays inside the horizon into `IsUnavailable` date overrides. A holiday with no stored row is **on**: the calendar starts closed.
+- A manual date override for the same day wins — the owner explicitly opened it.
+- Holidays are computed per request, never stored as overrides: changing a switch changes every future occurrence at once.

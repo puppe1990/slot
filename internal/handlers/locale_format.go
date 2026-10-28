@@ -55,6 +55,15 @@ func (l localeText) longDate(ts time.Time, loc *time.Location) string {
 	return ts.In(loc).Format("Monday, January 2, 2006")
 }
 
+// shortDate is "2 Nov" in English and "2 nov" in Portuguese.
+func (l localeText) shortDate(ts time.Time, loc *time.Location) string {
+	local := ts.In(loc)
+	if l.isPT() {
+		return itoa(local.Day()) + " " + ptMonthsShort[local.Month()-1]
+	}
+	return local.Format("2 Jan")
+}
+
 func (l localeText) weekdayShort(ts time.Time, loc *time.Location) string {
 	if l.isPT() {
 		return ptWeekdaysShort[ts.In(loc).Weekday()]
@@ -124,6 +133,11 @@ var ptWeekdaysLong = [7]string{
 }
 
 var ptWeekdaysShort = [7]string{"dom", "seg", "ter", "qua", "qui", "sex", "sáb"}
+
+var ptMonthsShort = [12]string{
+	"jan", "fev", "mar", "abr", "mai", "jun",
+	"jul", "ago", "set", "out", "nov", "dez",
+}
 
 var ptMonths = [12]string{
 	"janeiro", "fevereiro", "março", "abril", "maio", "junho",

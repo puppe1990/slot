@@ -81,6 +81,11 @@ func (b base) buildSlots(ctx context.Context, meetingType models.MeetingType, gu
 	if err != nil {
 		return slotPageData{}, fmt.Errorf("load overrides: %w", err)
 	}
+	holidayPrefs, err := b.deps.Store.ListHolidayPrefs(owner.ID)
+	if err != nil {
+		return slotPageData{}, fmt.Errorf("load holiday prefs: %w", err)
+	}
+	overrides = holidayClosures(overrides, holidayPrefs, now, horizonEnd, ownerLocation)
 	blocks, err := b.deps.Store.ListActiveIntervalsExcluding(owner.ID, now, horizonEnd, now, excludeBookingID)
 	if err != nil {
 		return slotPageData{}, fmt.Errorf("load bookings: %w", err)

@@ -8,6 +8,7 @@ Built with [Amarra-cais](https://github.com/puppe1990/amarra-cais) — Go 1.26, 
 
 - **Real availability math** — weekly windows in the owner's IANA timezone, per-date overrides, minimum notice, booking horizon, pre/post buffers, external busy blocks, and existing bookings. DST spring-forward and fall-back are covered by tests.
 - **Two-week rotas** — recurring blocked hours: close the same window every N weeks (a morning shift one week, a night shift the next), anchored on a date so the parity never drifts.
+- **National holidays** — the eight fixed Brazilian holidays, each with a switch; an enabled holiday closes the whole day, every year, and a manual date override still wins.
 - **No double bookings** — a guest picks a slot and gets a 10-minute `HOLD`; the overlap check and the insert share one SQLite transaction, and a partial unique index on `(meeting_type_id, start_time_utc)` for active rows backs it up. Confirming converts the hold to `CONFIRMED` atomically.
 - **Timezone-aware UI** — the guest page detects the browser zone (`?tz=`), shows guest and host clocks side by side, and renders every slot in both.
 - **Signed guest management** — `/manage/{token}` is HMAC-signed and only the SHA-256 hash is stored, so a DB backup cannot be replayed as a booking link.

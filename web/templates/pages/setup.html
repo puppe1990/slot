@@ -157,6 +157,32 @@
 
   <section class="rounded-xl border border-line bg-surface p-space-md">
     <div class="flex flex-wrap items-center justify-between gap-2">
+      <h2 class="text-headline-sm font-medium text-foam">{{ t "setup.holidays" }}</h2>
+      <span class="text-label-mono uppercase tracking-[0.08em] text-muted">{{ t "setup.holidays_country" }}</span>
+    </div>
+    <p class="mt-1 text-body-sm text-muted">{{ t "setup.holidays_intro" }}</p>
+
+    <form action="/setup/holidays" method="post" class="mt-space-md flex flex-col gap-space-sm">
+      <input type="hidden" name="csrf_token" value="{{ .CSRFToken }}" />
+      <ul class="flex flex-col divide-y divide-line rounded-lg border border-line bg-elevated">
+        {{ range .Holidays }}
+        <li class="flex flex-wrap items-center justify-between gap-2 px-3 py-2">
+          <label class="flex items-center gap-2">
+            <input type="checkbox" name="holiday" value="{{ .Key }}" {{ if .Enabled }}checked{{ end }} class="h-4 w-4 accent-[#1B382B]" />
+            <span class="text-body-md {{ if .Enabled }}text-foam{{ else }}text-muted{{ end }}">{{ .Name }}</span>
+          </label>
+          <span class="text-label-mono text-muted">{{ t "setup.holidays_next" .Next }}</span>
+        </li>
+        {{ end }}
+      </ul>
+      <div class="flex justify-end">
+        <button type="submit" class="h-11 rounded-lg border border-line px-4 text-label-ui uppercase tracking-[0.08em] text-foam transition-colors hover:border-line-strong">{{ t "setup.holidays_save" }}</button>
+      </div>
+    </form>
+  </section>
+
+  <section class="rounded-xl border border-line bg-surface p-space-md">
+    <div class="flex flex-wrap items-center justify-between gap-2">
       <h2 class="text-headline-sm font-medium text-foam">{{ t "setup.overrides" }}</h2>
       <span class="text-label-mono uppercase tracking-[0.08em] text-muted">{{ t "setup.overrides_range" }}</span>
     </div>
