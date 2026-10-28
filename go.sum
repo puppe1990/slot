@@ -18,8 +18,8 @@ github.com/ncruces/go-strftime v1.0.0 h1:HMFp8mLCTPp341M/ZnA4qaf7ZlsbTc+miZjCLOF
 github.com/ncruces/go-strftime v1.0.0/go.mod h1:Fwc5htZGVVkseilnfgOVb9mKy6w1naJmn9CehxcKcls=
 github.com/peterh/liner v1.2.2 h1:aJ4AOodmL+JxOZZEL2u9iJf8omNRpqHc/EbrK+3mAXw=
 github.com/peterh/liner v1.2.2/go.mod h1:xFwJyiKIXJZUKItq5dGHZSTBRAuG/CpeNpWLyiNRNwI=
-github.com/puppe1990/amarra-cais v0.23.1 h1:lL2ucdPh+7unTaiG5yN6yP+MH5GxyjR9rEUXeJkoiE4=
-github.com/puppe1990/amarra-cais v0.23.1/go.mod h1:BfulDX9EsicanDfXt3Pjji6TpweyqIeFIWKKd3JQOps=
+github.com/puppe1990/amarra-cais v0.25.0 h1:0ll9ZqMWnQa/CK95ziqTH12TYbyAFC5TzkaT02CGOaE=
+github.com/puppe1990/amarra-cais v0.25.0/go.mod h1:BfulDX9EsicanDfXt3Pjji6TpweyqIeFIWKKd3JQOps=
 github.com/remyoudompheng/bigfft v0.0.0-20230129092748-24d4a6f8daec h1:W09IVJc94icq4NjY3clb7Lk8O1qJ8BdBEF8z0ibU0rE=
 github.com/remyoudompheng/bigfft v0.0.0-20230129092748-24d4a6f8daec/go.mod h1:qqbHyh8v60DhA7CoWK5oRCqLrMHRGoxYCSS9EjAz6Eo=
 github.com/traefik/yaegi v0.15.1 h1:YA5SbaL6HZA0Exh9T/oArRHqGN2HQ+zgmCY7dkoTXu4=

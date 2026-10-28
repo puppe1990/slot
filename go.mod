@@ -3,12 +3,12 @@ module github.com/puppe1990/slot
 go 1.26.4
 
 require (
-	github.com/puppe1990/amarra-cais v0.23.1
+	github.com/brianvoe/gofakeit/v7 v7.18.0
+	github.com/puppe1990/amarra-cais v0.25.0
 	modernc.org/sqlite v1.53.0
 )
 
 require (
-	github.com/brianvoe/gofakeit/v7 v7.18.0 // indirect
 	github.com/coder/websocket v1.8.14 // indirect
 	github.com/dustin/go-humanize v1.0.1 // indirect
 	github.com/google/uuid v1.6.0 // indirect

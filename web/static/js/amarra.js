@@ -1,4 +1,4 @@
-/* amarra-cais v0.23.1 */
+/* amarra-cais v0.25.0 */
 (() => {
   var __defProp = Object.defineProperty;
   var __export = (target, all) => {
@@ -3058,6 +3058,8 @@ ${lines.join("\n")}
     eventName: () => eventName,
     formPayload: () => formPayload,
     liveRoot: () => liveRoot,
+    liveState: () => liveState,
+    reconnectDelay: () => reconnectDelay,
     setLoading: () => setLoading,
     start: () => start4,
     wsURL: () => wsURL
@@ -3100,7 +3102,7 @@ ${lines.join("\n")}
   }
   function applyLiveMessage(msg, root, morphFn = morph, extras = {}) {
     if (!msg || !root) return;
-    if (msg.type !== "ok" && msg.type !== "morph") return;
+    if (msg.type !== "ok" && msg.type !== "morph" && msg.type !== "resync") return;
     const html = msg.html ?? "";
     if (html !== "") {
       if (msg.target) {
@@ -3117,6 +3119,11 @@ ${lines.join("\n")}
     if (msg.navigate && extras.location) extras.location.href = msg.navigate;
     const pushFn = extras.dispatchPush ?? dispatchLivePush;
     for (const p of msg.pushes || []) pushFn(p.event, p.payload);
+    if (msg.type === "resync" && doc && typeof doc.dispatchEvent === "function" && typeof CustomEvent === "function") {
+      doc.dispatchEvent(
+        new CustomEvent("amarra:live-resync", { bubbles: true, detail: { lost: msg.lost ?? 0 } })
+      );
+    }
     if (doc && typeof doc.dispatchEvent === "function") {
       doc.dispatchEvent(new CustomEvent("amarra:morphed", { bubbles: true }));
     }
@@ -3125,6 +3132,24 @@ ${lines.join("\n")}
     if (typeof CSS !== "undefined" && CSS.escape) return CSS.escape(id);
     return String(id).replace(/[^a-zA-Z0-9_-]/g, "\\$&");
   }
+  var LIVE_RECONNECT_CODES = /* @__PURE__ */ new Set([1003, 1008, 1011]);
+  function reconnectDelay(attempt, opts = {}) {
+    const base = opts.baseMs ?? 1e3;
+    const max = opts.maxMs ?? 3e4;
+    const factor = opts.factor ?? 2;
+    const jitter = opts.jitter ?? 0.2;
+    const random = opts.random ?? Math.random;
+    const capped = Math.min(max, base * factor ** Math.max(0, attempt - 1));
+    const spread = capped * jitter;
+    return Math.max(0, Math.round(capped - spread + random() * spread * 2));
+  }
+  function liveState(root, state, detail = {}) {
+    root?.setAttribute?.("data-amarra-live-state", state);
+    if (typeof root?.dispatchEvent !== "function" || typeof CustomEvent !== "function") return;
+    root.dispatchEvent(
+      new CustomEvent("amarra:live-state", { bubbles: true, detail: { state, ...detail } })
+    );
+  }
   function start4(opts = {}) {
     const doc = opts.document ?? (typeof document !== "undefined" ? document : null);
     if (!doc || typeof doc.addEventListener !== "function") return;
@@ -3132,16 +3157,60 @@ ${lines.join("\n")}
     if (doc.documentElement?.dataset) doc.documentElement.dataset.amarraLive = "true";
     const WS = opts.WebSocket ?? (typeof WebSocket !== "undefined" ? WebSocket : null);
     const location = opts.location ?? (typeof window !== "undefined" ? window.location : null);
-    const sockets = /* @__PURE__ */ new Map();
-    function connect2(root) {
-      if (!root || !WS || !location) return;
-      const view = root.getAttribute("amarra-live");
-      if (!view) return;
-      const topic = root.getAttribute("data-amarra-topic") || view;
-      const url = wsURL(location, { view, topic });
-      const ws = new WS(url);
-      sockets.set(root, ws);
+    const connections = /* @__PURE__ */ new Map();
+    const setTimer = opts.setTimeout ?? setTimeout;
+    const clearTimer = opts.clearTimeout ?? clearTimeout;
+    const disabled = opts.reconnectMs !== void 0 && opts.reconnectMs < 0;
+    function removed(root) {
+      return root.isConnected === false || typeof doc.contains === "function" && !doc.contains(root);
+    }
+    function onClose(root, record, ev) {
+      record.ws = null;
+      if (!connections.has(root)) return;
+      if (removed(root)) {
+        root?.removeAttribute?.("data-amarra-live-state");
+        connections.delete(root);
+        return;
+      }
+      const code = ev?.code ?? 1006;
+      if (LIVE_RECONNECT_CODES.has(code)) {
+        record.failed = true;
+        liveState(root, "failed", {
+          permanent: true,
+          code,
+          reason: ev?.reason ?? "",
+          attempt: record.attempts
+        });
+        return;
+      }
+      if (disabled) {
+        liveState(root, "closed", { code });
+        return;
+      }
+      record.attempts += 1;
+      const wait = reconnectDelay(record.attempts, {
+        baseMs: opts.reconnectMs ?? 1e3,
+        maxMs: opts.maxMs,
+        jitter: opts.jitter,
+        random: opts.random
+      });
+      liveState(root, "reconnecting", { code, attempt: record.attempts, retryInMs: wait });
+      record.timer = setTimer(() => {
+        record.timer = null;
+        if (!connections.has(root) || removed(root)) {
+          connections.delete(root);
+          return;
+        }
+        open2(root, record);
+      }, wait);
+    }
+    function open2(root, record) {
+      const ws = new WS(record.url);
+      record.ws = ws;
+      liveState(root, "connecting", { attempt: record.attempts });
       ws.addEventListener("open", () => {
+        record.attempts = 0;
+        liveState(root, "open");
         const csrf = opts.csrfToken ?? csrfTokenFromMeta(doc);
         ws.send(JSON.stringify({ type: "join", csrf }));
       });
@@ -3160,25 +3229,33 @@ ${lines.join("\n")}
         setLoading(root._amarraPending, root, false);
         root._amarraPending = null;
       });
-      ws.addEventListener("close", () => {
-        sockets.delete(root);
-        const wait = opts.reconnectMs ?? 1e3;
-        if (wait < 0) return;
-        setTimeout(() => {
-          if (!doc.contains?.(root) && root.isConnected === false) return;
-          connect2(root);
-        }, wait);
-      });
+      ws.addEventListener("close", (ev) => onClose(root, record, ev));
+    }
+    function connect2(root) {
+      if (!root || !WS || !location || connections.has(root)) return;
+      const view = root.getAttribute("amarra-live");
+      if (!view) return;
+      const topic = root.getAttribute("data-amarra-topic") || view;
+      const record = {
+        url: wsURL(location, { view, topic }),
+        ws: null,
+        attempts: 0,
+        timer: null,
+        failed: false
+      };
+      connections.set(root, record);
+      open2(root, record);
     }
     function sync() {
-      for (const [root, ws] of sockets) {
-        if (root.isConnected === false) {
-          ws?.close?.();
-          sockets.delete(root);
-        }
+      for (const [root, record] of connections) {
+        if (!removed(root)) continue;
+        if (record.timer) clearTimer(record.timer);
+        record.ws?.close?.();
+        root?.removeAttribute?.("data-amarra-live-state");
+        connections.delete(root);
       }
       doc.querySelectorAll?.("[amarra-live]").forEach((el) => {
-        if (!sockets.has(el)) connect2(el);
+        if (!connections.has(el)) connect2(el);
       });
     }
     sync();
@@ -3188,7 +3265,7 @@ ${lines.join("\n")}
       if (!root) return false;
       const name = eventName(kind === "submit" ? el : el.closest?.(`[amarra-${kind}]`) || el, kind);
       if (!name) return false;
-      const ws = sockets.get(root);
+      const ws = connections.get(root)?.ws;
       if (!ws || ws.readyState !== 1) return false;
       const payload = extra ?? {};
       const send = () => {
