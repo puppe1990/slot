@@ -16,6 +16,7 @@ import (
 
 	"github.com/puppe1990/slot/internal/guesttoken"
 	"github.com/puppe1990/slot/internal/models"
+	"github.com/puppe1990/slot/internal/notify"
 	"github.com/puppe1990/slot/internal/store"
 )
 
@@ -224,5 +225,46 @@ func TestReminderUsesTheGuestLocale(t *testing.T) {
 	}
 	if subject := env.outbox.Messages()[0].Subject; !strings.HasPrefix(subject, "Lembrete:") {
 		t.Fatalf("subject = %q, want Portuguese", subject)
+	}
+}
+
+// The guest sees how to reach the owner, and no empty "Guest" card with their
+// own address missing.
+func TestGuestEmailsShowTheHostContact(t *testing.T) {
+	env := setupTestEnv(t)
+	booking := NewBookingHandler(env.deps)
+	rec := confirmUntil(t, env, booking, url.Values{
+		"name":    {"Marina Costa"},
+		"email":   {"marina@example.com"},
+		"consent": {"1"},
+	})
+	if rec.Code != http.StatusSeeOther {
+		t.Fatalf("confirm = %d: %s", rec.Code, rec.Body.String())
+	}
+
+	var guest, owner notify.Message
+	for _, message := range env.outbox.Messages() {
+		switch message.To {
+		case "marina@example.com":
+			guest = message
+		case "owner@example.com":
+			owner = message
+		}
+	}
+	if guest.To == "" || owner.To == "" {
+		t.Fatalf("messages = %+v", env.outbox.Messages())
+	}
+
+	if !strings.Contains(guest.HTML, "mailto:owner@example.com") {
+		t.Error("guest email has no host contact card")
+	}
+	if !strings.Contains(guest.Body, "Your host: Alex Rivera <owner@example.com>") {
+		t.Errorf("guest plain text has no host line:\n%s", guest.Body)
+	}
+	if strings.Contains(guest.HTML, ">Guest</div>") {
+		t.Error("guest email still renders the guest card")
+	}
+	if !strings.Contains(owner.HTML, "marina@example.com") {
+		t.Error("owner email lost the guest address")
 	}
 }

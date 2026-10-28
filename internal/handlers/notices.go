@@ -31,6 +31,9 @@ type bookingEmail struct {
 	GuestEmail    string
 	GuestWhatsApp string
 	GuestNotes    string
+	// Host fields go the other way: guest notices show how to reach the owner.
+	HostName  string
+	HostEmail string
 }
 
 func (b base) sendConfirmed(r *http.Request, booking models.Booking, manageURL string) {
@@ -46,6 +49,8 @@ func (b base) sendConfirmed(r *http.Request, booking models.Booking, manageURL s
 		CTAURL:    joinURL(manageURL, booking.MeetingURL),
 		CTALabel:  l.t("call.join"),
 		ManageURL: manageURL,
+		HostName:  booking.OwnerName,
+		HostEmail: booking.OwnerEmail,
 	}))
 }
 
@@ -117,16 +122,19 @@ func (b base) sendCancelled(r *http.Request, booking models.Booking, manageURL, 
 func (b base) sendOwnerCancelled(r *http.Request, booking models.Booking, reason string) {
 	l := b.localeFor(r)
 	b.send(r, b.bookingEmailMessage(l, booking, bookingEmail{
-		Kind:     "booking.owner_cancelled",
-		To:       booking.OwnerEmail,
-		Subject:  l.t("email.owner_cancelled.subject", booking.GuestName),
-		Heading:  l.t("email.heading.owner_cancelled"),
-		Tone:     "clay",
-		Intro:    l.t("email.owner_cancelled.intro", booking.GuestName, booking.MeetingTypeTitle),
-		Location: mustLocation(booking.OwnerTimezone),
-		CTAURL:   b.absoluteURL(r, "/dashboard"),
-		CTALabel: l.t("email.cta.dashboard"),
-		Reason:   reason,
+		Kind:          "booking.owner_cancelled",
+		To:            booking.OwnerEmail,
+		Subject:       l.t("email.owner_cancelled.subject", booking.GuestName),
+		Heading:       l.t("email.heading.owner_cancelled"),
+		Tone:          "clay",
+		Intro:         l.t("email.owner_cancelled.intro", booking.GuestName, booking.MeetingTypeTitle),
+		Location:      mustLocation(booking.OwnerTimezone),
+		CTAURL:        b.absoluteURL(r, "/dashboard"),
+		CTALabel:      l.t("email.cta.dashboard"),
+		Reason:        reason,
+		GuestEmail:    booking.GuestEmail,
+		GuestWhatsApp: booking.GuestWhatsApp,
+		GuestNotes:    booking.GuestNotes,
 	}))
 }
 
@@ -161,6 +169,9 @@ func (b base) bookingEmailMessage(l localeText, booking models.Booking, email bo
 	if reason != "" {
 		lines = append(lines, "", l.t("email.reason")+": "+reason)
 	}
+	if email.HostEmail != "" {
+		lines = append(lines, "", l.t("email.host")+": "+email.HostName+" <"+email.HostEmail+">")
+	}
 
 	html := renderEmail(emailView{
 		Lang:          l.tag,
@@ -173,6 +184,7 @@ func (b base) bookingEmailMessage(l localeText, booking models.Booking, email bo
 		Zone:          zone,
 		ReasonLabel:   l.t("email.reason"),
 		Reason:        reason,
+		ShowGuest:     email.GuestEmail != "",
 		GuestName:     booking.GuestName,
 		GuestEmail:    email.GuestEmail,
 		GuestWhatsApp: email.GuestWhatsApp,
@@ -185,6 +197,9 @@ func (b base) bookingEmailMessage(l localeText, booking models.Booking, email bo
 		CTALabel:      email.CTALabel,
 		ManageURL:     email.ManageURL,
 		ManageLabel:   l.t("email.cta.manage"),
+		HostName:      email.HostName,
+		HostEmail:     email.HostEmail,
+		HostLabel:     l.t("email.host"),
 		Footer:        l.t("layout.footer"),
 		FooterNote:    l.t("layout.footer_note"),
 	})

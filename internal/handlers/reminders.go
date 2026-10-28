@@ -100,6 +100,8 @@ func (h *ReminderService) reminderMessage(booking models.Booking) notify.Message
 		CTAURL:    joinURL(manageURL, booking.MeetingURL),
 		CTALabel:  l.t("call.join"),
 		ManageURL: manageURL,
+		HostName:  booking.OwnerName,
+		HostEmail: booking.OwnerEmail,
 	})
 }
 
