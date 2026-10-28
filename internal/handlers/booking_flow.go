@@ -14,14 +14,7 @@ import (
 // video room, guest and owner notices. It never fails the request — the slot is
 // already committed, so a vendor hiccup is logged and the booking stands.
 func (b base) finalizeBooking(r *http.Request, booking models.Booking, guestToken string) {
-	event, err := b.deps.Calendar.CreateEvent(r.Context(), calendar.Event{
-		Summary:   booking.MeetingTypeTitle + " · " + booking.GuestName,
-		Details:   bookingNotes(booking),
-		Start:     booking.StartUTC,
-		End:       booking.EndUTC,
-		Attendees: []string{booking.GuestEmail, booking.OwnerEmail},
-		Location:  meetingLocation(booking, b.localeFor(r)),
-	})
+	event, err := b.deps.Calendar.CreateEvent(r.Context(), b.calendarEvent(booking, b.localeFor(r)))
 	if err != nil {
 		log.Printf("slot: create calendar event for booking %d: %v", booking.ID, err)
 	} else if err := b.deps.Store.AttachCalendarEvent(booking.ID, event.ID); err != nil {
@@ -46,6 +39,19 @@ func (b base) finalizeBooking(r *http.Request, booking models.Booking, guestToke
 	manageURL := b.absoluteURL(r, "/manage/"+guestToken)
 	b.sendConfirmed(r, booking, manageURL)
 	b.sendOwnerNew(r, booking)
+}
+
+// calendarEvent is the single description of what a Slot booking looks like in
+// the owner's calendar.
+func (b base) calendarEvent(booking models.Booking, l localeText) calendar.Event {
+	return calendar.Event{
+		Summary:   booking.MeetingTypeTitle + " · " + booking.GuestName,
+		Details:   bookingNotes(booking),
+		Start:     booking.StartUTC,
+		End:       booking.EndUTC,
+		Attendees: []string{booking.GuestEmail, booking.OwnerEmail},
+		Location:  meetingLocation(booking, l),
+	}
 }
 
 // cancelBooking applies the cancellation and its side effects. The caller owns
@@ -79,6 +85,19 @@ func (b base) rescheduleBooking(r *http.Request, booking models.Booking, start t
 	if booking.CalendarEventID != "" {
 		if err := b.deps.Calendar.UpdateEvent(r.Context(), booking.CalendarEventID, start.UTC(), end.UTC()); err != nil {
 			log.Printf("slot: update calendar event for booking %d: %v", booking.ID, err)
+		}
+	} else {
+		// The confirmation may have failed to write the event (calendar outage
+		// or a rejected credential). A reschedule heals it instead of leaving
+		// the session invisible on the calendar forever.
+		moved := booking
+		moved.StartUTC = start.UTC()
+		moved.EndUTC = end.UTC()
+		event, err := b.deps.Calendar.CreateEvent(r.Context(), b.calendarEvent(moved, b.localeFor(r)))
+		if err != nil {
+			log.Printf("slot: create missing calendar event for booking %d: %v", booking.ID, err)
+		} else if err := b.deps.Store.AttachCalendarEvent(booking.ID, event.ID); err != nil {
+			log.Printf("slot: attach calendar event %s to booking %d: %v", event.ID, booking.ID, err)
 		}
 	}
 	b.sendMoved(r, booking, manageURL)

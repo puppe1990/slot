@@ -130,3 +130,45 @@ func TestGoogleFreeBusySurfacesUnreadableCalendar(t *testing.T) {
 		t.Fatalf("err = %v, want notFound surfaced", err)
 	}
 }
+
+func TestGoogleAttendeesFollowTheCredential(t *testing.T) {
+	var bodies []map[string]any
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		var body map[string]any
+		_ = json.NewDecoder(r.Body).Decode(&body)
+		bodies = append(bodies, body)
+		_, _ = w.Write([]byte(`{"id":"evt"}`))
+	}))
+	defer server.Close()
+
+	event := calendar.Event{
+		Summary:   "Purple Stock · Marina",
+		Start:     time.Now(),
+		End:       time.Now().Add(30 * time.Minute),
+		Attendees: []string{"marina@example.com", "owner@example.com"},
+	}
+
+	serviceAccount := &calendar.Google{
+		CalendarID: "owner@example.com", BaseURL: server.URL, HTTPClient: server.Client(),
+		AccessToken:     func(context.Context) (string, error) { return "t", nil },
+		InviteAttendees: false,
+	}
+	if _, err := serviceAccount.CreateEvent(context.Background(), event); err != nil {
+		t.Fatal(err)
+	}
+	if _, ok := bodies[0]["attendees"]; ok {
+		t.Fatal("service account sent attendees; Google answers 403 forbiddenForServiceAccounts")
+	}
+
+	oauth := &calendar.Google{
+		CalendarID: "owner@example.com", BaseURL: server.URL, HTTPClient: server.Client(),
+		AccessToken:     func(context.Context) (string, error) { return "t", nil },
+		InviteAttendees: true,
+	}
+	if _, err := oauth.CreateEvent(context.Background(), event); err != nil {
+		t.Fatal(err)
+	}
+	if _, ok := bodies[1]["attendees"]; !ok {
+		t.Fatal("oauth flow dropped the attendees")
+	}
+}
