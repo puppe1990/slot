@@ -378,6 +378,7 @@ var enMessages = map[string]string{
 	"email.heading.owner_cancelled": "Booking cancelled",
 	"email.cta.manage":              "Manage booking",
 	"email.cta.dashboard":           "Open dashboard",
+	"email.host":                    "Your host",
 	"email.guest":                   "Guest",
 	"email.message":                 "Message",
 	"email.join":                    "Join",

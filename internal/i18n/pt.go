@@ -377,6 +377,7 @@ var ptMessages = map[string]string{
 	"email.heading.owner_cancelled": "Reserva cancelada",
 	"email.cta.manage":              "Gerenciar reserva",
 	"email.cta.dashboard":           "Abrir o painel",
+	"email.host":                    "Seu anfitrião",
 	"email.guest":                   "Convidado",
 	"email.message":                 "Mensagem",
 	"email.join":                    "Entrar",
