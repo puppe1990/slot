@@ -104,3 +104,17 @@ func (f *Fake) DeleteEvent(_ context.Context, id string) error {
 	}
 	return nil
 }
+
+// Events returns the events created through the fake, in creation order. Tests
+// use it to assert what the adapter would have written.
+func (f *Fake) Events() []Event {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	out := make([]Event, 0, len(f.order))
+	for _, id := range f.order {
+		if event, ok := f.events[id]; ok {
+			out = append(out, event)
+		}
+	}
+	return out
+}

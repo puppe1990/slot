@@ -268,3 +268,30 @@ func TestGuestEmailsShowTheHostContact(t *testing.T) {
 		t.Error("owner email lost the guest address")
 	}
 }
+
+func TestCalendarEventCarriesTheJoinLink(t *testing.T) {
+	env := setupTestEnv(t)
+	env.deps.Call = &fakeCall{}
+	booking := NewBookingHandler(env.deps)
+
+	rec := confirmUntil(t, env, booking, url.Values{
+		"name":    {"Marina Costa"},
+		"email":   {"marina@example.com"},
+		"consent": {"1"},
+	})
+	if rec.Code != http.StatusSeeOther {
+		t.Fatalf("confirm = %d: %s", rec.Code, rec.Body.String())
+	}
+
+	events := env.calendar.Events()
+	if len(events) != 1 {
+		t.Fatalf("calendar events = %d, want 1", len(events))
+	}
+	event := events[0]
+	if !strings.Contains(event.Details, "/manage/") || !strings.Contains(event.Details, "/join") {
+		t.Fatalf("event details have no join link:\n%s", event.Details)
+	}
+	if !strings.Contains(event.Location, "/join") {
+		t.Fatalf("event location = %q, want the join link", event.Location)
+	}
+}
