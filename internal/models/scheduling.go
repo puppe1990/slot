@@ -114,8 +114,16 @@ type Booking struct {
 	CalendarEventID    string
 	MeetingURL         string
 	Attendance         string
-	CreatedAt          time.Time
-	UpdatedAt          time.Time
+	// ConsentAt is when the guest accepted the privacy notice; zero for rows
+	// created before the notice existed.
+	ConsentAt time.Time
+	// ReminderSentAt is the idempotency stamp of the reminder job.
+	ReminderSentAt time.Time
+	// GuestLocale is the language the guest booked in, so the reminder speaks
+	// the same one. Empty falls back to the app locale.
+	GuestLocale string
+	CreatedAt   time.Time
+	UpdatedAt   time.Time
 
 	// Joined columns used by the owner dashboard and the guest manage page.
 	MeetingTypeSlug     string

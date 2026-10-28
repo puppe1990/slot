@@ -10,12 +10,13 @@ import (
 	"github.com/puppe1990/slot/internal/handlers"
 )
 
-func registerRoutes(r *cais.Router, deps Deps, cfg cais.Config) {
+func registerRoutes(r *cais.Router, deps Deps, cfg cais.Config) *handlers.ReminderService {
 	handlerDeps := handlers.Deps{
 		Views:    deps.Views,
 		Store:    deps.Store,
 		Site:     deps.Site,
 		Catalog:  deps.Catalog,
+		Catalogs: deps.Catalogs,
 		Config:   cfg,
 		Calendar: deps.Calendar,
 		Call:     deps.Call,
@@ -28,6 +29,7 @@ func registerRoutes(r *cais.Router, deps Deps, cfg cais.Config) {
 	setup := handlers.NewSetupHandler(handlerDeps)
 	settings := handlers.NewSettingsHandler(handlerDeps)
 	adminAPI := handlers.NewAdminAPI(handlerDeps)
+	reminders := handlers.NewReminderService(handlerDeps)
 	meetingTypes := handlers.NewMeetingTypeHandler(handlerDeps)
 	booking := handlers.NewBookingHandler(handlerDeps)
 	manage := handlers.NewManageHandler(handlerDeps)
@@ -108,6 +110,8 @@ func registerRoutes(r *cais.Router, deps Deps, cfg cais.Config) {
 	r.Post("/manage/{token}/rsvp", bookingLimit.Middleware(http.HandlerFunc(manage.RSVP)).ServeHTTP)
 	r.Post("/manage/{token}/reschedule", bookingLimit.Middleware(http.HandlerFunc(manage.Reschedule)).ServeHTTP)
 	r.Post("/manage/{token}/cancel", bookingLimit.Middleware(http.HandlerFunc(manage.Cancel)).ServeHTTP)
+
+	return reminders
 }
 
 func registerLiveViews(hub *live.Hub, deps Deps) {

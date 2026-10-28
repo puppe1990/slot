@@ -83,6 +83,9 @@ type Store interface {
 	GetBooking(userID, bookingID int64) (models.Booking, error)
 	GetBookingByGuestTokenHash(hash string) (models.Booking, error)
 	ListBookings(userID int64, filter BookingFilter) ([]models.Booking, error)
+	ListBookingsNeedingReminder(from, to time.Time) ([]models.Booking, error)
+	ClaimReminder(bookingID int64, now time.Time) (bool, error)
+	ReleaseReminder(bookingID int64) error
 	RescheduleBooking(bookingID int64, start, end time.Time, actor, reason string, now time.Time) error
 	CancelBooking(bookingID int64, actor, reason string) error
 	PurgeExpiredHolds(now time.Time) (int64, error)

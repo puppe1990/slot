@@ -36,6 +36,7 @@ func TestConfirmStoresNormalizedWhatsApp(t *testing.T) {
 	booking := NewBookingHandler(env.deps)
 
 	req := postForm("/book/30min/confirm", url.Values{
+		"consent":  {"1"},
 		"name":     {"Marina Costa"},
 		"email":    {"marina@example.com"},
 		"whatsapp": {"+55 (11) 99999-8888"},
@@ -79,6 +80,7 @@ func TestConfirmRejectsMalformedWhatsApp(t *testing.T) {
 	booking := NewBookingHandler(env.deps)
 
 	req := postForm("/book/30min/confirm", url.Values{
+		"consent":  {"1"},
 		"name":     {"Marina Costa"},
 		"email":    {"marina@example.com"},
 		"whatsapp": {"123"},

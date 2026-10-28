@@ -287,6 +287,9 @@ var ptMessages = map[string]string{
 	"confirm.seconds":           "s",
 	"confirm.held":              "Horário reservado para você",
 	"confirm.held_body":         "Ninguém mais consegue reservar %s enquanto você termina. O hold se libera sozinho se você sair.",
+	"confirm.consent_label":     "Concordo que estes dados sejam usados para confirmar e realizar esta reunião.",
+	"confirm.privacy":           "Pedimos nome, e-mail, WhatsApp e uma anotação só para confirmar e realizar esta sessão. Para corrigir ou apagar, escreva para %s.",
+	"confirm.error_consent":     "Aceite o aviso de privacidade para confirmar.",
 	"confirm.whatsapp":          "WhatsApp",
 	"confirm.whatsapp_hint":     "Opcional — código do país e número, ex.: +55 11 99999-9999.",
 	"confirm.error_whatsapp":    "Use de 8 a 15 dígitos, incluindo o código do país.",
@@ -351,6 +354,9 @@ var ptMessages = map[string]string{
 	"dashboard.cancelled_flash": "Reserva cancelada e convidado avisado.",
 
 	// E-mail
+	"email.reminder.subject":        "Lembrete: %s",
+	"email.heading.reminder":        "Até já",
+	"email.reminder.intro":          "Sua %s com %s está chegando. Precisa mudar? Use o link abaixo.",
 	"email.confirmed.subject":       "Confirmada: %s",
 	"email.confirmed.intro":         "Você reservou %s com %s.",
 	"email.owner_new.subject":       "Nova reserva: %s",

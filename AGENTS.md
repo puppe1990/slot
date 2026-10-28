@@ -147,3 +147,11 @@ amarra-cais upgrade        # bump the framework + print the migration checklist
 - v0.24.0: `tailwind.config.js` must scan the shipped kit (`shippedKitContent()` via `go list -m`). Without it Tailwind prunes kit-only utilities (#372). The overrides in `web/templates/components/` are now **design choices**, not a CSS workaround.
 - v0.25.0: CSP emits `frame-src 'self'`. `CSP_FRAME_SRC` allows third-party iframes (amarra-cais#379); `frame-ancestors` stays `none`.
 - Always run `amarra-cais pwa --bump` after an upgrade so `web/static/js/amarra.js` matches `go.mod`, then `amarra-cais css`.
+
+## Reminders and consent
+
+- `internal/handlers/reminders.go` — in-process ticker started by `App.RunContext` (one binary on this deploy, no separate worker). `REMINDERS=off` disables it; `REMINDER_LEAD_HOURS` (default 24) sets the window.
+- Idempotency is the point: `ClaimReminder` stamps `bookings.reminder_sent_at` **before** the send, and `ReleaseReminder` clears it when the notifier fails, so a restart cannot duplicate or lose a reminder.
+- The manage URL is rebuilt with `deps.Signer.Sign(booking.ID)` — the signer is deterministic and the DB still stores only the hash.
+- `bookings.guest_locale` remembers the language of the booking; the reminder picks that catalog instead of the app default, so a Brazilian guest does not get an English reminder because `LOCALE=en`.
+- Consent: the confirm form requires the checkbox (`confirm.error_consent`), and `ConfirmHold` writes `consent_at`. Existing rows keep an empty value; the column is the audit trail, not a gate.

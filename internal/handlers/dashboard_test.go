@@ -78,9 +78,10 @@ func TestDashboardOwnerCancelFreesBooking(t *testing.T) {
 	holdRec := httptest.NewRecorder()
 	bookingHandler.Hold(holdRec, holdReq)
 	confirmReq := postForm("/book/30min/confirm", url.Values{
-		"name":  {"Sarah Jenkins"},
-		"email": {"sarah@example.com"},
-		"tz":    {"America/New_York"},
+		"consent": {"1"},
+		"name":    {"Sarah Jenkins"},
+		"email":   {"sarah@example.com"},
+		"tz":      {"America/New_York"},
 	}, holdCookie(holdRec))
 	confirmReq.SetPathValue("slug", "30min")
 	confirmRec := httptest.NewRecorder()
