@@ -98,6 +98,9 @@ func (l localeText) horizon(days int) string {
 }
 
 func (l localeText) notice(hours int) string {
+	if hours == 0 {
+		return l.t("formats.notice_none")
+	}
 	return l.t("unit.notice", l.duration(hours*60))
 }
 

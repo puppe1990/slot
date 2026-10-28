@@ -141,7 +141,7 @@ func (b base) buildSlots(ctx context.Context, meetingType models.MeetingType, gu
 	}
 
 	today := time.Date(now.In(ownerLocation).Year(), now.In(ownerLocation).Month(), now.In(ownerLocation).Day(), 0, 0, 0, 0, ownerLocation)
-	selectedDate := chooseDate(requestedDate, byDate, today, meetingType.BookingHorizonDays)
+	selectedDate := chooseDate(requestedDate, today, meetingType.BookingHorizonDays)
 
 	selected := slotDay{Date: selectedDate, IsSelected: true, Slots: byDate[selectedDate], HasSlots: len(byDate[selectedDate]) > 0}
 	selectedTime, _ := time.ParseInLocation(dateKeyLayout, selectedDate, ownerLocation)
@@ -197,19 +197,14 @@ func (b base) buildSlots(ctx context.Context, meetingType models.MeetingType, gu
 	}, nil
 }
 
-// chooseDate prefers the guest's pick, then the first day that actually has a
-// slot, then today — never a date outside the booking horizon.
-func chooseDate(requested string, byDate map[string][]slotView, today time.Time, horizonDays int) string {
+// chooseDate prefers the guest's pick, then today — even when today has no
+// remaining slots. Jumping to the next free day makes the strip look like it
+// skipped a weekday (Wednesday empty → Thursday selected).
+func chooseDate(requested string, today time.Time, horizonDays int) string {
 	horizonEnd := today.AddDate(0, 0, horizonDays)
 	if parsed, err := time.ParseInLocation(dateKeyLayout, requested, today.Location()); err == nil {
 		if !parsed.Before(today) && !parsed.After(horizonEnd) {
 			return requested
-		}
-	}
-	for day := 0; day <= horizonDays; day++ {
-		key := today.AddDate(0, 0, day).Format(dateKeyLayout)
-		if len(byDate[key]) > 0 {
-			return key
 		}
 	}
 	return today.Format(dateKeyLayout)
